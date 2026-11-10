@@ -77,7 +77,7 @@ test('#52 every terminal decision requires explanation and becomes immutable, vi
     }
     assert.deepEqual(app.store.list(), before);
     const result = await req(app, 'POST', `${path}/decision`, { outcome, explanation: 'Обоснованное решение.' });
-    assert.equal(result.statusCode, 200);
+    assert.equal(result.statusCode, 201);
     assert.ok(validate(result.json()), JSON.stringify(validate.errors));
     const visible = (await req(app, 'GET', path, undefined, 'employee-1')).json();
     assert.equal(visible.status, outcome);
