@@ -1,0 +1,25 @@
+:root { font-family: Inter, system-ui, sans-serif; color: var(--color-text, #193348); background: var(--color-background, #f3f6f8); font-synthesis: none; line-height: 1.5; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+a { color: var(--color-primary, #185a85); }
+button, select, input, textarea { font: inherit; }
+:focus-visible { outline: 3px solid #ba6200; outline-offset: 4px; }
+.app-shell { max-width: 1440px; margin: auto; }
+.app-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 36px; background: white; border-bottom: 1px solid #dce3e8; }
+.brand { display: flex; gap: 12px; align-items: center; font-weight: 700; font-size: 19px; text-decoration: none; color: inherit; }
+.brand small { display: block; font-size: 12px; font-weight: 400; color: #506577; }
+.brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; color: white; background: #183752; }
+.role-selector { display: grid; gap: 4px; font-size: 12px; font-weight: 600; }
+.role-selector select { padding: 8px 32px 8px 12px; border: 1px solid #8495a3; border-radius: 6px; background: white; color: inherit; }
+.demo-notice { margin: 0; padding: 10px 36px; background: #e5eef4; color: #365065; font-size: 13px; }
+.workspace { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; padding: 32px 36px; }
+nav { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+nav a { padding: 12px 14px; border-radius: 7px; text-decoration: none; color: #3f5364; }
+nav a.active { background: white; color: #183752; font-weight: 700; box-shadow: inset 3px 0 #185a85; }
+.section { min-height: 260px; padding: 32px; border: 1px solid #dce3e8; border-radius: 12px; background: white; }
+h1 { font-size: clamp(24px, 3vw, 32px); line-height: 1.2; margin: 10px 0 20px; }
+.eyebrow { margin: 0; text-transform: uppercase; letter-spacing: .12em; font-size: 11px; color: #536d7e; font-weight: 700; }
+.muted { color: #536577; }
+.skip-link { position: absolute; left: 16px; top: -80px; padding: 12px; background: white; z-index: 10; }
+.skip-link:focus { top: 16px; }
+@media (max-width: 720px) { .app-header { align-items: flex-start; flex-direction: column; padding: 20px; } .demo-notice { padding: 12px 20px; } .workspace { display: flex; flex-direction: column; padding: 20px; gap: 20px; } nav { flex-direction: row; flex-wrap: wrap; } .section { padding: 24px; } }
