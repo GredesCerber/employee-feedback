@@ -120,3 +120,39 @@ test('#89 контракт уточняет окно отката, уведом�
   assert.ok(api.paths['/demo/reset'].post.responses['404']);
   for (const value of ['demo-fixture', 'none']) assert.ok(api.components.schemas.CategorySuggestion.properties.source.enum.includes(value));
 });
+
+test('#89 схемы валидируют старые ответы и новые примеры без утечки автора', async (t) => {
+  const require = createRequire(new URL('../../api/package.json', import.meta.url));
+  const Ajv = require('ajv/dist/2020.js').default;
+  const ajv = new Ajv({ strict: false, allErrors: true });
+  require('ajv-formats').default(ajv);
+  ajv.addSchema(api, 'contract');
+  const validate = (name, value) => {
+    const check = ajv.compile({ $ref: `contract${ref(name)}` });
+    assert.ok(check(value), `${name}: ${JSON.stringify(check.errors)}`);
+  };
+  const { buildApp } = await import('../../api/dist/app.js');
+  const app = buildApp();
+  t.after(() => app.close());
+  for (const [path, name, user] of [['/health', 'Health', null], ['/complaints/complaint-1', 'Complaint', 'manager-1'], ['/summary', 'Summary', 'admin-1']]) {
+    const response = await app.inject({ url: path, headers: user ? { 'x-demo-user': user } : {} });
+    assert.equal(response.statusCode, 200);
+    validate(name, response.json());
+  }
+  validate('NotificationList', {
+    items: [{ id: 'event-1', kind: 'clarification_requested', complaintId: 'complaint-1', complaintNumber: 'A-001',
+      createdAt: '2026-11-10T09:00:00Z', message: 'Уточните описание.', href: '/my/complaint-1', simulated: true,
+      disclaimer: 'Имитация: в промышленной версии email / Битрикс24' }],
+    unreadCount: 1, generatedAt: '2026-11-10T09:01:00Z',
+  });
+  const similar = { id: 'complaint-1', number: 'A-001', categoryId: 'cross_department', categoryName: 'Межотдельное взаимодействие', status: 'new', score: 0.8 };
+  validate('SimilarComplaints', { items: [similar] });
+  const checkSimilar = ajv.compile({ $ref: `contract${ref('SimilarComplaint')}` });
+  assert.equal(checkSimilar({ ...similar, author: { id: 'employee-2', name: 'Скрытый автор' } }), false);
+  validate('CategorySuggestion', { category: null, source: 'none' });
+  validate('CategorySuggestion', { category: { id: 'cross_department', name: 'Межотдельное взаимодействие' }, source: 'demo-fixture' });
+  validate('DepartmentSummary', { departmentId: 'procurement', departmentName: 'Закупки', count: 0, closedCount: 0, closedShare: 0 });
+  validate('CategoryResolution', { categoryId: 'cross_department', categoryName: 'Межотдельное взаимодействие', closedCount: 0, averageResolutionHours: null });
+  validate('DemoResetResult', { loadedCount: 20 });
+  for (const code of ['RATE_LIMITED', 'UNDO_EXPIRED', 'NOTHING_TO_UNDO']) validate('Error', { code, message: 'Операция недоступна.' });
+});
