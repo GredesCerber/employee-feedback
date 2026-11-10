@@ -1,0 +1,8 @@
+# Allowlist: в контекст сборки API попадают только эти файлы.
+*
+!api/package.json
+!api/package-lock.json
+!api/tsconfig.json
+!api/src/**
+!api/data/**
+!contracts/api.yaml

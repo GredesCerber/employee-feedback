@@ -1,0 +1,6 @@
+# Allowlist: исходники фронтенда без локальных node_modules и сборок, плюс конфиг nginx.
+*
+!web/**
+web/node_modules
+web/dist
+!infra/nginx.conf

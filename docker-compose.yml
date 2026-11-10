@@ -1,0 +1,35 @@
+# Запуск всего решения одной командой: docker compose up --build
+# Фронтенд: http://localhost:8080 (порт меняется переменной WEB_PORT), API за прокси: /api/*.
+# Данные демо: синтетический seed из api/data/seed.json, хранится в памяти и сбрасывается при перезапуске.
+name: employee-feedback
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: infra/api.Dockerfile
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/web.Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
