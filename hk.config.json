@@ -1,0 +1,192 @@
+{
+  "areas": {
+    "web": [
+      "web/**"
+    ],
+    "api": [
+      "api/**"
+    ],
+    "contracts": [
+      "contracts/**"
+    ],
+    "e2e": [
+      "tests/e2e/**",
+      "tests/acceptance/**",
+      "tests/pending/**"
+    ],
+    "infra": [
+      "infra/**",
+      ".github/**",
+      "docker-compose.yml"
+    ],
+    "design": [
+      "design/**",
+      "web/src/styles/**"
+    ],
+    "research": [
+      "docs/research/**"
+    ]
+  },
+  "check": [
+    {
+      "name": "web-lint",
+      "run": "npm --prefix web run lint --if-present",
+      "when_exists": "web/package.json"
+    },
+    {
+      "name": "web-types",
+      "run": "npm --prefix web exec -- tsc -b web --noEmit",
+      "when_exists": "web/tsconfig.json"
+    },
+    {
+      "name": "web-test",
+      "run": "npm --prefix web run test --if-present",
+      "when_exists": "web/package.json"
+    },
+    {
+      "name": "api-types",
+      "run": "npm --prefix api exec -- tsc -b api --noEmit",
+      "when_exists": "api/tsconfig.json"
+    },
+    {
+      "name": "api-test",
+      "run": "npm --prefix api run test --if-present",
+      "when_exists": "api/package.json"
+    },
+    {
+      "name": "acceptance",
+      "run": "node --test \"tests/acceptance/**/*.test.*js\"",
+      "tests_dir": "tests/acceptance",
+      "tests_pattern": "\\.test\\.[cm]?js$",
+      "timeout_s": 900
+    }
+  ],
+  "lease_minutes": 45,
+  "tiers": {
+    "high": {
+      "claude": "opus",
+      "codex": "gpt-6.1-sol"
+    },
+    "mid": {
+      "claude": "sonnet",
+      "codex": "gpt-6.1-terra"
+    },
+    "low": {
+      "claude": "haiku",
+      "codex": "gpt-6-luna"
+    }
+  },
+  "hosts": [
+    "claude",
+    "codex"
+  ],
+  "review": {
+    "approvals": 1,
+    "approvals_high": 1,
+    "fallback_minutes": 30
+  },
+  "event": null,
+  "stack": "web-node",
+  "scaffold": [
+    "npm create vite@latest web -- --template react-ts",
+    "mkdir api && npm --prefix api init -y && npm --prefix api i fastify zod && npm --prefix api i -D typescript tsx vitest @types/node",
+    "npm init playwright@latest -- --quiet tests/e2e"
+  ],
+  "ecc": {
+    "enabled": true,
+    "version": "2.2.3",
+    "marketplace": "https://github.com/affaan-m/ECC.git",
+    "about": "Какие навыки ECC использовать по ролям. ECC — ускоритель для Claude Code, не зависимость протокола: всё работает и без него.",
+    "roles": {
+      "common": [
+        "search-first",
+        "documentation-lookup",
+        "verification-loop",
+        "strategic-compact",
+        "gateguard",
+        "safety-guard"
+      ],
+      "planner": [
+        "plan-prd",
+        "product-lens",
+        "council",
+        "contract-first",
+        "api-design",
+        "market-research"
+      ],
+      "builder": [
+        "orch-add-feature",
+        "orch-fix-defect",
+        "tdd-workflow",
+        "build-fix",
+        "api-connector-builder"
+      ],
+      "reviewer": [
+        "orch-review",
+        "astra-review",
+        "silent-failure-hunter",
+        "security-review"
+      ],
+      "qa": [
+        "e2e-testing",
+        "browser-qa",
+        "ai-regression-testing"
+      ],
+      "demo": [
+        "ui-demo",
+        "frontend-slides",
+        "frontend-design-direction",
+        "investor-materials"
+      ],
+      "ops": [
+        "opensource-sanitizer",
+        "cost-report",
+        "harness-audit"
+      ]
+    },
+    "avoid": [
+      "multi-*",
+      "email-ops",
+      "chief-of-staff",
+      "messages-ops",
+      "social-publisher",
+      "dev-team",
+      "team-builder"
+    ]
+  },
+  "mcp": {
+    "context7": {
+      "enabled": false,
+      "about": "Свежая документация библиотек и API прямо в контексте агента. Включить первым.",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "env_from": []
+    },
+    "perplexity": {
+      "enabled": false,
+      "about": "Глубокий веб-поиск для kickoff: идея, конкуренты, аргументы для питча. Ключ: PERPLEXITY_API_KEY в окружении.",
+      "command": "npx",
+      "args": [
+        "-y",
+        "VERIFY-PACKAGE-NAME-BEFORE-ENABLING"
+      ],
+      "env_from": [
+        "PERPLEXITY_API_KEY"
+      ]
+    },
+    "playwright": {
+      "enabled": false,
+      "about": "Браузер для QA и E2E демо-пути.",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp"
+      ],
+      "env_from": []
+    }
+  },
+  "captain": "GredesCerber"
+}

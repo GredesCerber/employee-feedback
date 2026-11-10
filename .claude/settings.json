@@ -1,0 +1,24 @@
+{
+  "env": {
+    "HK_AGENT": "claude"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(hk:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh pr view:*)",
+      "mcp__hk"
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "ecc": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/affaan-m/ECC.git"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "ecc@ecc": true
+  }
+}

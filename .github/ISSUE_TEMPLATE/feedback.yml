@@ -1,0 +1,36 @@
+name: Фидбек
+description: Потестировал стенд — что не так или что улучшить. Product lead раз в час превращает фидбек в задачи.
+labels: ["feedback"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Что это
+      options: ["Баг", "Дизайн / UX", "Функционал", "Идея"]
+    validations:
+      required: true
+  - type: textarea
+    id: did
+    attributes:
+      label: Что делал
+      description: Шаги, по которым можно повторить. Ссылка на страницу стенда.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Что ожидал
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Что увидел
+      description: Можно вставить скриншот (Ctrl+V).
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Насколько важно
+      options: ["Ломает демо", "Заметно жюри", "Мелочь"]
+    validations:
+      required: true

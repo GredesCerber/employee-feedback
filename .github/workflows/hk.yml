@@ -1,0 +1,114 @@
+# Проверки кода: линтер, типы, тесты из hk.config.json. Работают одинаково для Claude, Codex и людей.
+# Правила PR (защищённые файлы, приёмочные тесты, ревью агента) — в hk-guard.yml, он запускается из main.
+# Требует переменную HK_HARNESS (Settings → Variables), например @gredescerber/hackathon-harness@0.2.9.
+# harness ставится из GitHub Packages (приватный пакет): доступ репо продукта — см. README «Установка в CI».
+# Защиту main, переменную и метки настраивает `hk github setup --apply`.
+name: hk
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "*/15 * * * *" # возврат протухших аренд задач
+  # закрытие issue → задачи, которые его ждали (status:waiting), переходят в ready (job promote)
+  issues:
+    types: [closed]
+  workflow_dispatch:
+
+# Минимум прав по умолчанию: в job check выполняется код из PR (тесты), ему запись не нужна.
+# issues: write есть только у sweep (возврат протухших аренд) и promote (waiting → ready).
+permissions:
+  contents: read
+  pull-requests: read
+  packages: read # установить harness из GitHub Packages
+
+jobs:
+  # Имя job `check` — это контекст обязательной проверки в защите main (hk github setup).
+  check:
+    if: github.event_name != 'schedule' && github.event_name != 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, registry-url: "https://npm.pkg.github.com", scope: "@gredescerber" }
+      - uses: astral-sh/setup-uv@v6
+      - name: Установить harness (GitHub Packages)
+        env: { NODE_AUTH_TOKEN: "${{ secrets.HK_PACKAGES_TOKEN || github.token }}" }
+        run: npm install -g "${{ vars.HK_HARNESS }}"
+      - name: Сгенерированные конфиги актуальны
+        run: hk adapters build --check --json
+      # На PR проверки берутся из base-коммита: агент не может «позеленеть», заменив check в hk.config.json на true.
+      # На push в main base нет — используется hk.config.json из самого коммита.
+      - name: hk.config.json из base-коммита (только PR)
+        if: github.event_name == 'pull_request'
+        env: { BASE_SHA: "${{ github.event.pull_request.base.sha }}" }
+        run: |
+          if git cat-file -e "$BASE_SHA:hk.config.json" 2>/dev/null; then
+            git show "$BASE_SHA:hk.config.json" > hk.config.json
+            echo "hk.config.json взят из base $BASE_SHA"
+          else
+            echo "::warning::В base-коммите нет hk.config.json — используется версия из PR"
+          fi
+      # Чистый runner: без node_modules шаги lint/tsc/test из hk.config.json падают на каждом PR.
+      # Python-зависимости ставит сам `uv run` (синхронизирует окружение api/ перед запуском).
+      - name: Зависимости продукта (web/, api/)
+        run: |
+          for d in web api; do
+            if [ -f "$d/package-lock.json" ]; then npm --prefix "$d" ci --no-audit --no-fund
+            elif [ -f "$d/package.json" ]; then npm --prefix "$d" install --no-audit --no-fund
+            fi
+          done
+      - name: hk check
+        run: hk check --json
+      - name: Соответствие правилам хакатона
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: hk compliance check --json
+
+  sweep:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      issues: write # менять метки статуса и писать маркеры release
+      pull-requests: read # пересчитать hk-guard открытых PR
+      statuses: write # коммит-статус hk-guard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, registry-url: "https://npm.pkg.github.com", scope: "@gredescerber" }
+      - name: Установить harness (GitHub Packages)
+        env: { NODE_AUTH_TOKEN: "${{ secrets.HK_PACKAGES_TOKEN || github.token }}" }
+        run: npm install -g "${{ vars.HK_HARNESS }}"
+      - env: { GH_TOKEN: "${{ github.token }}" }
+        run: hk task sweep --json
+      # Ревью того же вендора засчитывается через fallback_minutes, но сам статус без события не пересчитается.
+      # Раз в 15 минут пересчитываем hk-guard открытых PR (код и конфиг — из main, код PR не исполняется).
+      - name: Пересчитать hk-guard открытых PR
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          for n in $(gh pr list --state open --json number --jq '.[].number'); do
+            hk guard --pr "$n" --report --json > /dev/null || true
+          done
+
+  # Закрыли issue → waiting-задачи, у которых все hk:after закрыты, становятся ready.
+  promote:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    concurrency: { group: hk-promote, cancel-in-progress: false }
+    permissions:
+      contents: read
+      packages: read
+      issues: write # менять метки статуса и писать комментарий
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, registry-url: "https://npm.pkg.github.com", scope: "@gredescerber" }
+      - name: Установить harness (GitHub Packages)
+        env: { NODE_AUTH_TOKEN: "${{ secrets.HK_PACKAGES_TOKEN || github.token }}" }
+        run: npm install -g "${{ vars.HK_HARNESS }}"
+      - env: { GH_TOKEN: "${{ github.token }}" }
+        run: hk task promote --json

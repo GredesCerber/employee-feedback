@@ -1,0 +1,22 @@
+name: Эпик
+description: Крупный пользовательский сценарий, который режется на задачи.
+labels: ["epic"]
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Сценарий пользователя
+      description: Что пользователь может сделать, когда эпик готов.
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Задачи
+      description: Ссылки на задачи (#N). Вертикальные срезы, а не слои.
+      value: |
+        - [ ] #
+  - type: textarea
+    id: demo
+    attributes:
+      label: Как показать на демо

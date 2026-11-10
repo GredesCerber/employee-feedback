@@ -1,0 +1,14 @@
+{
+  "name": "Система обратной связи сотрудников",
+  "rules_url": "",
+  "start": "",
+  "end": "",
+  "ai_allowed": true,
+  "ai_disclosure_required": true,
+  "prebuilt_code": "tooling_only",
+  "team_members": [
+    "GredesCerber",
+    "Ami-m1nzyi",
+    "punyzxc"
+  ]
+}

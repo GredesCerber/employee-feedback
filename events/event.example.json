@@ -1,0 +1,10 @@
+{
+  "name": "Example Hackathon 2026",
+  "rules_url": "https://example.com/rules",
+  "start": "2026-12-05T10:00:00+03:00",
+  "end": "2026-12-07T10:00:00+03:00",
+  "ai_allowed": true,
+  "ai_disclosure_required": true,
+  "prebuilt_code": "tooling_only",
+  "team_members": ["github-login-1", "github-login-2"]
+}

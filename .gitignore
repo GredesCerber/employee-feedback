@@ -1,0 +1,23 @@
+# hk: локальные файлы
+.hk/
+.mcp.json
+.claude/skills/
+.claude/agents/analyst.md
+.claude/agents/builder.md
+.claude/agents/implementer.md
+.claude/agents/integrator.md
+.claude/agents/planner.md
+.claude/agents/reviewer.md
+.claude/agents/scout.md
+.codex/config.toml
+.agents/skills/
+
+# секреты
+.env
+.env.*
+!.env.example
+
+node_modules/
+__pycache__/
+.venv/
+dist/

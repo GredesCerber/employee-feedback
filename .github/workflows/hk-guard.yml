@@ -1,0 +1,47 @@
+# Правила PR без «кнопки approve» у человека (hk guard). Ставит коммит-статус hk-guard —
+# обязательную проверку защиты main (hk github setup).
+#
+# Почему pull_request_target и issue_comment: оба события берут ЭТОТ файл и hk.config.json из main,
+# а не из ветки PR, поэтому PR не может ослабить проверку сам себе. Код PR здесь не запускается —
+# только чтение списка файлов и комментариев через GitHub API, поэтому права на запись безопасны.
+#
+#   failure — PR трогает правила агентов/CI или чужие приёмочные тесты, либо ревьюер просит правки;
+#   pending — ждёт ревью агента (hk pr review); success — можно мержить (авто-мерж сольёт сам).
+name: hk-guard
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  issue_comment:
+    types: [created, edited] # hk pr review пишет комментарий → пересчитать статус
+  workflow_dispatch:
+    inputs:
+      pr: { description: "номер PR", required: true }
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+  packages: read # установить harness из GitHub Packages
+  statuses: write # коммит-статус hk-guard
+
+jobs:
+  guard:
+    if: github.event_name != 'issue_comment' || (github.event.issue.pull_request && contains(github.event.comment.body, 'hk:review'))
+    runs-on: ubuntu-latest
+    concurrency:
+      group: hk-guard-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}
+      cancel-in-progress: true
+    steps:
+      # checkout без ref → main (base). Ветку PR не берём: её код здесь не нужен и не должен исполняться.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, registry-url: "https://npm.pkg.github.com", scope: "@gredescerber" }
+      - name: Установить harness (GitHub Packages)
+        env: { NODE_AUTH_TOKEN: "${{ secrets.HK_PACKAGES_TOKEN || github.token }}" }
+        run: npm install -g "${{ vars.HK_HARNESS }}"
+      - name: hk guard
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          PR: "${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}"
+        run: hk guard --pr "$PR" --report --json

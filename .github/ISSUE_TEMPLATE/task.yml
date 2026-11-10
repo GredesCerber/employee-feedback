@@ -1,0 +1,62 @@
+name: Задача
+description: Одна задача для одного агента. Без критериев приёмки агент её не возьмёт.
+labels: ["status:needs-spec"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Цель
+      description: Одно предложение — зачем эта задача.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии приёмки
+      description: Given / When / Then. Каждый пункт должен проверяться тестом.
+      value: |
+        - [ ] Given ... When ... Then ...
+    validations:
+      required: true
+  - type: input
+    id: contract
+    attributes:
+      label: Контракт
+      description: Ссылка на часть контракта, например contracts/api.yaml#/paths/~1auth
+  - type: input
+    id: paths
+    attributes:
+      label: Разрешённые пути
+      description: Например web/src/features/auth/**
+  - type: input
+    id: after
+    attributes:
+      label: Зависимости
+      description: "После #N, #M — пока они не закрыты, задача в status:waiting (в ready переведёт hk task promote)"
+  - type: input
+    id: req
+    attributes:
+      label: Требования ТЗ
+      description: ID требований из docs/tz-analysis.md, например R1, R3
+  - type: textarea
+    id: changes_acceptance
+    attributes:
+      label: Меняет приёмку
+      description: "Только если задача меняет УЖЕ существующие приёмочные тесты (например, по фидбеку). По одному пути на строку: tests/acceptance/test_12_login.py. Остальные существующие тесты PR задачи менять не сможет (hk-guard)."
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Вне скоупа
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Риск
+      options: ["low", "med", "high"]
+  - type: textarea
+    id: tests
+    attributes:
+      label: Требуемые тесты
+      value: |
+        - [ ] unit
+        - [ ] contract
+        - [ ] e2e (если трогает демо-путь)
