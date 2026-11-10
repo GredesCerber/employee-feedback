@@ -26,7 +26,7 @@ export interface Complaint {
   id: string; number: string; type: ComplaintType; categoryId: string; departmentId: string;
   author: User; description: string; proposedSolution: string | null; priority: Priority;
   attachments: Attachment[]; status: Status; assignee: User | null;
-  routing: { queue: 'assigned' | 'unassigned'; reason: 'category_rule' | 'no_rule' | 'manual' };
+  routing: { queue: 'assigned' | 'unassigned'; reason: 'category_rule' | 'no_rule' | 'manual_assignment' };
   createdAt: string; updatedAt: string; dueAt: string; firstResponseAt: string | null;
   closedAt: string | null; overdue: boolean; comments: Comment[]; history: HistoryEvent[];
   decision: Decision | null; nextAction: string;
