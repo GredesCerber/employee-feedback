@@ -16,7 +16,7 @@ const { version } = JSON.parse(
 /** Build an isolated app without opening a port, for tests and embedding. */
 export function buildApp(options: FastifyServerOptions = {}) {
   const app = Fastify(options);
-  const store = new ComplaintStore();
+  const store = new ComplaintStore(process.env.PERSIST_FILE);
   store.seed();
   app.decorate('store', store);
   configureErrors(app);
