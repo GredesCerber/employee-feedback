@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -6,7 +7,8 @@ import { MemoryRouter } from 'react-router-dom';
 import App from '../src/App';
 import type { components } from '../src/api/client';
 
-const contract = JSON.parse(readFileSync(new URL('../../contracts/api.yaml', import.meta.url), 'utf8'));
+const contractPath = existsSync(resolve('contracts/api.yaml')) ? resolve('contracts/api.yaml') : resolve('../contracts/api.yaml');
+const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
 const complaint: components['schemas']['Complaint'] = contract.paths['/complaints'].post.responses['201'].content['application/json'].examples.routed.value;
 const reference = contract.components.schemas.ReferenceData.examples[0];
 const rejected = { ...complaint, status: 'rejected', nextAction: 'Ознакомьтесь с причиной отказа.', decision: { outcome: 'rejected', explanation: 'Нет подходящего помещения.', actions: 'Вернуться к вопросу при перепланировке.', author: complaint.assignee, createdAt: complaint.createdAt } };
