@@ -4,6 +4,7 @@ import { ComplaintStore } from './store.js';
 import { configureErrors } from './http.js';
 import { registerComplaints } from './complaints.js';
 import { registerLifecycle } from './lifecycle.js';
+import { registerRateLimit } from './rate-limit.js';
 
 declare module 'fastify' {
   interface FastifyInstance { store: ComplaintStore }
@@ -19,6 +20,7 @@ export function buildApp(options: FastifyServerOptions = {}) {
   const store = new ComplaintStore(process.env.PERSIST_FILE);
   store.seed();
   app.decorate('store', store);
+  registerRateLimit(app);
   configureErrors(app);
   app.get('/health', async () => ({ status: 'ok', version }));
   registerComplaints(app);
