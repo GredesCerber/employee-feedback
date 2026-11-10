@@ -33,8 +33,8 @@ test('#110 source links resolve to files and factual paragraphs cite sources or 
 
 test('#110 reconciles existing access and integration concepts without presenting planned features as implemented', () => {
   const doc = read();
-  assert.ok(doc.includes('../../../docs/research/integrations.md'));
-  assert.ok(doc.includes('../../../api/concept/access.md'));
+  assert.ok(doc.includes('../../docs/research/integrations.md'));
+  assert.ok(doc.includes('../../api/concept/access.md'));
   const questions = doc.split('## Открытые вопросы')[1].split('## Развитие')[0];
   assert.match(questions, /аноним/i);
   assert.match(questions, /уведомлен/i);
