@@ -70,3 +70,17 @@ npm --prefix api start
 ограниченный резервный счётчик. `NODE_ENV=test` или `RATE_LIMIT_MAX=0` отключает
 ограничение (значения заголовков тогда 0). Счётчики существуют только в памяти
 экземпляра API: между процессами они не синхронизируются, при перезапуске исчезают.
+
+Все ответы содержат `X-Content-Type-Options: nosniff`,
+`Referrer-Policy: no-referrer` и `Cache-Control: no-store`, включая ошибки.
+Для отдельного адреса фронтенда задайте `CORS_ORIGINS` — точные HTTP(S) origins
+через запятую, например `https://employee-feedback.vercel.app,http://localhost:5173`.
+Пути, завершающий `/`, логин/пароль и `*` запрещены; неверная настройка останавливает
+запуск. Пробелы вокруг элементов игнорируются. Без переменной (или при пустом
+списке) CORS выключен. Разрешённый источник получает свой
+`Access-Control-Allow-Origin`; preflight OPTIONS возвращает 204 с методами
+GET/POST/PATCH/OPTIONS и заголовками Content-Type, X-Demo-User, X-Request-Id.
+Браузеру доступны также Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining,
+X-Request-Id. Cookie credentials не разрешаются. Чужой Origin не получает CORS,
+но сам запрос на сервере выполняется с обычной проверкой роли: CORS не является
+авторизацией и не превращает демо-заголовок в безопасный механизм входа.
