@@ -291,7 +291,7 @@ export interface components {
             proposedSolution?: string;
             priority?: components["schemas"]["Priority"];
             /** @default [] */
-            attachments: components["schemas"]["Attachment"][];
+            attachments?: components["schemas"]["Attachment"][];
         };
         /** @description At creation, a valid configured manager yields assigned/category_rule; missing or unavailable assignee yields unassigned/no_rule and assignee=null. Never discard the complaint. Manual assignment sets assigned/manual_assignment. */
         Routing: {

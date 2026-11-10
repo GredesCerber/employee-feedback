@@ -16,7 +16,7 @@ describe('contract client', () => {
 
   it('preserves API validation errors without reporting success', async () => {
     const client = createApiClient({ userId: 'employee-1', baseUrl: 'http://localhost:3000', fetch: async () => Response.json({ code: 'VALIDATION_ERROR', message: 'Укажите категорию', details: [{ field: 'categoryId', message: 'Обязательное поле' }] }, { status: 422 }) });
-    await expect(client.POST('/complaints', { body: { type: 'problem', categoryId: '', description: 'Текст', attachments: [] } })).rejects.toMatchObject({ status: 422, code: 'VALIDATION_ERROR', message: 'Укажите категорию', details: [{ field: 'categoryId', message: 'Обязательное поле' }] });
+    await expect(client.POST('/complaints', { body: { type: 'problem', categoryId: '', description: 'Текст' } })).rejects.toMatchObject({ status: 422, code: 'VALIDATION_ERROR', message: 'Укажите категорию', details: [{ field: 'categoryId', message: 'Обязательное поле' }] });
   });
 
   it('handles non-JSON server errors and network failures explicitly', async () => {
