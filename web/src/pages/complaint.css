@@ -1,0 +1,7 @@
+/* Карточка обращения: тип реплики в ленте и пояснение про запасную очередь. */
+.comment-kind { display: inline-block; margin-right: 6px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--color-border-strong); background: var(--color-surface-muted); color: var(--color-text); font-size: 12px; font-weight: 600; vertical-align: middle; }
+.comment-kind-clarification_request { border-color: var(--color-warning-border); background: var(--status-awaiting_clarification-bg); color: var(--status-awaiting_clarification-fg); }
+.comment-kind-clarification_response { border-color: var(--color-primary); background: var(--status-in_review-bg); color: var(--status-in_review-fg); }
+.comment-clarification_request { border-left: 3px solid var(--color-warning-border); padding-left: 12px; }
+.comment-clarification_response { border-left: 3px solid var(--color-primary); padding-left: 12px; }
+.fallback-queue-hint { margin: -12px 0 24px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--color-warning-bg); color: var(--color-warning-text); font-size: var(--font-size-sm); }
