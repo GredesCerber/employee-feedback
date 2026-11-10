@@ -14,7 +14,10 @@
 .summary-table-panel .muted { font-size: 13px; }
 .summary-empty { margin: 24px 0 0; padding: 16px 20px; border: 1px dashed var(--color-border-dashed); border-radius: 10px; background: var(--color-surface-subtle); }
 .summary-chart { margin: 12px 0 20px; }
-.bar-chart { display: block; width: 100%; height: auto; overflow: visible; }
+.bar-chart-frame { width: 100%; min-width: 0; overflow: hidden; }
+/* Колонки сводки могут сужаться до ширины экрана: иначе SVG по умолчанию (640 px) растягивает их и даёт горизонтальную прокрутку. */
+.summary-sections > *, .summary-chart { min-width: 0; }
+.bar-chart { display: block; overflow: visible; }
 .bar-chart text { font-size: 14px; fill: var(--color-text); }
 .bar-chart .bar-value { font-weight: 700; font-variant-numeric: tabular-nums; }
 .bar-track { fill: var(--color-chart-track); }
