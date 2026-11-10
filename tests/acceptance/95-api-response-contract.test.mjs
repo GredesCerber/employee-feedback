@@ -30,10 +30,60 @@ function validateResponse(operation, response) {
   let definition = operation.responses[String(response.statusCode)];
   assert.ok(definition, `${operation.operationId}: undocumented status ${response.statusCode}`);
   if (definition.$ref) definition = resolve(definition.$ref);
-  const schema = definition.content?.['application/json']?.schema;
-  assert.ok(schema, `${operation.operationId}: missing JSON response schema`);
+  const mediaType = String(response.headers['content-type']).split(';')[0].trim().toLowerCase();
+  const schema = definition.content?.[mediaType]?.schema;
+  assert.ok(schema, `${operation.operationId}: undocumented response content type ${mediaType}`);
   const validator = ajv.compile(schema.$ref ? { $ref: `contract${schema.$ref}` } : schema);
-  assert.ok(validator(response.json()), `${operation.operationId} ${response.statusCode}: ${JSON.stringify(validator.errors)}`);
+  const body = mediaType === 'application/json' ? response.json() : response.body;
+  assert.ok(validator(body), `${operation.operationId} ${response.statusCode}: ${JSON.stringify(validator.errors)}`);
+  if (mediaType === 'text/csv') {
+    assert.match(response.headers['content-type'], /charset=utf-8/i);
+    assert.ok(body.startsWith('\uFEFF'), `${operation.operationId}: CSV must retain its UTF-8 BOM`);
+  }
+}
+
+const futureFixtures = {
+  undoLastAction: { method: 'post', path: '/complaints/{complaintId}/undo', role: 'manager', params: { complaintId: 'fixture-complaint' } },
+  listNotifications: { method: 'get', path: '/notifications', role: 'employee', query: { since: '2026-01-01T00:00:00Z' } },
+  findSimilarComplaints: { method: 'get', path: '/complaints/similar', role: 'manager', query: { text: 'Не хватает параметров в заявке на оборудование.' } },
+  suggestCategory: { method: 'get', path: '/complaints/suggest-category', role: 'employee', query: { text: 'Нужна понятная инструкция для обработки документов.' } },
+  exportComplaints: { method: 'get', path: '/complaints/export', role: 'manager', query: { status: 'new' } },
+  resetDemo: { method: 'post', path: '/demo/reset', role: 'admin' },
+  getSummaryDigest: { method: 'get', path: '/summary/digest', role: 'manager' },
+  getAnalyticsTrends: { method: 'get', path: '/analytics/trends', role: 'manager' },
+};
+const roleUsers = { employee: 'employee-1', manager: 'manager-1', admin: 'admin-1' };
+function runFutureFixture(app, operationId, params = {}) {
+  const fixture = futureFixtures[operationId];
+  const values = { ...fixture.params, ...params };
+  const path = fixture.path.replace(/\{([^}]+)\}/g, (_, name) => encodeURIComponent(values[name]));
+  const query = new URLSearchParams(fixture.query).toString();
+  return request(app, fixture.method.toUpperCase(), `${path}${query ? `?${query}` : ''}`, undefined, roleUsers[fixture.role]);
+}
+async function prepareUndo(app) {
+  const created = await request(app, 'POST', '/complaints', payload, 'employee-1');
+  assert.equal(created.statusCode, 201, `undo setup create: ${created.body}`);
+  const id = created.json().id;
+  const changed = await request(app, 'PATCH', `/complaints/${id}/status`, { status: 'in_review' }, 'manager-1');
+  assert.equal(changed.statusCode, 200, `undo setup status: ${changed.body}`);
+  assert.equal(changed.json().status, 'in_review');
+  assert.equal(changed.json().history.at(-1).kind, 'status_changed');
+  assert.equal(changed.json().history.at(-1).actor.id, 'manager-1');
+  return id;
+}
+function prepareFixtureEnvironment(operationId, t) {
+  const changes = operationId === 'resetDemo'
+    ? { DEMO_RESET_ENABLED: 'true', PERSIST_FILE: undefined }
+    : operationId === 'getSummaryDigest' ? { ANTHROPIC_API_KEY: undefined } : {};
+  const original = Object.fromEntries(Object.keys(changes).map(name => [name, process.env[name]]));
+  t.after(() => {
+    for (const [name, value] of Object.entries(original)) {
+      if (value === undefined) delete process.env[name]; else process.env[name] = value;
+    }
+  });
+  for (const [name, value] of Object.entries(changes)) {
+    if (value === undefined) delete process.env[name]; else process.env[name] = value;
+  }
 }
 
 const scenarios = {
@@ -48,9 +98,79 @@ const scenarios = {
   addComment: async app => request(app, 'POST', '/complaints/complaint-1/comments', { kind: 'comment', text: 'Синтетический комментарий.' }),
   recordDecision: async app => request(app, 'POST', '/complaints/complaint-1/decision', { outcome: 'rejected', explanation: 'Синтетическое обоснование.' }),
   getSummary: async app => request(app, 'GET', '/summary', undefined, 'admin-1'),
+  undoLastAction: async app => runFutureFixture(app, 'undoLastAction', { complaintId: await prepareUndo(app) }),
+  listNotifications: async app => runFutureFixture(app, 'listNotifications'),
+  findSimilarComplaints: async app => runFutureFixture(app, 'findSimilarComplaints'),
+  suggestCategory: async app => runFutureFixture(app, 'suggestCategory'),
+  exportComplaints: async app => runFutureFixture(app, 'exportComplaints'),
+  getSummaryDigest: async app => runFutureFixture(app, 'getSummaryDigest'),
+  getAnalyticsTrends: async app => runFutureFixture(app, 'getAnalyticsTrends'),
+  resetDemo: async app => {
+    const initialCount = app.store.list().length;
+    const created = await request(app, 'POST', '/complaints', payload, 'employee-1');
+    assert.equal(created.statusCode, 201);
+    assert.equal(app.store.list().length, initialCount + 1);
+    const response = await runFutureFixture(app, 'resetDemo');
+    if (response.statusCode === 200) {
+      assert.equal(response.json().loadedCount, initialCount);
+      assert.equal(app.store.list().length, initialCount);
+      assert.equal(app.store.get(created.json().id), undefined);
+    }
+    return response;
+  },
 };
 const baselineOperationIds = new Set(['getHealth', 'getSession', 'getReferenceData', 'createComplaint',
   'listComplaints', 'getComplaint', 'assignComplaint', 'changeComplaintStatus', 'addComment', 'recordDecision', 'getSummary']);
+
+test('#95 future success fixtures already satisfy the published request schemas and roles', () => {
+  for (const operation of operations.filter(item => item['x-implementation-issue'])) {
+    assert.ok(futureFixtures[operation.operationId], `Missing pending input fixture for ${operation.operationId}`);
+  }
+  for (const [operationId, fixture] of Object.entries(futureFixtures)) {
+    const operation = operations.find(item => item.operationId === operationId);
+    assert.ok(operation, `${operationId} must be in the contract`);
+    assert.equal(fixture.method, operation.method); assert.equal(fixture.path, operation.path);
+    assert.ok(operation['x-roles'].includes(fixture.role), `${operationId}: role is allowed`);
+    assert.equal(operation.requestBody, undefined, `${operationId}: fixture sends no request body, as contracted`);
+    const parameters = [...(contract.paths[operation.path].parameters ?? []), ...(operation.parameters ?? [])];
+    for (const parameter of parameters) {
+      const value = (parameter.in === 'path' ? fixture.params : fixture.query)?.[parameter.name];
+      if (value === undefined && !parameter.required) continue;
+      assert.notEqual(value, undefined, `${operationId}: missing ${parameter.name}`);
+      const validator = ajv.compile(parameter.schema.$ref ? { $ref: `contract${parameter.schema.$ref}` } : parameter.schema);
+      assert.ok(validator(value), `${operationId}/${parameter.name}: ${JSON.stringify(validator.errors)}`);
+    }
+    for (const name of Object.keys(fixture.query ?? {})) {
+      assert.ok(parameters.some(parameter => parameter.in === 'query' && parameter.name === name), `${operationId}: unknown query ${name}`);
+    }
+  }
+});
+
+test('#95 undo preparation makes a real eligible manager action even before undo is implemented', async t => {
+  const app = buildApp(); t.after(() => app.close());
+  await prepareUndo(app);
+});
+
+test('#95 reset fixture prepares an isolated seed store before the endpoint is implemented', async t => {
+  prepareFixtureEnvironment('resetDemo', t);
+  assert.equal(process.env.DEMO_RESET_ENABLED, 'true');
+  assert.equal(process.env.PERSIST_FILE, undefined);
+  const app = buildApp(); t.after(() => app.close());
+  assert.ok(app.store.list().length > 0);
+  const created = await request(app, 'POST', '/complaints', payload, 'employee-1');
+  assert.equal(created.statusCode, 201);
+  const otherApp = buildApp(); t.after(() => otherApp.close());
+  assert.equal(otherApp.store.get(created.json().id), undefined);
+});
+
+test('#95 CSV responses validate their declared string schema and media type without parsing JSON', () => {
+  const operation = operations.find(item => item.operationId === 'exportComplaints');
+  const example = operation.responses['200'].content['text/csv'].example;
+  const response = { statusCode: 200, headers: { 'content-type': 'text/csv; charset=utf-8' }, body: example };
+  validateResponse(operation, response);
+  assert.throws(() => validateResponse(operation, { ...response, body: {} }), /exportComplaints/);
+  assert.throws(() => validateResponse(operation, { ...response, headers: { 'content-type': 'text/plain' } }), /content type/);
+});
 
 test('#95 pending contract operations are explicit and separate from live response coverage', t => {
   for (const operation of operations.filter(item => Object.hasOwn(item, 'x-implementation-issue'))) {
@@ -63,6 +183,7 @@ test('#95 pending contract operations are explicit and separate from live respon
 
 for (const operation of activeOperations) {
   test(`#95 successful ${operation.method.toUpperCase()} ${operation.path} matches its response schema`, async t => {
+    prepareFixtureEnvironment(operation.operationId, t);
     const app = buildApp(); t.after(() => app.close());
     assert.ok(scenarios[operation.operationId], `Missing success scenario for ${operation.operationId} (${operation.method} ${operation.path})`);
     const response = await scenarios[operation.operationId](app);
