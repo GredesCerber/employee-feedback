@@ -68,8 +68,8 @@ async function openCard(user: ReturnType<typeof userEvent.setup>) {
   await screen.findByRole('heading', { name: `Обращение ${current.number}` });
 }
 async function asAuthor(user: ReturnType<typeof userEvent.setup>) {
+  // После #203 смена роли с открытой карточки сразу открывает ту же карточку у автора (/queue/:id → /my/:id).
   await user.selectOptions(screen.getByLabelText('Демонстрационная роль'), 'employee');
-  await user.click(await screen.findByRole('link', { name: current.number }));
   await screen.findByRole('heading', { name: `Обращение ${current.number}` });
 }
 

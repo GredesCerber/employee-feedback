@@ -1,4 +1,4 @@
-import { useCallback, useId } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
@@ -8,7 +8,7 @@ import './summary.css';
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
 const percent = new Intl.NumberFormat('ru-RU', { style: 'percent', maximumFractionDigits: 1 });
 
-type Bar = { label: string; value: number };
+export type Bar = { label: string; value: number };
 
 /** «повторяется 2 раза», «5 раз», «21 раз» */
 function timesLabel(count: number) {
@@ -17,27 +17,59 @@ function timesLabel(count: number) {
   return `повторяется ${number.format(count)} ${word}`;
 }
 
-const CHART_WIDTH = 640, LABEL_WIDTH = 230, VALUE_WIDTH = 56, ROW = 40, BAR = 22;
+const DEFAULT_WIDTH = 640, VALUE_WIDTH = 56, ROW = 40, BAR = 22, STACKED_ROW = 52, STACKED_BAR = 18;
+/** Оценка ширины подписи при 14 px (кириллица в Inter/system-ui ≈ 7.5 px на символ) и отступ до столбца. */
+const labelWidth = (label: string) => Math.ceil(label.length * 7.5) + 16;
 
-/** Горизонтальная столбчатая диаграмма на чистом SVG. Таблица-альтернатива выводится рядом. */
-function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
+/** Ширина контейнера в пикселях; без ResizeObserver (тесты, старые браузеры) — ширина по умолчанию. */
+function useContainerWidth() {
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const ref = useCallback((node: HTMLDivElement | null) => {
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(entries => {
+      const next = Math.floor(entries[0]?.contentRect.width ?? 0);
+      if (next > 0) setWidth(next);
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, width };
+}
+
+/**
+ * Горизонтальная столбчатая диаграмма на чистом SVG (#197). 1 единица viewBox = 1 px экрана,
+ * поэтому текст всегда 14 px. Если подписи не помещаются слева от столбцов, они переносятся над столбцами.
+ * Таблица-альтернатива выводится рядом.
+ */
+export function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
   const titleId = useId();
+  const { ref, width } = useContainerWidth();
   const max = Math.max(0, ...bars.map(bar => bar.value));
-  const track = CHART_WIDTH - LABEL_WIDTH - VALUE_WIDTH;
-  const height = bars.length * ROW;
-  return <svg className="bar-chart" role="img" aria-labelledby={titleId} viewBox={`0 0 ${CHART_WIDTH} ${height}`} preserveAspectRatio="xMinYMin meet">
-    <title id={titleId}>{`${title}: ${bars.map(bar => `${bar.label} ${number.format(bar.value)}`).join(', ')}`}</title>
-    {bars.map((bar, index) => {
-      const width = max > 0 ? Math.round((bar.value / max) * track) : 0;
-      const y = index * ROW;
-      return <g key={bar.label} data-bar={bar.label}>
-        <text className="bar-label" x={LABEL_WIDTH - 12} y={y + ROW / 2} textAnchor="end" dominantBaseline="middle">{bar.label}</text>
-        <rect className="bar-track" x={LABEL_WIDTH} y={y + (ROW - BAR) / 2} width={track} height={BAR} rx={4} />
-        <rect className="bar-fill" x={LABEL_WIDTH} y={y + (ROW - BAR) / 2} width={width} height={BAR} rx={4} />
-        <text className="bar-value" x={LABEL_WIDTH + width + 8} y={y + ROW / 2} dominantBaseline="middle">{number.format(bar.value)}</text>
-      </g>;
-    })}
-  </svg>;
+  const labelColumn = Math.max(80, ...bars.map(bar => labelWidth(bar.label)));
+  const stacked = labelColumn > width * 0.45;
+  const left = stacked ? 0 : labelColumn;
+  const track = Math.max(40, width - left - VALUE_WIDTH);
+  const row = stacked ? STACKED_ROW : ROW;
+  const barHeight = stacked ? STACKED_BAR : BAR;
+  const height = bars.length * row;
+  return <div ref={ref} className="bar-chart-frame">
+    <svg className="bar-chart" role="img" aria-labelledby={titleId} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+      <title id={titleId}>{`${title}: ${bars.map(bar => `${bar.label} ${number.format(bar.value)}`).join(', ')}`}</title>
+      {bars.map((bar, index) => {
+        const filled = max > 0 ? Math.round((bar.value / max) * track) : 0;
+        const y = index * row;
+        const barY = stacked ? y + 24 : y + (ROW - BAR) / 2;
+        return <g key={bar.label} data-bar={bar.label}>
+          {stacked
+            ? <text className="bar-label" x={0} y={y + 12} textAnchor="start" dominantBaseline="middle">{bar.label}</text>
+            : <text className="bar-label" x={labelColumn - 12} y={y + ROW / 2} textAnchor="end" dominantBaseline="middle">{bar.label}</text>}
+          <rect className="bar-track" x={left} y={barY} width={track} height={barHeight} rx={4} />
+          <rect className="bar-fill" x={left} y={barY} width={filled} height={barHeight} rx={4} />
+          <text className="bar-value" x={left + filled + 8} y={barY + barHeight / 2} dominantBaseline="middle">{number.format(bar.value)}</text>
+        </g>;
+      })}
+    </svg>
+  </div>;
 }
 
 export default function SummaryPage() {

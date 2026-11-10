@@ -2,10 +2,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import Fastify, { type FastifyServerOptions } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import { ComplaintStore } from './store.js';
-import type { Persistence } from './persistence.js';
+import type { DatabasePersistence } from './pg-persistence.js';
 import { configureErrors } from './http.js';
 import { registerComplaints } from './complaints.js';
 import { registerLifecycle } from './lifecycle.js';
+import { registerRateLimit } from './rate-limit.js';
+import { registerSecurity } from './security.js';
 
 declare module 'fastify' {
   interface FastifyInstance { store: ComplaintStore }
@@ -15,9 +17,9 @@ const { version } = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
 ) as { version: string };
 
-export interface AppOptions {
-  /** Durable storage; omitted means in-memory demo data reset on restart. */
-  persistence?: Persistence;
+export interface HostedOptions {
+  /** Database storage (DATABASE_URL); omitted means in-memory or PERSIST_FILE. */
+  database?: DatabasePersistence;
   /** Directory with the built frontend (web/dist). When set, the API serves it too. */
   webRoot?: string;
 }
@@ -25,10 +27,14 @@ export interface AppOptions {
 function createApp(options: FastifyServerOptions, store: ComplaintStore) {
   // The frontend calls /api/*; contract paths have no prefix (nginx strips it in compose).
   const app = Fastify({
+    bodyLimit: 64 * 1024,
     rewriteUrl: request => (request.url ?? '/').replace(/^\/api(?=\/|\?|$)/, '') || '/',
     ...options,
   });
+  store.seed();
   app.decorate('store', store);
+  registerSecurity(app);
+  registerRateLimit(app);
   configureErrors(app);
   app.get('/health', async () => ({ status: 'ok', version }));
   registerComplaints(app);
@@ -36,22 +42,19 @@ function createApp(options: FastifyServerOptions, store: ComplaintStore) {
   return app;
 }
 
-/** Build an isolated in-memory app without opening a port, for tests and embedding. */
+/** Build an isolated app without opening a port, for tests and embedding. */
 export function buildApp(options: FastifyServerOptions = {}) {
-  const store = new ComplaintStore();
-  store.seed();
-  return createApp(options, store);
+  return createApp(options, new ComplaintStore(process.env.PERSIST_FILE));
 }
 
-/** App with durable storage and optional frontend hosting (single-service deploy). */
-export async function buildHostedApp(options: FastifyServerOptions = {}, extra: AppOptions = {}) {
-  const store = new ComplaintStore(extra.persistence);
+/** App with database storage and optional frontend hosting (single-service deploy). */
+export async function buildHostedApp(options: FastifyServerOptions = {}, extra: HostedOptions = {}) {
+  const store = new ComplaintStore(process.env.PERSIST_FILE, extra.database);
   await store.hydrate();
-  store.seed();
   const app = createApp(options, store);
   app.addHook('onClose', async () => {
     await store.flush();
-    await extra.persistence?.close();
+    await extra.database?.close();
   });
   if (extra.webRoot && existsSync(extra.webRoot)) {
     await app.register(fastifyStatic, { root: extra.webRoot, wildcard: false });

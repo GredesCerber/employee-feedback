@@ -1,32 +1,42 @@
 import type { Complaint } from './model.js';
-import type { Persistence } from './persistence.js';
 import { seedComplaints, seedReferenceData, seedUsers } from './seed.js';
+import { FilePersistence } from './persistence.js';
+import type { DatabasePersistence } from './pg-persistence.js';
 
 /** Isolated demo memory store. Restart deliberately reloads the immutable seed. */
 export class ComplaintStore {
   private readonly records = new Map<string, Complaint>();
+  private readonly persistence?: FilePersistence;
+
+  private readonly database?: DatabasePersistence;
   private writes: Promise<void> = Promise.resolve();
-  /** Last persistence error, kept so a failed write does not stop later ones. */
+  /** Last database write error; a failed write does not stop later ones. */
   writeError: unknown = null;
 
-  /** Without persistence the store is purely in memory (tests, docker compose). */
-  constructor(private readonly persistence?: Persistence) {}
-
-  /** Load previously stored complaints before seeding. */
-  async hydrate(): Promise<void> {
-    if (!this.persistence) return;
-    for (const item of await this.persistence.load()) this.records.set(item.id, structuredClone(item));
+  /** `database` (DATABASE_URL) takes precedence over the single-file snapshot (PERSIST_FILE). */
+  constructor(persistFile?: string, database?: DatabasePersistence) {
+    this.database = database;
+    if (persistFile !== undefined && !database) {
+      this.persistence = new FilePersistence(persistFile);
+      for (const item of this.persistence.load() ?? []) this.records.set(item.id, structuredClone(item));
+    }
   }
 
-  /** Resolves when every queued write has reached the database. */
+  /** Load stored complaints from the database; call before seed(). */
+  async hydrate(): Promise<void> {
+    if (!this.database) return;
+    for (const item of await this.database.load()) this.records.set(item.id, structuredClone(item));
+  }
+
+  /** Resolves when every queued database write has finished. */
   flush(): Promise<void> { return this.writes; }
 
-  private persist(item: Complaint): void {
-    const persistence = this.persistence;
-    if (!persistence) return;
+  private enqueue(item: Complaint): void {
+    const database = this.database;
+    if (!database) return;
     const snapshot = structuredClone(item);
     this.writes = this.writes
-      .then(() => persistence.save(snapshot))
+      .then(() => database.save(snapshot))
       .then(() => { this.writeError = null; }, error => { this.writeError = error; });
   }
 
@@ -34,11 +44,14 @@ export class ComplaintStore {
   get users() { return structuredClone(seedUsers); }
 
   seed() {
+    const snapshot = new Map(this.records);
     for (const complaint of seedComplaints()) {
-      if (!this.records.has(complaint.id)) {
-        this.records.set(complaint.id, structuredClone(complaint));
-        this.persist(complaint);
-      }
+      if (!snapshot.has(complaint.id)) snapshot.set(complaint.id, structuredClone(complaint));
+    }
+    this.persistence?.saveSeed([...snapshot.values()]);
+    for (const [id, item] of snapshot) {
+      if (!this.records.has(id)) this.enqueue(item);
+      this.records.set(id, item);
     }
   }
 
@@ -47,8 +60,13 @@ export class ComplaintStore {
     return Math.max(0, ...this.list().map(item => Number(item.number.slice(2)))) + 1;
   }
   save(item: Complaint): void {
-    this.records.set(item.id, structuredClone(item));
-    this.persist(item);
+    const copy = structuredClone(item);
+    const snapshot = new Map(this.records);
+    snapshot.set(copy.id, copy);
+    // Publish memory only after successful disk replacement. Failed writes are atomic too.
+    this.persistence?.save([...snapshot.values()]);
+    this.records.set(copy.id, copy);
+    this.enqueue(copy);
   }
   get(id: string): Complaint | undefined {
     const record = this.records.get(id);

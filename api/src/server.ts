@@ -1,12 +1,12 @@
 import { fileURLToPath } from 'node:url';
 import { buildHostedApp } from './app.js';
-import { createPgPersistence } from './persistence.js';
+import { createPgPersistence } from './pg-persistence.js';
 
 // DATABASE_URL turns on Postgres persistence; WEB_ROOT (default ../../web/dist) is served if it exists.
 const databaseUrl = process.env.DATABASE_URL;
-const persistence = databaseUrl ? await createPgPersistence(databaseUrl) : undefined;
+const database = databaseUrl ? await createPgPersistence(databaseUrl) : undefined;
 const webRoot = process.env.WEB_ROOT ?? fileURLToPath(new URL('../../web/dist', import.meta.url));
-const app = await buildHostedApp({ logger: true }, { persistence, webRoot });
+const app = await buildHostedApp({ logger: true }, { database, webRoot });
 const port = Number(process.env.PORT ?? 3000);
 const host = process.env.HOST ?? '127.0.0.1';
 

@@ -19,14 +19,14 @@ const newComplaint = { type: 'problem', categoryId: 'cross_department', descript
 
 test('complaints survive an app restart when persistence is configured', async () => {
   const persistence = fakePersistence();
-  const first = await buildHostedApp({}, { persistence });
+  const first = await buildHostedApp({}, { database: persistence });
   const created = await first.inject({ method: 'POST', url: '/complaints', payload: newComplaint,
     headers: { 'x-demo-user': 'employee-1' } });
   assert.equal(created.statusCode, 201, created.body);
   const { id } = created.json();
   await first.close();
 
-  const second = await buildHostedApp({}, { persistence });
+  const second = await buildHostedApp({}, { database: persistence });
   const fetched = await second.inject({ url: `/complaints/${id}`, headers: { 'x-demo-user': 'employee-1' } });
   assert.equal(fetched.statusCode, 200);
   assert.equal(second.store.list().length, persistence.rows.size);
@@ -35,18 +35,18 @@ test('complaints survive an app restart when persistence is configured', async (
 
 test('seed is stored once and not duplicated on later starts', async () => {
   const persistence = fakePersistence();
-  const first = await buildHostedApp({}, { persistence });
+  const first = await buildHostedApp({}, { database: persistence });
   await first.close();
   const count = persistence.rows.size;
   assert.ok(count > 0);
-  const second = await buildHostedApp({}, { persistence });
+  const second = await buildHostedApp({}, { database: persistence });
   await second.close();
   assert.equal(persistence.rows.size, count);
 });
 
 test('a failing database does not break requests', async () => {
   const persistence = { ...fakePersistence(), save: async () => { throw new Error('db down'); } };
-  const app = await buildHostedApp({}, { persistence });
+  const app = await buildHostedApp({}, { database: persistence });
   const response = await app.inject({ method: 'POST', url: '/complaints', payload: newComplaint,
     headers: { 'x-demo-user': 'employee-1' } });
   assert.equal(response.statusCode, 201);

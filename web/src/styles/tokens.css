@@ -1,0 +1,170 @@
+/*
+ * Дизайн-токены (#106). Единственное место, где заданы цвета интерфейса.
+ * Светлая тема — по умолчанию; тёмная — по prefers-color-scheme или по выбору в демо-панели (data-theme на <html>).
+ * Контраст пар «текст/фон» ≥ 4.5:1 проверяет web/tests/tokens.test.ts.
+ */
+:root {
+  color-scheme: light;
+
+  /* Палитра */
+  --color-bg: #f3f6f8;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f0f5f8;
+  --color-surface-subtle: #f8fafb;
+  --color-text: #193348;
+  --color-text-strong: #183752;
+  --color-text-muted: #536577;
+  --color-border: #dce3e8;
+  --color-border-strong: #8195a4;
+  --color-border-dashed: #b9c6d0;
+  --color-primary: #185a85;
+  --color-on-primary: #ffffff;
+  --color-focus: #ba6200;
+  --color-notice-bg: #e5eef4;
+  --color-notice-text: #365065;
+  --color-hint-bg: #eef5fa;
+  --color-chart-track: #eef2f5;
+  --color-danger: #962d21;
+  --color-danger-strong: #a32424;
+  --color-danger-bg: #fff8f5;
+  --color-danger-border: #dfbbb6;
+  --color-warning-bg: #fff4e5;
+  --color-warning-text: #7a4500;
+  --color-warning-border: #a35c00;
+
+  /* Статусы обращений: фон и текст бейджа (7 статусов контракта) */
+  --status-new-bg: #e5eef4;
+  --status-new-fg: #31566e;
+  --status-in_review-bg: #e5eef4;
+  --status-in_review-fg: #31566e;
+  --status-in_progress-bg: #e3edf7;
+  --status-in_progress-fg: #1f4f78;
+  --status-awaiting_clarification-bg: #fff0d8;
+  --status-awaiting_clarification-fg: #754b08;
+  --status-implemented-bg: #e6f1e8;
+  --status-implemented-fg: #285d37;
+  --status-rejected-bg: #fcebe7;
+  --status-rejected-fg: #8b3025;
+  --status-closed-bg: #e6f1e8;
+  --status-closed-fg: #285d37;
+
+  /* Отступы */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-9: 36px;
+
+  /* Радиусы */
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-pill: 999px;
+
+  /* Типографика */
+  --font-family: Inter, system-ui, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 20px;
+  --line-height: 1.5;
+
+  /* Тени */
+  --shadow-active-nav: inset 3px 0 var(--color-primary);
+  --shadow-card: 0 1px 2px rgb(16 32 48 / 6%);
+}
+
+/* Тёмная тема: значения подобраны так, чтобы текст на каждом фоне имел контраст ≥ 4.5:1 */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #0f1a24;
+  --color-surface: #16232f;
+  --color-surface-muted: #1c2c3a;
+  --color-surface-subtle: #1a2733;
+  --color-text: #e3ebf2;
+  --color-text-strong: #f4f8fb;
+  --color-text-muted: #a9b8c6;
+  --color-border: #2c3e4f;
+  --color-border-strong: #5c7184;
+  --color-border-dashed: #4a5f72;
+  --color-primary: #7cbcec;
+  --color-on-primary: #0b1620;
+  --color-focus: #ffb35c;
+  --color-notice-bg: #1d3243;
+  --color-notice-text: #c9dbe8;
+  --color-hint-bg: #1b3142;
+  --color-chart-track: #253646;
+  --color-danger: #ff9e92;
+  --color-danger-strong: #ff7d70;
+  --color-danger-bg: #2e1c1a;
+  --color-danger-border: #6b3a34;
+  --color-warning-bg: #33260f;
+  --color-warning-text: #ffcf8a;
+  --color-warning-border: #b8822c;
+  --status-new-bg: #1d3243;
+  --status-new-fg: #b9d4e8;
+  --status-in_review-bg: #1d3243;
+  --status-in_review-fg: #b9d4e8;
+  --status-in_progress-bg: #1b2f45;
+  --status-in_progress-fg: #a9cdf0;
+  --status-awaiting_clarification-bg: #3a2a0c;
+  --status-awaiting_clarification-fg: #ffd28a;
+  --status-implemented-bg: #173322;
+  --status-implemented-fg: #9fdcb0;
+  --status-rejected-bg: #3a1d19;
+  --status-rejected-fg: #ffb0a6;
+  --status-closed-bg: #173322;
+  --status-closed-fg: #9fdcb0;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
+}
+
+/* Системная тёмная тема, если пользователь явно не выбрал светлую. Значения дублируют блок выше. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-bg: #0f1a24;
+    --color-surface: #16232f;
+    --color-surface-muted: #1c2c3a;
+    --color-surface-subtle: #1a2733;
+    --color-text: #e3ebf2;
+    --color-text-strong: #f4f8fb;
+    --color-text-muted: #a9b8c6;
+    --color-border: #2c3e4f;
+    --color-border-strong: #5c7184;
+    --color-border-dashed: #4a5f72;
+    --color-primary: #7cbcec;
+    --color-on-primary: #0b1620;
+    --color-focus: #ffb35c;
+    --color-notice-bg: #1d3243;
+    --color-notice-text: #c9dbe8;
+    --color-hint-bg: #1b3142;
+    --color-chart-track: #253646;
+    --color-danger: #ff9e92;
+    --color-danger-strong: #ff7d70;
+    --color-danger-bg: #2e1c1a;
+    --color-danger-border: #6b3a34;
+    --color-warning-bg: #33260f;
+    --color-warning-text: #ffcf8a;
+    --color-warning-border: #b8822c;
+    --status-new-bg: #1d3243;
+    --status-new-fg: #b9d4e8;
+    --status-in_review-bg: #1d3243;
+    --status-in_review-fg: #b9d4e8;
+    --status-in_progress-bg: #1b2f45;
+    --status-in_progress-fg: #a9cdf0;
+    --status-awaiting_clarification-bg: #3a2a0c;
+    --status-awaiting_clarification-fg: #ffd28a;
+    --status-implemented-bg: #173322;
+    --status-implemented-fg: #9fdcb0;
+    --status-rejected-bg: #3a1d19;
+    --status-rejected-fg: #ffb0a6;
+    --status-closed-bg: #173322;
+    --status-closed-fg: #9fdcb0;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
+  }
+}

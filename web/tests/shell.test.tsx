@@ -17,10 +17,10 @@ describe('role navigation acceptance', () => {
     await user.click(screen.getByRole('link', { name: 'Новое обращение' }));
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Новое обращение');
     await user.selectOptions(screen.getByLabelText('Демонстрационная роль'), 'manager');
-    expect(menuLabels()).toEqual(['Очередь обращений']);
+    expect(menuLabels()).toEqual(['Очередь обращений', 'Дашборд']);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Очередь обращений');
     await user.selectOptions(screen.getByLabelText('Демонстрационная роль'), 'admin');
-    expect(menuLabels()).toEqual(['Сводка']);
+    expect(menuLabels()).toEqual(['Сводка', 'Дашборд']);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Сводка');
     await user.selectOptions(screen.getByLabelText('Демонстрационная роль'), 'employee');
     expect(menuLabels()).toEqual(['Мои обращения', 'Новое обращение']);
