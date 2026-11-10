@@ -2,8 +2,8 @@ import { useCallback, useRef, useState } from 'react';
 import { useSession } from '../app/session';
 import type { components } from '../api/client';
 import { statusTransitions } from '../api/policy';
-import { errorMessage, requireData, useResource } from './data';
-import { LoadError, statusLabels } from './complaint';
+import { errorMessage, requireData, retryAfterOf, useCooldown, useResource } from './data';
+import { Loading, LoadError, statusLabels } from './complaint';
 import type { Complaint } from './complaint';
 
 type Outcome = components['schemas']['DecisionInput']['outcome'];
@@ -16,23 +16,30 @@ function useMutation(onUpdated: OnUpdated) {
   const [error, setErrorText] = useState('');
   const [field, setField] = useState('');
   const lock = useRef(false);
+  const cooldown = useCooldown();
   /** Ошибка проверки: текст, связанное поле и фокус на нём. */
   function setError(message: string, fieldId = '') {
     setErrorText(message); setField(fieldId);
     if (fieldId) document.getElementById(fieldId)?.focus();
   }
   async function run(action: () => Promise<unknown>, success: string) {
-    if (lock.current) return;
+    if (lock.current || cooldown.active) return;
     lock.current = true; setBusy(true); setError('');
     try { await action(); onUpdated(success); }
-    catch (failure) { setError(errorMessage(failure)); }
+    catch (failure) {
+      const wait = retryAfterOf(failure);
+      if (wait) cooldown.start(wait);
+      setError(wait ? '' : errorMessage(failure));
+    }
     finally { lock.current = false; setBusy(false); }
   }
   /** Атрибуты поля, связанные с текущей ошибкой. */
   function invalid(fieldId: string, errorId: string) {
     return field === fieldId && error ? { 'aria-invalid': true, 'aria-describedby': errorId } : {};
   }
-  return { busy, error, setError, run, invalid };
+  // Пока идёт отсчёт после 429, текст ошибки показывает оставшиеся секунды, а действия заблокированы.
+  const shown = cooldown.active ? cooldown.message : error;
+  return { busy: busy || cooldown.active, error: shown, setError, run, invalid };
 }
 
 export function AuthorReply({ item, onUpdated }: { item: Complaint; onUpdated: OnUpdated }) {
@@ -77,8 +84,8 @@ export function ManagerActions({ item, onUpdated }: { item: Complaint; onUpdated
     {mutation.error && <div className="load-error"><p id="manager-action-error" role="alert">{mutation.error}</p><button type="button" onClick={() => onUpdated()}>Обновить карточку</button></div>}
     <fieldset disabled={mutation.busy}>
       <legend>Назначение</legend>
-      {reference.loading && <p role="status">Загрузка ответственных…</p>}
-      {reference.error && <LoadError message={reference.error} retry={reference.reload} />}
+      {reference.loading && <Loading label="Загрузка ответственных…" />}
+      {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
       {reference.data && <form className="action-panel" onSubmit={event => {
         event.preventDefault();
         if (!assigneeId) { mutation.setError('Выберите ответственного.', 'assignee'); return; }

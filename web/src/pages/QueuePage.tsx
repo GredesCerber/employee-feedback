@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useSession } from '../app/session';
 import type { paths } from '../api/client';
 import { requireData, useResource } from '../features/data';
-import { dateLabel, LoadError, StatusBadge, statusLabels } from '../features/complaint';
+import { dateLabel, Loading, LoadError, StatusBadge, statusLabels } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
 
 type Query = NonNullable<paths['/complaints']['get']['parameters']['query']>;
@@ -102,8 +102,8 @@ export default function QueuePage() {
   }
 
   return <section className="section"><p className="eyebrow">Рабочая область руководителя</p><h1>Очередь обращений</h1>
-    {reference.loading && <p role="status">Загрузка фильтров…</p>}
-    {reference.error && <LoadError message={reference.error} retry={reference.reload} />}
+    {reference.loading && <Loading label="Загрузка фильтров…" />}
+    {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
     {reference.data && <button type="button" className="filter-toggle" aria-expanded={filtersOpen} aria-controls="queue-filters" onClick={() => setFiltersOpen(open => !open)}>Фильтры</button>}
     {reference.data && <form id="queue-filters" className={filtersOpen ? 'filter-form is-open' : 'filter-form'} onSubmit={apply}>
       <label>Подразделение<select value={filters.departmentId} onChange={event => setFilters({ ...filters, departmentId: event.target.value })}><option value="">Все подразделения</option>{reference.data.departments.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
@@ -117,10 +117,10 @@ export default function QueuePage() {
       {filterError && <p id="filter-error" role="alert" className="field-error">{filterError}</p>}
       <div className="actions"><button className="primary-button" type="submit">Применить фильтры</button><button type="button" onClick={reset}>Сбросить</button></div>
     </form>}
-    {result.loading && <p role="status">Загрузка очереди…</p>}
-    {result.error && <LoadError message={result.error} retry={result.reload} />}
+    {result.loading && <Loading label="Загрузка очереди…" />}
+    {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {result.data && <><p className="muted queue-counter" aria-live="polite"><span>Найдено: {result.data.total}</span>{overall.data !== undefined && <> <span>из {overall.data}</span></>}</p>
-      {result.data.items.length === 0 ? <p>По выбранным фильтрам обращений нет.</p> : <ul className="complaint-list">{result.data.items.map(item => <li className="complaint-item" key={item.id}>
+      {result.data.items.length === 0 ? <div className="empty-state"><p>По выбранным фильтрам обращений нет.</p><p className="muted">Измените условия или нажмите «Сбросить», чтобы увидеть всю очередь.</p></div> : <ul className="complaint-list">{result.data.items.map(item => <li className="complaint-item" key={item.id}>
         <div className="item-header"><Link className="complaint-number" to={`/queue/${item.id}`}>{item.number}</Link><StatusBadge status={item.status} /></div>
         <p className="item-description">{item.description}</p><p className="muted">{item.assignee?.name ?? 'Без ответственного'}</p>
         <p className={item.overdue ? 'overdue' : 'muted'}>{item.overdue ? 'Просрочено · срок ' : 'Срок: '}{dateLabel(item.dueAt)}</p>

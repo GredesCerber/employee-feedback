@@ -2,7 +2,7 @@ import { useCallback, useId } from 'react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
-import { dateLabel, LoadError, typeLabels } from '../features/complaint';
+import { dateLabel, Loading, LoadError, typeLabels } from '../features/complaint';
 import './summary.css';
 
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
@@ -49,8 +49,8 @@ export default function SummaryPage() {
   const topicBars = summary?.recurringTopics.map(topic => ({ label: topic.categoryName, value: topic.count })) ?? [];
   return <section className="section"><p className="eyebrow">Обзор обратной связи</p><h1>Сводка</h1>
     <p className="muted">Результаты рассмотрения и темы, к которым сотрудники возвращаются чаще.</p>
-    {result.loading && <p role="status">Загрузка сводки…</p>}
-    {result.error && <LoadError message={result.error} retry={result.reload} />}
+    {result.loading && <Loading label="Загрузка сводки…" />}
+    {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {summary && <>
       <div className="summary-toolbar"><p className="muted">Сводка на <time dateTime={summary.generatedAt}>{dateLabel(summary.generatedAt)}</time></p><button onClick={result.reload}>Обновить сводку</button></div>
       <div className="summary-metrics">
