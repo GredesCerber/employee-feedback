@@ -1,0 +1,2183 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Employee Feedback MVP API",
+    "version": "1.0.0",
+    "description": "Contract for R1-R7 and all six demo steps. Synthetic data only. JSON syntax is used as a YAML 1.2 subset so acceptance tests require only Node. Demo identity selection is a simulation, not production authentication. No anonymous submissions, real file uploads, notifications or external integrations. See x-demo-flow, x-access-policy and x-status-transitions.",
+    "contact": {
+      "name": "Employee Feedback team",
+      "url": "https://github.com/GredesCerber/employee-feedback"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local synthetic-data API; deployment may override the origin, paths remain identical."
+    }
+  ],
+  "tags": [
+    {
+      "name": "Context",
+      "description": "Demo identity and form reference data"
+    },
+    {
+      "name": "Complaints",
+      "description": "Registration, routing and lifecycle"
+    },
+    {
+      "name": "Analytics",
+      "description": "Administrative aggregates"
+    }
+  ],
+  "security": [
+    {
+      "DemoIdentity": []
+    }
+  ],
+  "x-access-policy": {
+    "employee": "Create and read own complaints, comment and answer clarification on own nonterminal complaints. Cannot change fields, assign, change status directly or decide.",
+    "manager": "Read all complaints across departments, assign eligible managers, comment/request clarification, change status and decide. No create or aggregate analytics.",
+    "admin": "Read all complaints, reference data and summary. No complaint mutation. Category/routing administration is future scope.",
+    "authorization": "Apply role authorization before mutation. For permitted roles, hide foreign complaint existence from employees with 404. Known but forbidden role=403; missing/unknown demo identity=401. Text is plain text; UI escapes it. Unknown body/query fields, duplicate query keys, invalid formats or whitespace-only required text=422. Malformed JSON=400. Mutations are atomic; errors leave data/history unchanged."
+  },
+  "x-demo-identities": [
+    {
+      "id": "employee-1",
+      "role": "employee",
+      "departmentId": "procurement"
+    },
+    {
+      "id": "employee-2",
+      "role": "employee",
+      "departmentId": "accounting"
+    },
+    {
+      "id": "manager-1",
+      "role": "manager",
+      "departmentId": "procurement"
+    },
+    {
+      "id": "admin-1",
+      "role": "admin",
+      "departmentId": "administration"
+    }
+  ],
+  "x-status-transitions": {
+    "new": [
+      "in_review",
+      "awaiting_clarification",
+      "rejected"
+    ],
+    "in_review": [
+      "in_progress",
+      "awaiting_clarification",
+      "implemented",
+      "rejected",
+      "closed"
+    ],
+    "in_progress": [
+      "in_review",
+      "awaiting_clarification",
+      "implemented",
+      "rejected",
+      "closed"
+    ],
+    "awaiting_clarification": [
+      "in_review"
+    ],
+    "implemented": [],
+    "rejected": [],
+    "closed": []
+  },
+  "x-demo-flow": [
+    {
+      "step": 1,
+      "requirements": [
+        "R1",
+        "R5"
+      ],
+      "operations": [
+        "getSession",
+        "getReferenceData",
+        "createComplaint"
+      ],
+      "scenario": "employee-1 creates problem with category, text, optional solution and a synthetic attachment placeholder."
+    },
+    {
+      "step": 2,
+      "requirements": [
+        "R2"
+      ],
+      "operations": [
+        "createComplaint",
+        "getComplaint",
+        "listComplaints",
+        "assignComplaint"
+      ],
+      "scenario": "Create with category that has an assignee, then with one whose assigneeId is null. manager-1 sees queue=unassigned and assigns a manager."
+    },
+    {
+      "step": 3,
+      "requirements": [
+        "R3"
+      ],
+      "operations": [
+        "changeComplaintStatus",
+        "addComment",
+        "getComplaint"
+      ],
+      "scenario": "manager-1 moves new to in_review, posts clarification_request; employee-1 posts clarification_response, returning to in_review."
+    },
+    {
+      "step": 4,
+      "requirements": [
+        "R4"
+      ],
+      "operations": [
+        "recordDecision",
+        "getComplaint"
+      ],
+      "scenario": "manager-1 records implemented on one reviewed complaint and rejected with explanation on another. Author reads both results."
+    },
+    {
+      "step": 5,
+      "requirements": [
+        "R6"
+      ],
+      "operations": [
+        "listComplaints",
+        "getComplaint"
+      ],
+      "scenario": "manager-1 filters departmentId/categoryId/status/dueBefore/dueAfter/overdue and opens history."
+    },
+    {
+      "step": 6,
+      "requirements": [
+        "R7"
+      ],
+      "operations": [
+        "getSummary"
+      ],
+      "scenario": "admin-1 reads counts, closed share, mean first response and recurring category topics."
+    }
+  ],
+  "paths": {
+    "/session": {
+      "get": {
+        "operationId": "getSession",
+        "summary": "Resolve the demo user",
+        "description": "Returns the synthetic identity selected by X-Demo-User. Role and department are resolved server-side, never accepted from request JSON. Available to all three roles.",
+        "tags": [
+          "Context"
+        ],
+        "x-demo-steps": [
+          1
+        ],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/reference-data": {
+      "get": {
+        "operationId": "getReferenceData",
+        "summary": "Get form and routing reference data",
+        "description": "All roles can read categories and departments. Only managers/admins receive eligible assignees; employees get assignees=[]. Missing category rules are represented by assigneeId=null. This read-only MVP catalogue has no administration mutations.",
+        "tags": [
+          "Context"
+        ],
+        "x-demo-steps": [
+          1,
+          2
+        ],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceData"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/complaints": {
+      "post": {
+        "operationId": "createComplaint",
+        "summary": "Register and route an employee complaint",
+        "description": "Employee only. Creates status=new and a unique number, derives author/department from session, routes by category, sets dueAt=createdAt + category.dueInDays calendar days and appends created/assigned history in one transaction. Missing routing owner is a successful unassigned complaint visible to managers. firstResponseAt, closedAt and decision start null; comments empty. Return the complete persisted Complaint.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          1,
+          2
+        ],
+        "x-roles": [
+          "employee"
+        ],
+        "responses": {
+          "201": {
+            "description": "Created and persisted atomically.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Complaint"
+                },
+                "examples": {
+                  "routed": {
+                    "summary": "Category routing",
+                    "value": {
+                      "id": "complaint-21",
+                      "number": "A-021",
+                      "type": "problem",
+                      "categoryId": "cross_department",
+                      "description": "В заявках не хватает назначения изделия и параметров.",
+                      "proposedSolution": "Добавить обязательные поля в форму заявки.",
+                      "attachments": [
+                        {
+                          "name": "sample-request.txt",
+                          "mediaType": "text/plain",
+                          "sizeBytes": 120,
+                          "isPlaceholder": true
+                        }
+                      ],
+                      "priority": "medium",
+                      "departmentId": "procurement",
+                      "author": {
+                        "id": "employee-1",
+                        "name": "Сотрудник закупок",
+                        "role": "employee",
+                        "departmentId": "procurement"
+                      },
+                      "status": "new",
+                      "assignee": {
+                        "id": "manager-1",
+                        "name": "Руководитель закупок",
+                        "role": "manager",
+                        "departmentId": "procurement"
+                      },
+                      "routing": {
+                        "queue": "assigned",
+                        "reason": "category_rule"
+                      },
+                      "createdAt": "2026-11-10T09:00:00Z",
+                      "updatedAt": "2026-11-10T09:00:00Z",
+                      "dueAt": "2026-11-17T09:00:00Z",
+                      "firstResponseAt": null,
+                      "closedAt": null,
+                      "overdue": false,
+                      "comments": [],
+                      "history": [
+                        {
+                          "id": "event-001",
+                          "kind": "created",
+                          "actor": {
+                            "id": "employee-1",
+                            "name": "Сотрудник закупок",
+                            "role": "employee",
+                            "departmentId": "procurement"
+                          },
+                          "createdAt": "2026-11-10T09:00:00Z",
+                          "fromStatus": null,
+                          "toStatus": "new",
+                          "text": "Обращение зарегистрировано."
+                        },
+                        {
+                          "id": "event-002",
+                          "kind": "assigned",
+                          "actor": null,
+                          "createdAt": "2026-11-10T09:00:00Z",
+                          "fromStatus": null,
+                          "toStatus": null,
+                          "text": "Ответственный назначен по категории."
+                        }
+                      ],
+                      "decision": null,
+                      "nextAction": "Руководитель рассмотрит обращение до указанного срока."
+                    }
+                  },
+                  "fallback": {
+                    "summary": "Missing routing rule still registers the complaint",
+                    "value": {
+                      "id": "complaint-22",
+                      "number": "A-022",
+                      "type": "problem",
+                      "categoryId": "no_rule_demo",
+                      "description": "В заявках не хватает назначения изделия и параметров.",
+                      "proposedSolution": "Добавить обязательные поля в форму заявки.",
+                      "attachments": [
+                        {
+                          "name": "sample-request.txt",
+                          "mediaType": "text/plain",
+                          "sizeBytes": 120,
+                          "isPlaceholder": true
+                        }
+                      ],
+                      "priority": "medium",
+                      "departmentId": "procurement",
+                      "author": {
+                        "id": "employee-1",
+                        "name": "Сотрудник закупок",
+                        "role": "employee",
+                        "departmentId": "procurement"
+                      },
+                      "status": "new",
+                      "assignee": null,
+                      "routing": {
+                        "queue": "unassigned",
+                        "reason": "no_rule"
+                      },
+                      "createdAt": "2026-11-10T09:00:00Z",
+                      "updatedAt": "2026-11-10T09:00:00Z",
+                      "dueAt": "2026-11-17T09:00:00Z",
+                      "firstResponseAt": null,
+                      "closedAt": null,
+                      "overdue": false,
+                      "comments": [],
+                      "history": [
+                        {
+                          "id": "event-003",
+                          "kind": "created",
+                          "actor": {
+                            "id": "employee-1",
+                            "name": "Сотрудник закупок",
+                            "role": "employee",
+                            "departmentId": "procurement"
+                          },
+                          "createdAt": "2026-11-10T09:00:00Z",
+                          "fromStatus": null,
+                          "toStatus": "new",
+                          "text": "Обращение зарегистрировано."
+                        }
+                      ],
+                      "decision": null,
+                      "nextAction": "Ожидается назначение ответственного руководителем."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateComplaint"
+              },
+              "example": {
+                "type": "problem",
+                "categoryId": "cross_department",
+                "description": "В заявках не хватает назначения изделия и параметров.",
+                "proposedSolution": "Добавить обязательные поля в форму заявки.",
+                "attachments": [
+                  {
+                    "name": "sample-request.txt",
+                    "mediaType": "text/plain",
+                    "sizeBytes": 120,
+                    "isPlaceholder": true
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "listComplaints",
+        "summary": "List visible complaints with filters",
+        "description": "Employees see only their own complaints. Managers and admins see all synthetic complaints, including unassigned across departments. Apply access restriction before all filters, totals and pagination. Combine filters with AND; inclusive dueAfter/dueBefore bounds, UTC comparison. Inverted dates return 422. q is a case-insensitive literal substring of number, description or proposedSolution (not regex/SQL). Stable order createdAt descending then id ascending. Empty results return 200 with items=[].",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          2,
+          5
+        ],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplaintList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "parameters": [
+          {
+            "name": "departmentId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            },
+            "description": "Filter by author's department ID; unknown ID returns an empty list."
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            },
+            "description": "Filter by category ID; unknown ID returns an empty list."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Status"
+            },
+            "description": "Exact status; unknown value is 422."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ComplaintType"
+            },
+            "description": "Exact type."
+          },
+          {
+            "name": "dueAfter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Deadline greater than or equal to this timestamp."
+          },
+          {
+            "name": "dueBefore",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Deadline less than or equal to this timestamp."
+          },
+          {
+            "name": "overdue",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "true selects overdue; false selects non-overdue. Omitted means both."
+          },
+          {
+            "name": "queue",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "assigned",
+                "unassigned"
+              ]
+            },
+            "description": "Filter routing queue; assignment state is independent of status."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Literal case-insensitive search."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Page size."
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Number of matching records to skip."
+          }
+        ]
+      }
+    },
+    "/complaints/{complaintId}": {
+      "get": {
+        "operationId": "getComplaint",
+        "summary": "Read complaint, history and result",
+        "description": "Employee author only; managers/admins can read all complaints. Other employees receive the same 404 as an unknown ID. Includes ordered comments/history, responsible person, deadline, nextAction and explanation of any terminal outcome. No edit/delete operation is part of this MVP.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          2,
+          3,
+          4
+        ],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Complaint"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "complaintId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "Opaque complaint ID (not its displayed registration number)."
+        }
+      ]
+    },
+    "/complaints/{complaintId}/assignment": {
+      "patch": {
+        "operationId": "assignComplaint",
+        "summary": "Assign or reassign a complaint",
+        "description": "Manager only, across departments including fallback queue. assigneeId must identify an existing manager (422 otherwise). Reject terminal complaints with 409; preserve status/dueAt, set routing to assigned/manual_assignment and append assigned history. Selecting the existing assignee is a 200 no-op. Assignment does not count as a first response.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          2
+        ],
+        "x-roles": [
+          "manager"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Complaint"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentInput"
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "complaintId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "Opaque complaint ID (not its displayed registration number)."
+        }
+      ]
+    },
+    "/complaints/{complaintId}/status": {
+      "patch": {
+        "operationId": "changeComplaintStatus",
+        "summary": "Move to review or work",
+        "description": "Manager only. Check x-status-transitions against current persisted status. Only in_review/in_progress targets accepted here; clarification uses comments, terminal outcomes use decision. Invalid known transition or same-state change is 409; unsupported target is 422. Save status plus actor/time history atomically. First successful manager status action sets firstResponseAt if absent.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          3
+        ],
+        "x-roles": [
+          "manager"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Complaint"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusInput"
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "complaintId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "Opaque complaint ID (not its displayed registration number)."
+        }
+      ]
+    },
+    "/complaints/{complaintId}/comments": {
+      "post": {
+        "operationId": "addComment",
+        "summary": "Comment, request clarification or answer",
+        "description": "Manager may add comment or clarification_request on any nonterminal complaint. Employee author may add comment, or clarification_response only while awaiting_clarification; other employees get 404. Admin cannot post. Manager request requires nonblank text and moves new/in_review/in_progress to awaiting_clarification. A repeated request while waiting is 409. Author response moves awaiting_clarification to in_review. Save comment, status and history atomically in ascending timestamp/id order. Ordinary comment preserves status. First manager comment/request sets firstResponseAt if absent; author response never sets it. Wrong kind for role is 403; terminal modification or incompatible current status is 409.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          3
+        ],
+        "x-roles": [
+          "employee",
+          "manager"
+        ],
+        "responses": {
+          "201": {
+            "description": "Created and persisted atomically.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Complaint"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentInput"
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "complaintId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "Opaque complaint ID (not its displayed registration number)."
+        }
+      ]
+    },
+    "/complaints/{complaintId}/decision": {
+      "post": {
+        "operationId": "recordDecision",
+        "summary": "Close with a result or motivated refusal",
+        "description": "Manager only. outcome implemented/rejected/closed must be allowed by x-status-transitions. Nonblank explanation is mandatory for every outcome, including refusal; blank/missing is 422. Save decision, terminal status, closedAt and history atomically and make them visible to author. First manager decision sets firstResponseAt if absent. Repeat decision or closing while awaiting clarification is 409. Terminal records are immutable in MVP.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          4
+        ],
+        "x-roles": [
+          "manager"
+        ],
+        "responses": {
+          "201": {
+            "description": "Created and persisted atomically.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Complaint"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionInput"
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "complaintId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "Opaque complaint ID (not its displayed registration number)."
+        }
+      ]
+    },
+    "/summary": {
+      "get": {
+        "operationId": "getSummary",
+        "summary": "Read administrative summary",
+        "description": "Admin only; employees/managers receive 403. Aggregate all synthetic complaints into one consistent snapshot. Terminal states implemented/rejected/closed all count toward closedShare. Only manager status/comment/decision actions count as first response, never registration, auto/manual assignment or author comments. Recurring topics are counts grouped by category. Empty dataset returns total=0, all three type counts=0, closedCount=0, closedShare=0, respondedCount=0, averageFirstResponseHours=null, recurringTopics=[].",
+        "tags": [
+          "Analytics"
+        ],
+        "x-demo-steps": [
+          6
+        ],
+        "x-roles": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Summary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "DemoIdentity": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Demo-User",
+        "description": "Synthetic user ID, e.g. employee-1, employee-2, manager-1, admin-1. Server resolves role/department from its seed registry; never trust an X-Role or body role. This selectable demo identity is not a secure login and must be replaced before production."
+      }
+    },
+    "schemas": {
+      "Role": {
+        "type": "string",
+        "enum": [
+          "employee",
+          "manager",
+          "admin"
+        ]
+      },
+      "ComplaintType": {
+        "type": "string",
+        "enum": [
+          "problem",
+          "suggestion",
+          "praise"
+        ],
+        "x-labels": {
+          "problem": "Проблема",
+          "suggestion": "Предложение",
+          "praise": "Положительный отзыв"
+        }
+      },
+      "Status": {
+        "type": "string",
+        "enum": [
+          "new",
+          "in_review",
+          "in_progress",
+          "awaiting_clarification",
+          "implemented",
+          "rejected",
+          "closed"
+        ],
+        "x-labels": {
+          "new": "Новое",
+          "in_review": "На рассмотрении",
+          "in_progress": "В работе",
+          "awaiting_clarification": "Ожидает уточнения",
+          "implemented": "Реализовано",
+          "rejected": "Отклонено",
+          "closed": "Закрыто"
+        }
+      },
+      "Priority": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "default": "medium"
+      },
+      "User": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "role",
+          "departmentId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S",
+            "description": "Synthetic display name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "departmentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        }
+      },
+      "Department": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S",
+            "description": "Department label"
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "assigneeId",
+          "dueInDays"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S",
+            "description": "Category label"
+          },
+          "assigneeId": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "pattern": "^[A-Za-z0-9_-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dueInDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "description": "Calendar days from creation to deadline. Used even when assigneeId is null."
+          }
+        }
+      },
+      "ReferenceData": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "departments",
+          "categories",
+          "assignees"
+        ],
+        "properties": {
+          "departments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Department"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          },
+          "assignees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            },
+            "description": "Only manager users eligible for assignment. Employees receive an empty array."
+          }
+        },
+        "examples": [
+          {
+            "departments": [
+              {
+                "id": "procurement",
+                "name": "Закупки"
+              }
+            ],
+            "categories": [
+              {
+                "id": "cross_department",
+                "name": "Межотдельное взаимодействие",
+                "assigneeId": "manager-1",
+                "dueInDays": 7
+              },
+              {
+                "id": "no_rule_demo",
+                "name": "Категория без ответственного (демо)",
+                "assigneeId": null,
+                "dueInDays": 7
+              }
+            ],
+            "assignees": [
+              {
+                "id": "manager-1",
+                "name": "Руководитель закупок",
+                "role": "manager",
+                "departmentId": "procurement"
+              }
+            ]
+          }
+        ]
+      },
+      "Attachment": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "mediaType",
+          "sizeBytes",
+          "isPlaceholder"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "pattern": "\\S",
+            "description": "Synthetic placeholder filename; display as plain text, never interpret as a filesystem path."
+          },
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "text/plain",
+              "application/pdf",
+              "image/png",
+              "image/jpeg"
+            ]
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5242880
+          },
+          "isPlaceholder": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "description": "MVP attachment metadata only. No bytes, URLs, download, antivirus or external fetching. UI must label it as a test-file placeholder, not an uploaded file."
+      },
+      "CreateComplaint": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "categoryId",
+          "description"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/ComplaintType"
+          },
+          "categoryId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "pattern": "\\S",
+            "description": "Trimmed nonblank problem or proposal text"
+          },
+          "proposedSolution": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "pattern": "\\S",
+            "description": "Optional proposed solution; omit when blank"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            },
+            "maxItems": 5,
+            "default": []
+          }
+        },
+        "description": "Author and department come from the server-resolved session, never from this body. Unknown fields are rejected. Category must exist; a category without an assignee is valid."
+      },
+      "Routing": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "queue",
+          "reason"
+        ],
+        "properties": {
+          "queue": {
+            "type": "string",
+            "enum": [
+              "assigned",
+              "unassigned"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "category_rule",
+              "no_rule",
+              "manual_assignment"
+            ]
+          }
+        },
+        "description": "At creation, a valid configured manager yields assigned/category_rule; missing or unavailable assignee yields unassigned/no_rule and assignee=null. Never discard the complaint. Manual assignment sets assigned/manual_assignment."
+      },
+      "Comment": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "author",
+          "kind",
+          "text",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "author": {
+            "$ref": "#/components/schemas/User"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "clarification_request",
+              "clarification_response"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "pattern": "\\S",
+            "description": "Plain text comment"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CommentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "text"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "clarification_request",
+              "clarification_response"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "pattern": "\\S",
+            "description": "Trimmed nonblank text"
+          }
+        }
+      },
+      "DecisionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "outcome",
+          "explanation"
+        ],
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "implemented",
+              "rejected",
+              "closed"
+            ]
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "pattern": "\\S",
+            "description": "Required result or reason for refusal. Whitespace-only is invalid."
+          },
+          "actions": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "pattern": "\\S",
+            "description": "Actions taken or agreed follow-up; optional"
+          }
+        },
+        "examples": [
+          {
+            "outcome": "implemented",
+            "explanation": "Добавлены обязательные поля.",
+            "actions": "Опубликован новый шаблон."
+          },
+          {
+            "outcome": "rejected",
+            "explanation": "Сейчас нет подходящего помещения; вернуться к вопросу при перепланировке."
+          }
+        ]
+      },
+      "Decision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "outcome",
+          "explanation",
+          "actions",
+          "author",
+          "createdAt"
+        ],
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "implemented",
+              "rejected",
+              "closed"
+            ]
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "pattern": "\\S",
+            "description": "Result visible to author"
+          },
+          "actions": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 5000,
+                "pattern": "\\S",
+                "description": "Actions taken or follow-up"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "author": {
+            "$ref": "#/components/schemas/User"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "HistoryEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "actor",
+          "createdAt",
+          "fromStatus",
+          "toStatus",
+          "text"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "created",
+              "assigned",
+              "status_changed",
+              "commented",
+              "decided"
+            ]
+          },
+          "actor": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fromStatus": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Status"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "toStatus": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Status"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "pattern": "\\S",
+            "description": "Readable event text, without private/internal notes"
+          }
+        },
+        "description": "Append-only timeline. actor=null means automatic routing by the system; every user action records the resolved user. Ordered by createdAt ascending then id ascending; timestamps are server generated UTC."
+      },
+      "Complaint": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "number",
+          "type",
+          "categoryId",
+          "departmentId",
+          "author",
+          "description",
+          "proposedSolution",
+          "priority",
+          "attachments",
+          "status",
+          "assignee",
+          "routing",
+          "createdAt",
+          "updatedAt",
+          "dueAt",
+          "firstResponseAt",
+          "closedAt",
+          "overdue",
+          "comments",
+          "history",
+          "decision",
+          "nextAction"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "number": {
+            "type": "string",
+            "pattern": "^A-[0-9]{3,}$",
+            "description": "Unique human-readable registration number; synthetic seed uses A-001..A-020."
+          },
+          "type": {
+            "$ref": "#/components/schemas/ComplaintType"
+          },
+          "categoryId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "departmentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "author": {
+            "$ref": "#/components/schemas/User"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "pattern": "\\S",
+            "description": "Original description"
+          },
+          "proposedSolution": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 5000,
+                "pattern": "\\S",
+                "description": "Original proposed solution"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            },
+            "maxItems": 5
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          },
+          "assignee": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "routing": {
+            "$ref": "#/components/schemas/Routing"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "firstResponseAt": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "closedAt": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "overdue": {
+            "type": "boolean",
+            "description": "True iff dueAt < server now and status is not implemented, rejected or closed. Terminal complaints are never overdue."
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Comment"
+            },
+            "description": "Ascending createdAt then id; no hidden comments in MVP."
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoryEvent"
+            }
+          },
+          "decision": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Decision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nextAction": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "pattern": "\\S",
+            "description": "Readable server-derived next step for the author, including unassigned or awaiting clarification."
+          }
+        }
+      },
+      "ComplaintList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Complaint"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "description": "total is the count after authorization and filters, before pagination. Stable order: createdAt descending then id ascending."
+      },
+      "StatusInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "in_review",
+              "in_progress"
+            ]
+          }
+        },
+        "description": "Only ordinary nonterminal transitions use this operation. Use comments for clarification and decision for terminal status."
+      },
+      "AssignmentInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assigneeId"
+        ],
+        "properties": {
+          "assigneeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        },
+        "description": "Existing manager user ID. Assignment preserves status and deadline and appends history atomically. Terminal complaints cannot be reassigned."
+      },
+      "TypeCount": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "count"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/ComplaintType"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CategoryCount": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "categoryId",
+          "categoryName",
+          "count"
+        ],
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "categoryName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S",
+            "description": "Category label"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Summary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "total",
+          "byType",
+          "closedCount",
+          "closedShare",
+          "averageFirstResponseHours",
+          "respondedCount",
+          "recurringTopics",
+          "generatedAt"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "All complaints, including terminal statuses, at generatedAt."
+          },
+          "byType": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TypeCount"
+            },
+            "description": "Exactly one item for each problem, suggestion, praise; zero counts included."
+          },
+          "closedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number with status implemented, rejected or closed."
+          },
+          "closedShare": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "closedCount / total, ratio 0..1; 0 when total=0. UI multiplies by 100 for percent."
+          },
+          "averageFirstResponseHours": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "Mean of (firstResponseAt-createdAt) in hours over complaints with a firstResponseAt, excluding unanswered. null if none. No rounding required."
+          },
+          "respondedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Denominator used by averageFirstResponseHours; number with firstResponseAt != null."
+          },
+          "recurringTopics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "description": "Categories with at least 2 complaints of any type/status, sorted count descending then categoryId ascending. Counts each complaint once; no AI clustering."
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server UTC timestamp for one consistent aggregate snapshot."
+          }
+        },
+        "examples": [
+          {
+            "total": 0,
+            "byType": [
+              {
+                "type": "problem",
+                "count": 0
+              },
+              {
+                "type": "suggestion",
+                "count": 0
+              },
+              {
+                "type": "praise",
+                "count": 0
+              }
+            ],
+            "closedCount": 0,
+            "closedShare": 0,
+            "averageFirstResponseHours": null,
+            "respondedCount": 0,
+            "recurringTopics": [],
+            "generatedAt": "2026-11-10T09:00:00Z"
+          }
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "BAD_REQUEST",
+              "UNAUTHENTICATED",
+              "FORBIDDEN",
+              "NOT_FOUND",
+              "INVALID_TRANSITION",
+              "VALIDATION_ERROR",
+              "PAYLOAD_TOO_LARGE",
+              "UNSUPPORTED_MEDIA_TYPE",
+              "INTERNAL_ERROR"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "pattern": "\\S",
+            "description": "Safe human-readable explanation without stack traces or secrets"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "field",
+                "message"
+              ],
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100,
+                  "pattern": "\\S",
+                  "description": "Invalid field or query parameter"
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500,
+                  "pattern": "\\S",
+                  "description": "Reason"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Malformed JSON or malformed query syntax.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "BAD_REQUEST",
+              "message": "Malformed JSON or malformed query syntax."
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or unknown demo identity.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "UNAUTHENTICATED",
+              "message": "Missing or unknown demo identity."
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Known identity lacks the operation role.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "FORBIDDEN",
+              "message": "Known identity lacks the operation role."
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Complaint does not exist or is hidden from this user. Use the same response for both.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "NOT_FOUND",
+              "message": "Complaint does not exist or is hidden from this user. Use the same response for both."
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Transition not allowed from the current state, duplicate terminal decision, or terminal complaint modification. No partial write.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "INVALID_TRANSITION",
+              "message": "Transition not allowed from the current state, duplicate terminal decision, or terminal complaint modification. No partial write."
+            }
+          }
+        }
+      },
+      "Validation": {
+        "description": "Invalid fields, blank text, unknown reference, unsupported status, or invalid filter. No partial write.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "VALIDATION_ERROR",
+              "message": "Invalid fields, blank text, unknown reference, unsupported status, or invalid filter. No partial write."
+            }
+          }
+        }
+      },
+      "TooLarge": {
+        "description": "Request or attachment metadata exceeds documented limits.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "PAYLOAD_TOO_LARGE",
+              "message": "Request or attachment metadata exceeds documented limits."
+            }
+          }
+        }
+      },
+      "Unsupported": {
+        "description": "Request body must use application/json.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "UNSUPPORTED_MEDIA_TYPE",
+              "message": "Request body must use application/json."
+            }
+          }
+        }
+      },
+      "Internal": {
+        "description": "Unexpected failure; no stack traces or sensitive values.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "INTERNAL_ERROR",
+              "message": "Unexpected failure; no stack traces or sensitive values."
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-validation": {
+    "structural": "npx @redocly/cli@2.11.1 lint contracts/api.yaml",
+    "acceptance": "node --test tests/acceptance/47-api-contract.test.mjs",
+    "format": "JSON-compatible YAML 1.2; self-contained references. Built-in tests require no dependencies; the external linter checks full OpenAPI structure and examples."
+  }
+}
