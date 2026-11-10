@@ -22,7 +22,7 @@ export default function MyComplaintsPage() {
           <p>{item.nextAction}</p>
           {item.overdue && <p className="overdue">Просрочено · срок {dateLabel(item.dueAt)}</p>}
         </li>)}</ul>
-        <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(value => Math.max(0, value - 20))}>Назад</button><span>Страница {Math.floor(offset / 20) + 1} из {Math.max(1, Math.ceil(result.data.total / 20))}</span><button disabled={offset + result.data.items.length >= result.data.total} onClick={() => setOffset(value => value + 20)}>Далее</button></div>
+        {result.data.total > 20 && <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(value => Math.max(0, value - 20))}>Назад</button><span>Страница {Math.floor(offset / 20) + 1} из {Math.max(1, Math.ceil(result.data.total / 20))}</span><button disabled={offset + result.data.items.length >= result.data.total} onClick={() => setOffset(value => value + 20)}>Далее</button></div>}
       </>}
     </>}
   </section>;
