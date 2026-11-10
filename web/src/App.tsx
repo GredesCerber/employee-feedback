@@ -2,7 +2,11 @@ import { Link, Navigate, NavLink, Route, Routes, useNavigate } from 'react-route
 import { SessionProvider, useSession } from './app/session';
 import type { Role } from './app/session';
 import type { ReactNode } from 'react';
+import SubmitPage from './pages/SubmitPage';
+import MyComplaintsPage from './pages/MyComplaintsPage';
+import ComplaintPage from './pages/ComplaintPage';
 import './shell.css';
+import './pages.css';
 
 const navigation: Record<Role, { path: string; label: string }[]> = {
   employee: [{ path: '/my', label: 'Мои обращения' }, { path: '/submit', label: 'Новое обращение' }],
@@ -40,8 +44,9 @@ function Shell() {
       <main id="main" tabIndex={-1} key={role}>
         <Routes>
           <Route path="/" element={<Navigate to={home[role]} replace />} />
-          <Route path="/my" element={<RoleRoute role="employee"><Section title="Мои обращения" /></RoleRoute>} />
-          <Route path="/submit" element={<RoleRoute role="employee"><Section title="Новое обращение" /></RoleRoute>} />
+          <Route path="/my" element={<RoleRoute role="employee"><MyComplaintsPage /></RoleRoute>} />
+          <Route path="/my/:complaintId" element={<RoleRoute role="employee"><ComplaintPage /></RoleRoute>} />
+          <Route path="/submit" element={<RoleRoute role="employee"><SubmitPage /></RoleRoute>} />
           <Route path="/queue" element={<RoleRoute role="manager"><Section title="Очередь обращений" /></RoleRoute>} />
           <Route path="/summary" element={<RoleRoute role="admin"><Section title="Сводка" /></RoleRoute>} />
           <Route path="*" element={<section className="section"><h1>Страница не найдена</h1><Link to={home[role]}>Вернуться к обращениям</Link></section>} />
