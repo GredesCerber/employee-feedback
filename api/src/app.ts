@@ -3,6 +3,7 @@ import Fastify, { type FastifyServerOptions } from 'fastify';
 import { ComplaintStore } from './store.js';
 import { configureErrors } from './http.js';
 import { registerComplaints } from './complaints.js';
+import { registerLifecycle } from './lifecycle.js';
 
 declare module 'fastify' {
   interface FastifyInstance { store: ComplaintStore }
@@ -21,5 +22,6 @@ export function buildApp(options: FastifyServerOptions = {}) {
   configureErrors(app);
   app.get('/health', async () => ({ status: 'ok', version }));
   registerComplaints(app);
+  registerLifecycle(app);
   return app;
 }
