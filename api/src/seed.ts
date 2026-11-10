@@ -53,7 +53,11 @@ export function seedComplaints(): Complaint[] {
       priority: row.priority, attachments: [], status: row.status, assignee,
       routing: { queue: 'assigned', reason: 'category_rule' }, createdAt, updatedAt,
       dueAt: new Date(Date.parse(createdAt) + 7 * 86400000).toISOString(), firstResponseAt, closedAt,
-      overdue: false, comments: [],
+      overdue: false,
+      comments: ['A-005', 'A-013'].includes(row.number) ? [{
+        id: `seed-clarification-${index + 1}`, author: assignee, kind: 'clarification_request',
+        text: row.nextAction, createdAt: firstResponseAt!,
+      }] : [],
       history: [{ id: `seed-event-${index + 1}`, kind: 'created', actor: author, createdAt,
         fromStatus: null, toStatus: row.status, text: 'Загружено из синтетического демонстрационного набора.' }],
       decision: closedAt ? { outcome: row.status as 'implemented' | 'rejected' | 'closed',
