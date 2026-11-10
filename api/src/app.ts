@@ -17,7 +17,7 @@ const { version } = JSON.parse(
 
 /** Build an isolated app without opening a port, for tests and embedding. */
 export function buildApp(options: FastifyServerOptions = {}) {
-  const app = Fastify(options);
+  const app = Fastify({ bodyLimit: 64 * 1024, ...options });
   const store = new ComplaintStore(process.env.PERSIST_FILE);
   store.seed();
   app.decorate('store', store);
