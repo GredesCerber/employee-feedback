@@ -1,0 +1,13 @@
+# Render Blueprint: один бесплатный Docker-сервис. DATABASE_URL (строка Neon) задаётся в панели Render.
+services:
+  - type: web
+    name: employee-feedback
+    runtime: docker
+    plan: free
+    dockerfilePath: ./infra/hosted.Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        sync: false
