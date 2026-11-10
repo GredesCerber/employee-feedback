@@ -15,6 +15,10 @@ export class ComplaintStore {
   }
 
   list(): Complaint[] { return structuredClone([...this.records.values()]); }
+  nextNumber(): number {
+    return Math.max(0, ...this.list().map(item => Number(item.number.slice(2)))) + 1;
+  }
+  save(item: Complaint): void { this.records.set(item.id, structuredClone(item)); }
   get(id: string): Complaint | undefined {
     const record = this.records.get(id);
     return record ? structuredClone(record) : undefined;
