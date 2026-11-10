@@ -1,5 +1,10 @@
 import { readFileSync } from 'node:fs';
 import Fastify, { type FastifyServerOptions } from 'fastify';
+import { ComplaintStore } from './store.js';
+
+declare module 'fastify' {
+  interface FastifyInstance { store: ComplaintStore }
+}
 
 const { version } = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
@@ -8,6 +13,9 @@ const { version } = JSON.parse(
 /** Build an isolated app without opening a port, for tests and embedding. */
 export function buildApp(options: FastifyServerOptions = {}) {
   const app = Fastify(options);
+  const store = new ComplaintStore();
+  store.seed();
+  app.decorate('store', store);
   app.get('/health', async () => ({ status: 'ok', version }));
   return app;
 }
