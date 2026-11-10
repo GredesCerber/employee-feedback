@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import SubmitPage from './pages/SubmitPage';
 import MyComplaintsPage from './pages/MyComplaintsPage';
 import ComplaintPage from './pages/ComplaintPage';
+import SummaryPage from './pages/SummaryPage';
 import QueuePage from './pages/QueuePage';
 import './shell.css';
 import './pages.css';
@@ -19,10 +20,6 @@ const home: Record<Role, string> = { employee: '/my', manager: '/queue', admin: 
 function RoleRoute({ role, children }: { role: Role; children: ReactNode }) {
   const session = useSession();
   return session.role === role ? children : <Navigate to={home[session.role]} replace />;
-}
-
-function Section({ title }: { title: string }) {
-  return <section className="section"><p className="eyebrow">Обратная связь</p><h1>{title}</h1><p className="muted">Раздел готовится к запуску.</p></section>;
 }
 
 function Shell() {
@@ -50,7 +47,7 @@ function Shell() {
           <Route path="/submit" element={<RoleRoute role="employee"><SubmitPage /></RoleRoute>} />
           <Route path="/queue" element={<RoleRoute role="manager"><QueuePage /></RoleRoute>} />
           <Route path="/queue/:complaintId" element={<RoleRoute role="manager"><ComplaintPage /></RoleRoute>} />
-          <Route path="/summary" element={<RoleRoute role="admin"><Section title="Сводка" /></RoleRoute>} />
+          <Route path="/summary" element={<RoleRoute role="admin"><SummaryPage /></RoleRoute>} />
           <Route path="*" element={<section className="section"><h1>Страница не найдена</h1><Link to={home[role]}>Вернуться к обращениям</Link></section>} />
         </Routes>
       </main>
