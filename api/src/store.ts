@@ -22,7 +22,7 @@ export class ComplaintStore {
     for (const complaint of seedComplaints()) {
       if (!snapshot.has(complaint.id)) snapshot.set(complaint.id, structuredClone(complaint));
     }
-    this.persistence?.save([...snapshot.values()]);
+    this.persistence?.saveSeed([...snapshot.values()]);
     for (const [id, item] of snapshot) this.records.set(id, item);
   }
 
