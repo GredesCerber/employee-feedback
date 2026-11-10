@@ -56,3 +56,13 @@ fieldset { border: 1px solid #dce3e8; border-radius: 8px; margin: 20px 0; paddin
 legend { font-weight: 600; padding: 0 8px; }
 @media (max-width: 720px) { .filter-form { grid-template-columns: 1fr; padding: 16px; } }
 @media (max-width: 520px) { .metadata { grid-template-columns: 1fr; } .complaint-item { padding: 16px; } .pagination { gap: 10px; } .pagination span { order: -1; width: 100%; } }
+.filter-toggle { display: none; }
+@media (max-width: 720px) {
+  button, select, input:not([type=checkbox]):not([type=radio]), textarea, .primary-link, nav a { min-height: 44px; }
+  .primary-link, nav a { display: inline-flex; align-items: center; }
+  .checkbox-label { min-height: 44px; }
+  .role-selector, .role-selector select { width: 100%; }
+  .filter-toggle { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; }
+  .filter-form:not(.is-open) { display: none; }
+  .actions > button, .actions > .primary-link { flex: 1 1 auto; justify-content: center; }
+}
