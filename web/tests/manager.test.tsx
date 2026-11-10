@@ -113,7 +113,7 @@ describe('manager queue acceptance', () => {
     await user.click(screen.getByRole('button', { name: 'Запросить уточнение' }));
     await screen.findByText('Ожидает уточнения');
     await asAuthor(user);
-    expect(screen.getByText('Уточните номер заявки.')).toBeTruthy();
+    expect(screen.getAllByText('Уточните номер заявки.').length).toBeGreaterThan(0);
     await user.type(screen.getByLabelText('Ваш ответ на уточнение'), 'Номер заявки 123.');
     await user.click(screen.getByRole('button', { name: 'Отправить уточнение' }));
     expect(await screen.findByText('Номер заявки 123.')).toBeTruthy();
@@ -144,5 +144,16 @@ describe('manager queue acceptance', () => {
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect((screen.getByLabelText('Обоснование решения') as HTMLTextAreaElement).value).toBe('Сохранить это объяснение.');
     expect(current.decision).toBeNull();
+  });
+
+  it('offers only contract transitions and advances new to review then work', async () => {
+    current.status = 'new';
+    const user = await openManager(); await openCard(user);
+    expect(screen.queryByRole('option', { name: 'Реализовано' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Начать рассмотрение' }));
+    await screen.findByText('На рассмотрении');
+    await user.click(screen.getByRole('button', { name: 'Взять в работу' }));
+    expect(await screen.findByText('В работе')).toBeTruthy();
+    expect(requests.filter(request => new URL(request.url).pathname.endsWith('/status'))).toHaveLength(2);
   });
 });
