@@ -45,7 +45,7 @@ test('104 Render blueprint has repository-root API commands, health and document
   assert.equal(api.type, 'web');
   assert.equal(api.runtime, 'node');
   assert.equal(api.rootDir, undefined, 'API needs contracts outside api/');
-  assert.equal(api.buildCommand, 'npm --prefix api ci && npm --prefix api run build');
+  assert.equal(api.buildCommand, 'npm --prefix api ci --include=dev && npm --prefix api run build');
   assert.equal(api.startCommand, 'npm --prefix api start');
   assert.equal(api.healthCheckPath, '/health');
   assert.equal(api.autoDeployTrigger, 'off');
@@ -60,7 +60,7 @@ test('104 Render blueprint has repository-root API commands, health and document
 
 test('104 Vercel installs/builds web and serves SPA routes', () => {
   const config = JSON.parse(read('infra/deploy/vercel.json'));
-  assert.equal(config.installCommand, 'npm --prefix web ci');
+  assert.equal(config.installCommand, 'npm --prefix web ci --include=dev');
   assert.equal(config.buildCommand, 'npm --prefix web run build');
   assert.equal(config.outputDirectory, 'web/dist');
   assert.deepEqual(config.rewrites, [{ source: '/(.*)', destination: '/index.html' }]);

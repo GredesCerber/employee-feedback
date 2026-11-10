@@ -25,9 +25,12 @@
    перед созданием ресурсов. Подтверждение создания выполняет человек.
 2. Корень сервиса — корень репозитория, поле Root Directory оставьте пустым.
    API загружает `contracts/` рядом с `api/`, поэтому корень `api/` не подходит.
-3. Blueprint задаёт сборку `npm --prefix api ci && npm --prefix api run build`,
+3. Blueprint задаёт сборку `npm --prefix api ci --include=dev && npm --prefix api run build`,
    запуск `npm --prefix api start`, health check `/health`, `HOST=0.0.0.0`,
    `NODE_ENV=production`, Node и лимиты из ENV.md. `PORT` назначает Render.
+   `--include=dev` устанавливает TypeScript из devDependencies для сборки,
+   даже когда npm по умолчанию исключает их при `NODE_ENV=production`.
+   Рабочий API продолжает запускаться в production; флаг не меняет NODE_ENV.
 4. Автовыкладка выключена (`autoDeployTrigger: off`). Выполните ручной deploy
    выбранного SHA, дождитесь успешной сборки и health check. Сохраните выданный
    HTTPS URL API — далее обозначен `API_URL`; это обозначение, не env приложения.
@@ -48,7 +51,9 @@
    vercel --local-config infra/deploy/vercel.json
    ```
 
-   Конфиг устанавливает зависимости `web/`, выполняет его `build`, отдаёт
+   Конфиг устанавливает зависимости командой `npm --prefix web ci --include=dev`,
+   чтобы Vite и TypeScript из devDependencies были доступны также в production.
+   Затем выполняет `npm --prefix web run build`, отдаёт
    `web/dist` и направляет SPA-маршруты на `/index.html`.
 4. Настройте CORS API на точный полученный origin и проверьте preview по пункту 4.
    После проверки человек публикует Production:
