@@ -28,7 +28,8 @@ function RoleRoute({ role, children }: { role: Role | Role[]; children: ReactNod
   // Запоминаем запрошенный адрес (с фильтрами): после переключения на нужную роль вернёмся на него.
   // Если роль только что сменили и запрошенный ранее адрес ей доступен, идём на него, иначе на домашнюю страницу роли.
   if ((Array.isArray(role) ? role : [role]).includes(session.role)) return children;
-  const target = returnPath(location.state, session.role) ?? home[session.role];
+  // Открытая карточка обращения сохраняется при смене роли: /queue/:id ↔ /my/:id (#203).
+  const target = cardPath(location.pathname, session.role) ?? returnPath(location.state, session.role) ?? home[session.role];
   return <Navigate to={target} replace state={{ from: `${location.pathname}${location.search}` }} />;
 }
 
@@ -40,6 +41,16 @@ function returnPath(state: unknown, next: Role): string | undefined {
   return allowed ? from : undefined;
 }
 
+/** Карточка обращения у каждой роли своя: сотрудник видит её на /my/:id, руководитель — на /queue/:id. */
+const cardBase: Partial<Record<Role, string>> = { employee: '/my', manager: '/queue' };
+
+/** Та же карточка обращения для новой роли, если сейчас открыта карточка и у новой роли она есть. */
+function cardPath(pathname: string, next: Role): string | undefined {
+  const match = /^\/(?:my|queue)\/([^/]+)\/?$/.exec(pathname);
+  const base = cardBase[next];
+  return match && base ? `${base}/${match[1]}` : undefined;
+}
+
 function Shell() {
   const { role, setRole } = useSession();
   const navigate = useNavigate();
@@ -49,7 +60,7 @@ function Shell() {
   function switchRole(next: string) {
     if (next !== 'employee' && next !== 'manager' && next !== 'admin') return;
     setRole(next);
-    navigate(returnPath(location.state, next) ?? home[next], { replace: true });
+    navigate(cardPath(location.pathname, next) ?? returnPath(location.state, next) ?? home[next], { replace: true });
   }
   return <div className="app-shell">
     <a className="skip-link" href="#main">Перейти к содержимому</a>
