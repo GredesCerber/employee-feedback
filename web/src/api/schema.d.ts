@@ -267,7 +267,7 @@ export interface paths {
         };
         /**
          * Suggest a category from offline demo examples
-         * @description All demo roles may request an offline category suggestion for the submitted text. Use recorded api/data/ai-fixtures.json examples or a documented deterministic word rule, never a network model call. A recognized match returns an existing category id/name and source=demo-fixture; unknown or trimmed-short text returns category=null and source=none. The web labels this as Demo AI and preserves a category the user already chose.
+         * @description All demo roles may request a category suggestion for their submitted text. Preserve the category id/name or null response format. The baseline #121 uses recorded api/data/ai-fixtures.json examples or deterministic demo rules with source=demo-fixture. The optional #149 provider reports source=llm only after successful live inference, source=rules for local fallback without a configured key or after failure, and source=none with category=null for unknown or trimmed-short text. Never expose provider keys or raw upstream errors. The client identifies the actual source and preserves a category the user already chose.
          */
         get: operations["suggestCategory"];
         put?: never;
@@ -330,6 +330,46 @@ export interface paths {
          * @description Public liveness endpoint available without X-Demo-User. Returns status=ok and the version from api/package.json. It does not assert database durability, external integration readiness or authenticated user access.
          */
         get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/summary/digest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a weekly digest with an honest fallback
+         * @description Manager/admin only; employees receive 403. Select complaints by createdAt in the half-open UTC period [from,to), then apply optional department. If omitted, to is the snapshot time and from is seven days before to. If only from is supplied, to defaults to now; if only to is supplied, from defaults to seven days before it. Invalid timestamps or from >= to return 422. Compute total, category/department counts and overdue count from this same selected cohort; empty input returns a readable no-complaints template and highlights=[]. Send aggregates only to the optional provider: category/department labels and counts, no raw complaint text, author data, identifiers, comments or attachments. Provider failure returns 200 with source=template, never a provider exception or secret. Successful generation alone may use source=llm. Cache identical selected aggregate facts and filters for at most 60 seconds; return the cached generatedAt/period so the snapshot age remains visible. Changes to aggregate facts invalidate reuse. This endpoint does not change permissions or fields of GET /summary.
+         */
+        get: operations["getSummaryDigest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analytics/trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read dashboard trends and aggregate totals
+         * @description Manager/admin only; employees receive 403. Apply optional department to every block before calculations, using the ordinary manager/admin readable scope and one generatedAt snapshot. Return 14 zero-filled UTC day buckets and 8 zero-filled Monday-based week buckets, including the current day/week. Other blocks cover the whole filtered store: byCategory, byDepartment, totals, topThemes and all overdue nonterminal complaints including unassigned. In an empty store chart buckets contain zero counts, other arrays are empty, totals are zero and averageResolutionHours is null. topThemes are the five most frequent repeated words across description/proposedSolution after lowercase and ё-to-е normalization, Unicode letter/digit tokenization and the documented Russian stop-word set; count a word once per complaint, require two complaints and use alphabetical tie-breaks. This is deterministic word counting, not LLM inference. Do not return author identities, complaint text or comments; category/theme labels are untrusted plain text. User-entered wording can contain indirect identifying clues, so aggregate themes do not guarantee full anonymity. The new totals/byDepartment fields support manager dashboards without changing the existing admin-only /summary endpoint.
+         */
+        get: operations["getAnalyticsTrends"];
         put?: never;
         post?: never;
         delete?: never;
@@ -715,10 +755,10 @@ export interface components {
             /** @description Recognized existing category; null when there is no confident demo match. */
             category: components["schemas"]["SuggestedCategory"] | null;
             /**
-             * @description demo-fixture is a prerecorded or deterministic demo suggestion; none means no match. No live model call is claimed.
+             * @description Actual provenance: llm is a successful live provider response; demo-fixture is a recorded demo example; rules is deterministic local matching, including fallback without a key or after provider failure; none means no suggestion. The client labels the source honestly.
              * @enum {string}
              */
-            source: "demo-fixture" | "none";
+            source: "llm" | "demo-fixture" | "rules" | "none";
         };
         /** @description Number of complaints loaded from the immutable seed after a successful reset. */
         DemoResetResult: {
@@ -729,6 +769,370 @@ export interface components {
             status: "ok";
             /** @description API package version, independent of the OpenAPI contract version. */
             version: string;
+        };
+        /** @description UTC half-open interval [from,to): createdAt >= from and createdAt < to. from must precede to. Returned timestamps describe the aggregate snapshot, not a promise that all time buckets have observations. */
+        AnalyticsPeriod: {
+            /** Format: date-time */
+            from: string;
+            /** Format: date-time */
+            to: string;
+        };
+        /**
+         * @description No authors, complaint IDs, descriptions, comments or attachments. Text must report the supplied aggregate counts faithfully and stay readable as text. Cached responses retain the original generatedAt and period, up to 60 seconds old.
+         * @example {
+         *       "text": "Обращений за период нет.",
+         *       "highlights": [],
+         *       "period": {
+         *         "from": "2026-11-03T09:00:00Z",
+         *         "to": "2026-11-10T09:00:00Z"
+         *       },
+         *       "source": "template",
+         *       "generatedAt": "2026-11-10T09:00:00Z"
+         *     }
+         * @example {
+         *       "text": "За период поступило 3 обращения. Чаще всего встречается межотдельное взаимодействие: 2 обращения. Просрочено 1 обращение из этого периода.",
+         *       "highlights": [
+         *         "Всего за период: 3.",
+         *         "Межотдельное взаимодействие: 2.",
+         *         "Просрочено: 1."
+         *       ],
+         *       "period": {
+         *         "from": "2026-11-03T09:00:00Z",
+         *         "to": "2026-11-10T09:00:00Z"
+         *       },
+         *       "source": "template",
+         *       "generatedAt": "2026-11-10T09:00:00Z"
+         *     }
+         */
+        SummaryDigest: {
+            /** @description Plain text weekly digest. No HTML rendering or embedded executable markup; empty-period template explicitly says обращений за период нет. */
+            text: string;
+            /** @description Up to five facts based on the same aggregates and period. Empty when there are no complaints in the selected period. */
+            highlights: string[];
+            period: components["schemas"]["AnalyticsPeriod"];
+            /**
+             * @description llm only for a successful model-generated digest; template when no provider is configured, generation fails, or the period is empty. Both use exactly the same aggregate facts.
+             * @enum {string}
+             */
+            source: "llm" | "template";
+            /** Format: date-time */
+            generatedAt: string;
+        };
+        DayCount: {
+            /**
+             * Format: date
+             * @description UTC calendar date, YYYY-MM-DD.
+             */
+            date: string;
+            count: number;
+        };
+        WeekCount: {
+            /**
+             * Format: date
+             * @description UTC Monday starting the week, YYYY-MM-DD.
+             */
+            weekStart: string;
+            count: number;
+        };
+        ThemeCount: {
+            /** @description Normalized repeated word, displayed as plain text. */
+            theme: string;
+            /** @description Number of distinct visible complaints containing this token; repeated occurrences within one complaint count once. */
+            count: number;
+        };
+        /** @description Minimal manager/admin drill-down data. No author object, name, description, comments or personal identifiers. id identifies the complaint, never its author. */
+        OverdueComplaint: {
+            id: string;
+            /** @description Unique human-readable registration number; synthetic seed uses A-001..A-020. */
+            number: string;
+            categoryId: string;
+            /** @description Category label. */
+            categoryName: string;
+            /** Format: date-time */
+            dueAt: string;
+            /** @description (generatedAt - dueAt) / 3600000 without mandatory rounding. Only nonterminal overdue complaints appear. */
+            overdueHours: number;
+        };
+        /** @description Whole filtered store snapshot, not only the chart window. openCount=total-closedCount; overdueCount includes unassigned nonterminal complaints with dueAt < generatedAt. Empty input yields counts=0 and averageResolutionHours=null. */
+        AnalyticsTotals: {
+            total: number;
+            openCount: number;
+            closedCount: number;
+            overdueCount: number;
+            /** @description Mean (closedAt-createdAt)/3600000 for terminal complaints with closedAt, null if none. Terminal statuses are implemented, rejected and closed. */
+            averageResolutionHours: number | null;
+        };
+        /**
+         * @description Every block uses the same department filter and generatedAt. Time series use their fixed chart windows; other aggregates and overdue use the whole filtered store. Zero-filled time buckets coexist with empty category/department/theme/overdue arrays. Illustrative examples below are not totals from the seed dataset.
+         * @example {
+         *       "generatedAt": "2026-11-10T09:00:00.000Z",
+         *       "byDay": [
+         *         {
+         *           "date": "2026-10-28",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-10-29",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-10-30",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-10-31",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-01",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-02",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-03",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-04",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-05",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-06",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-07",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-08",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-09",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-10",
+         *           "count": 0
+         *         }
+         *       ],
+         *       "byWeek": [
+         *         {
+         *           "weekStart": "2026-09-21",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-09-28",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-10-05",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-10-12",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-10-19",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-10-26",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-11-02",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-11-09",
+         *           "count": 0
+         *         }
+         *       ],
+         *       "byCategory": [],
+         *       "byDepartment": [],
+         *       "topThemes": [],
+         *       "overdue": [],
+         *       "totals": {
+         *         "total": 0,
+         *         "openCount": 0,
+         *         "closedCount": 0,
+         *         "overdueCount": 0,
+         *         "averageResolutionHours": null
+         *       }
+         *     }
+         * @example {
+         *       "generatedAt": "2026-11-10T09:00:00.000Z",
+         *       "byDay": [
+         *         {
+         *           "date": "2026-10-28",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-10-29",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-10-30",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-10-31",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-01",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-02",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-03",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-04",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-05",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-06",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-07",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-08",
+         *           "count": 2
+         *         },
+         *         {
+         *           "date": "2026-11-09",
+         *           "count": 0
+         *         },
+         *         {
+         *           "date": "2026-11-10",
+         *           "count": 1
+         *         }
+         *       ],
+         *       "byWeek": [
+         *         {
+         *           "weekStart": "2026-09-21",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-09-28",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-10-05",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-10-12",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-10-19",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-10-26",
+         *           "count": 0
+         *         },
+         *         {
+         *           "weekStart": "2026-11-02",
+         *           "count": 2
+         *         },
+         *         {
+         *           "weekStart": "2026-11-09",
+         *           "count": 1
+         *         }
+         *       ],
+         *       "byCategory": [
+         *         {
+         *           "categoryId": "cross_department",
+         *           "categoryName": "Межотдельное взаимодействие",
+         *           "count": 2
+         *         },
+         *         {
+         *           "categoryId": "catalog",
+         *           "categoryName": "Каталог и данные",
+         *           "count": 1
+         *         }
+         *       ],
+         *       "byDepartment": [
+         *         {
+         *           "departmentId": "engineering",
+         *           "departmentName": "Проектирование",
+         *           "count": 1,
+         *           "closedCount": 0,
+         *           "closedShare": 0
+         *         },
+         *         {
+         *           "departmentId": "procurement",
+         *           "departmentName": "Закупки",
+         *           "count": 2,
+         *           "closedCount": 1,
+         *           "closedShare": 0.5
+         *         }
+         *       ],
+         *       "topThemes": [
+         *         {
+         *           "theme": "заявка",
+         *           "count": 2
+         *         }
+         *       ],
+         *       "overdue": [
+         *         {
+         *           "id": "complaint-101",
+         *           "number": "A-101",
+         *           "categoryId": "cross_department",
+         *           "categoryName": "Межотдельное взаимодействие",
+         *           "dueAt": "2026-11-10T08:00:00Z",
+         *           "overdueHours": 1
+         *         }
+         *       ],
+         *       "totals": {
+         *         "total": 3,
+         *         "openCount": 2,
+         *         "closedCount": 1,
+         *         "overdueCount": 1,
+         *         "averageResolutionHours": 24
+         *       }
+         *     }
+         */
+        AnalyticsTrends: {
+            /** Format: date-time */
+            generatedAt: string;
+            /** @description Exactly 14 UTC dates ending with the snapshot date, ascending. Counts createdAt within each day up to generatedAt. Include a zero for every empty day, also for a fully empty store. */
+            byDay: components["schemas"]["DayCount"][];
+            /** @description Exactly 8 UTC Monday-based weeks including the current week, ascending. Count records created within each week up to generatedAt; zero-fill empty weeks. */
+            byWeek: components["schemas"]["WeekCount"][];
+            /** @description Counts across the whole filtered store, all types/statuses. Only nonempty categories, sorted count descending then categoryId ascending. Empty store yields []. */
+            byCategory: components["schemas"]["CategoryCount"][];
+            /** @description Counts and closed shares across the whole filtered store. Only nonempty departments, sorted departmentId ascending. Empty store yields []. This supplies manager widgets without granting access to GET /summary. */
+            byDepartment: components["schemas"]["DepartmentSummary"][];
+            /** @description At most five repeated normalized tokens from description and proposedSolution. Count each token once per complaint, require at least two complaints, sort count descending then theme ascending. Empty store or no repetitions yields []. */
+            topThemes: components["schemas"]["ThemeCount"][];
+            /** @description All nonterminal overdue complaints in the filtered store, including unassigned, sorted overdueHours descending then id ascending. Empty store yields []. */
+            overdue: components["schemas"]["OverdueComplaint"][];
+            totals: components["schemas"]["AnalyticsTotals"];
         };
     };
     responses: {
@@ -1472,6 +1876,66 @@ export interface operations {
                     "application/json": components["schemas"]["Health"];
                 };
             };
+            500: components["responses"]["Internal"];
+        };
+    };
+    getSummaryDigest: {
+        parameters: {
+            query?: {
+                /** @description Inclusive start. Default is to minus seven days. */
+                from?: string;
+                /** @description Exclusive end. Default is the snapshot time; cached snapshots may be up to 60 seconds old. */
+                to?: string;
+                /** @description Optional author department ID (not its label). Applies to every block before aggregation; unknown valid ID yields the documented empty result. Does not expose individual authors. */
+                department?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful aggregate snapshot, including an empty result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryDigest"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Validation"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    getAnalyticsTrends: {
+        parameters: {
+            query?: {
+                /** @description Optional author department ID (not its label). Applies to every block before aggregation; unknown valid ID yields the documented empty result. Does not expose individual authors. */
+                department?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful aggregate snapshot, including an empty result. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsTrends"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Validation"];
             500: components["responses"]["Internal"];
         };
     };
