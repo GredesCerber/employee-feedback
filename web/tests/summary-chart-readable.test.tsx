@@ -85,11 +85,20 @@ describe('#197 readable summary charts', () => {
         const label = group.querySelector('.bar-label')!;
         const bar = group.querySelector('.bar-fill')!;
         const track = group.querySelector('.bar-track')!;
-        expect(label.getAttribute('text-anchor')).toBe('start');
-        expect(Number(label.getAttribute('y'))).toBeLessThan(Number(bar.getAttribute('y')));
         expect(Number(track.getAttribute('x')) + Number(track.getAttribute('width'))).toBeLessThanOrEqual(300);
+        if (label.getAttribute('text-anchor') === 'start') {
+          // Подпись над столбцом.
+          expect(Number(label.getAttribute('y'))).toBeLessThan(Number(bar.getAttribute('y')));
+        } else {
+          // Подпись слева: целиком помещается до начала столбца.
+          const x = Number(label.getAttribute('x'));
+          expect(x).toBeLessThan(Number(track.getAttribute('x')));
+          expect(x).toBeGreaterThanOrEqual(label.textContent!.length * 7.5);
+        }
       }
     }
+    // Длинные названия категорий на узком экране переносятся над столбцами.
+    expect(svgs[1]!.querySelector('[data-bar="Категория без ответственного (демо)"] .bar-label')!.getAttribute('text-anchor')).toBe('start');
   });
 
   it('the chart never sets a percentage width or a horizontal scroller', () => {
