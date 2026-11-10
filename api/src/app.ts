@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import Fastify, { type FastifyServerOptions } from 'fastify';
 import { ComplaintStore } from './store.js';
+import { configureErrors } from './http.js';
+import { registerComplaints } from './complaints.js';
 
 declare module 'fastify' {
   interface FastifyInstance { store: ComplaintStore }
@@ -16,6 +18,8 @@ export function buildApp(options: FastifyServerOptions = {}) {
   const store = new ComplaintStore();
   store.seed();
   app.decorate('store', store);
+  configureErrors(app);
   app.get('/health', async () => ({ status: 'ok', version }));
+  registerComplaints(app);
   return app;
 }
