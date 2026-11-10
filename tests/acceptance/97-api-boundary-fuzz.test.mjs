@@ -59,7 +59,9 @@ async function minimize(operation, payload) {
 test('#97 seeded boundary inputs cover every write operation without 5xx or divergent errors', { timeout: 60000 }, async t => {
   assert.deepEqual(randomValues(seed, 24), randomValues(seed, 24));
   const writes = Object.values(contract.paths).flatMap(path => Object.entries(path)
-    .filter(([method]) => ['post', 'put', 'patch', 'delete'].includes(method)).map(([, op]) => op.operationId));
+    // #89 captain-approved contract-first stage; all implemented writes remain strict.
+    .filter(([method, op]) => ['post', 'put', 'patch', 'delete'].includes(method) && !op['x-implementation-issue'])
+    .map(([, op]) => op.operationId));
   assert.deepEqual([...writes].sort(), mutations.map(op => op.operationId).sort(), 'Add fuzz fixtures for every new write operation');
   let checked = 0;
   for (const operation of mutations) {

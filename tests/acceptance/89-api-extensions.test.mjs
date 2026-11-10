@@ -16,6 +16,21 @@ const expected = [
   ['/demo/reset', 'post', 'resetDemo', ['admin']],
 ];
 
+test('#89 контрактная стадия не выводит существующие операции из матрицы и fuzz', () => {
+  const existing = ['getHealth', 'getSession', 'getReferenceData', 'createComplaint', 'listComplaints', 'getComplaint', 'assignComplaint', 'changeComplaintStatus', 'addComment', 'recordDecision', 'getSummary'];
+  for (const name of existing) {
+    const operation = operations.find((op) => op.operationId === name);
+    assert.ok(operation, name);
+    assert.equal(operation['x-implementation-issue'], undefined, `${name}: реализованную операцию нельзя объявлять будущей`);
+  }
+  const delivery = { undoLastAction: 117, listNotifications: 120, findSimilarComplaints: 121, suggestCategory: 121, exportComplaints: 119, resetDemo: 122 };
+  for (const [name, issue] of Object.entries(delivery)) {
+    const marker = operations.find((op) => op.operationId === name)?.['x-implementation-issue'];
+    // Removal is expected once the delivery task implements its endpoint.
+    if (marker !== undefined) assert.equal(marker, issue, name);
+  }
+});
+
 test('#89 новые операции имеют явные роли, ошибки, схемы и публичный health', () => {
   for (const [path, method, id, roles] of expected) {
     const operation = api.paths[path]?.[method];
