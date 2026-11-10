@@ -66,3 +66,12 @@ legend { font-weight: 600; padding: 0 8px; }
   .filter-form:not(.is-open) { display: none; }
   .actions > button, .actions > .primary-link { flex: 1 1 auto; justify-content: center; }
 }
+
+/* #114: индикатор загрузки и пустые состояния */
+.loading-indicator { display: flex; align-items: center; gap: 10px; color: #536577; margin: 20px 0; }
+.spinner { width: 18px; height: 18px; border: 3px solid #dce3e8; border-top-color: #185a85; border-radius: 50%; animation: spin 0.8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+.empty-state { padding: 16px 20px; border: 1px dashed #b9c6d0; border-radius: 10px; background: #f8fafb; margin-top: 16px; }
+.empty-state p { margin: 0 0 4px; }
+.load-error button:disabled { opacity: 0.6; cursor: not-allowed; }

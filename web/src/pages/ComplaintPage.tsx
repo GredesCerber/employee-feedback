@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
-import { dateLabel, LoadError, StatusBadge, typeLabels } from '../features/complaint';
+import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../features/complaint';
 import { AuthorReply, ManagerActions } from '../features/ComplaintActions';
 
 export default function ComplaintPage() {
@@ -24,8 +24,8 @@ export default function ComplaintPage() {
   }, [item]);
   return <section className="section"><Link to={role === 'manager' ? '/queue' : '/my'}>{role === 'manager' ? 'К очереди' : 'К моим обращениям'}</Link>
     <p className="visually-hidden" aria-live="polite">{notice}</p>
-    {result.loading && <><h1>Обращение</h1><p role="status">Загрузка обращения…</p></>}
-    {result.error && <><h1>Обращение недоступно</h1><LoadError message={result.error} retry={result.reload} /></>}
+    {result.loading && <><h1>Обращение</h1><Loading label="Загрузка обращения…" /></>}
+    {result.error && <><h1>Обращение недоступно</h1><LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} /></>}
     {item && <>
       <div className="detail-header"><h1 ref={heading} tabIndex={-1}>Обращение {item.number}</h1><StatusBadge status={item.status} /></div>
       <div className="next-action"><h2>Следующий шаг</h2><p>{item.nextAction}</p></div>

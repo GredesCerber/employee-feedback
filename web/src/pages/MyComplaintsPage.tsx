@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
-import { dateLabel, LoadError, StatusBadge, typeLabels } from '../features/complaint';
+import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../features/complaint';
 
 export default function MyComplaintsPage() {
   const { api } = useSession();
@@ -10,8 +10,8 @@ export default function MyComplaintsPage() {
   const load = useCallback(async () => requireData((await api.GET('/complaints', { params: { query: { limit: 20, offset } } })).data), [api, offset]);
   const result = useResource(load);
   return <section className="section"><p className="eyebrow">Личный кабинет</p><h1>Мои обращения</h1>
-    {result.loading && <p role="status">Загрузка обращений…</p>}
-    {result.error && <LoadError message={result.error} retry={result.reload} />}
+    {result.loading && <Loading label="Загрузка обращений…" />}
+    {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {result.data && <>
       {result.data.total === 0 ? <div><p>У вас пока нет обращений.</p><Link to="/submit">Подать первое обращение</Link></div> : <>
         <p className="muted">Всего обращений: {result.data.total}</p>

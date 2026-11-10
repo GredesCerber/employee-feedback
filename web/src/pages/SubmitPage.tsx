@@ -3,8 +3,8 @@ import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { ApiError } from '../api/client';
-import { errorMessage, requireData, useResource } from '../features/data';
-import { LoadError } from '../features/complaint';
+import { errorMessage, requireData, retryAfterOf, useCooldown, useResource } from '../features/data';
+import { Loading, LoadError } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
 
 const fieldIds: Record<string, string> = { categoryId: 'category', description: 'description', proposedSolution: 'solution', type: 'complaint-type' };
@@ -26,13 +26,14 @@ export default function SubmitPage() {
   const [failure, setFailure] = useState('');
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
+  const cooldown = useCooldown();
   const [created, setCreated] = useState<Complaint>();
   const resultHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { if (created) resultHeading.current?.focus(); }, [created]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (lock.current) return;
+    if (lock.current || cooldown.active) return;
     const nextErrors: Record<string, string> = {};
     if (!categoryId) nextErrors.categoryId = 'Выберите категорию.';
     if (!description.trim()) nextErrors.description = 'Опишите проблему или предложение.';
@@ -47,7 +48,9 @@ export default function SubmitPage() {
       } });
       setCreated(requireData(result.data));
     } catch (error) {
-      setFailure(errorMessage(error));
+      const wait = retryAfterOf(error);
+      if (wait) cooldown.start(wait);
+      setFailure(wait ? '' : errorMessage(error));
       if (error instanceof ApiError) {
         const serverErrors = Object.fromEntries((error.details ?? []).map(item => [item.field, item.message]));
         setErrors(serverErrors); focusFirstInvalid(serverErrors);
@@ -65,8 +68,8 @@ export default function SubmitPage() {
 
   return <><section className="section"><p className="eyebrow">Обратная связь</p><h1>Новое обращение</h1>
     <p className="muted">Сообщите о проблеме или предложите улучшение. Обращение видят вы, руководители и администраторы.</p>
-    {reference.loading && <p role="status">Загрузка категорий…</p>}
-    {reference.error && <LoadError message={reference.error} retry={reference.reload} />}
+    {reference.loading && <Loading label="Загрузка категорий…" />}
+    {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
     {reference.data && <form onSubmit={submit} noValidate className="complaint-form">
       <label htmlFor="complaint-type">Тип обращения</label><select id="complaint-type" value={type} onChange={event => setType(event.target.value as Complaint['type'])}><option value="problem">Проблема</option><option value="suggestion">Предложение</option><option value="praise">Благодарность</option></select>
       <label htmlFor="category">Категория</label><select id="category" value={categoryId} onChange={event => setCategory(event.target.value)} required aria-invalid={Boolean(errors.categoryId)} aria-describedby={errors.categoryId ? 'category-error' : undefined}><option value="">Выберите категорию</option>{reference.data.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
@@ -76,8 +79,8 @@ export default function SubmitPage() {
       <label htmlFor="solution">Предлагаемое решение <span className="optional">(необязательно)</span></label><textarea id="solution" value={solution} onChange={event => setSolution(event.target.value)} rows={3} maxLength={5000} />
       <label className="checkbox-label"><input type="checkbox" checked={attachment} onChange={event => setAttachment(event.target.checked)} />Добавить тестовое вложение</label>
       <p className="field-hint">Файл-заглушка sample-request.txt: сохраняются только название, тип и размер, содержимое не загружается.</p>
-      {failure && <p role="alert" className="field-error">{failure}</p>}
-      <button className="primary-button" disabled={busy} type="submit">{busy ? 'Отправка…' : 'Отправить обращение'}</button>
+      {(cooldown.active || failure) && <p role="alert" className="field-error">{cooldown.active ? cooldown.message : failure}</p>}
+      <button className="primary-button" disabled={busy || cooldown.active} type="submit">{busy ? 'Отправка…' : 'Отправить обращение'}</button>
     </form>}
   </section>{announcement}</>;
 }
