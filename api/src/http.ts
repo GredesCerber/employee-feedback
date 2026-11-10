@@ -9,6 +9,35 @@ export const contract = JSON.parse(readFileSync(new URL('../../contracts/api.yam
 const ajv = new Ajv2020({ strict: false, allErrors: true, formats: fullFormats });
 ajv.addSchema(contract, 'contract');
 const validators = new Map<string, ReturnType<typeof ajv.compile>>();
+const listParameters = contract.paths['/complaints'].get.parameters as { name: string; schema: Record<string, unknown> }[];
+const listQueryValidator = ajv.compile({ type: 'object', additionalProperties: false,
+  properties: Object.fromEntries(listParameters.map(parameter => [parameter.name,
+    parameter.schema.$ref ? { $ref: `contract${parameter.schema.$ref}` } : parameter.schema])) });
+
+export interface ListQuery {
+  departmentId?: string; categoryId?: string; status?: string; type?: string;
+  dueAfter?: string; dueBefore?: string; overdue?: boolean; queue?: string; q?: string;
+  limit?: number; offset?: number;
+}
+export function listQuery(request: FastifyRequest): ListQuery {
+  const params = queryParameters(request, listParameters.map(parameter => parameter.name));
+  const value: Record<string, unknown> = {};
+  for (const [key, input] of params) {
+    if (key === 'limit' || key === 'offset') {
+      if (!/^\d+$/.test(input) || !Number.isSafeInteger(Number(input))) invalid('Некорректная пагинация.');
+      value[key] = Number(input);
+    } else if (key === 'overdue') {
+      if (!['true', 'false'].includes(input)) invalid('Просрочка задаётся true или false.');
+      value[key] = input === 'true';
+    } else value[key] = input;
+  }
+  if (!listQueryValidator(value)) invalid('Некорректный фильтр.');
+  const result = value as ListQuery;
+  if (result.dueAfter && result.dueBefore && Date.parse(result.dueAfter) > Date.parse(result.dueBefore)) {
+    invalid('Начало диапазона срока позже окончания.');
+  }
+  return result;
+}
 
 export class ApiError extends Error {
   constructor(public statusCode: number, public code: string, message: string) { super(message); }
