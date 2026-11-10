@@ -2,7 +2,7 @@ services:
   - type: web
     name: employee-feedback-api
     runtime: node
-    buildCommand: "npm --prefix api ci && npm --prefix api run build"
+    buildCommand: "npm --prefix api ci --include=dev && npm --prefix api run build"
     startCommand: "npm --prefix api start"
     healthCheckPath: /health
     autoDeployTrigger: off

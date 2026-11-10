@@ -29,7 +29,13 @@ test('R1-R7: OpenAPI 3.1 has resolvable references, unique operations and respon
     ids.add(op.operationId);
     const success = Object.entries(op.responses).filter(([code]) => /^2\d\d$/.test(code));
     assert.ok(success.length, op.operationId);
-    for (const [, response] of success) assert.ok(response.content?.['application/json']?.schema);
+    for (const [, response] of success) {
+      if (op.operationId === 'exportComplaints') {
+        assert.equal(op.path, '/complaints/export');
+        assert.equal(op.method, 'get');
+        assert.equal(response.content?.['text/csv']?.schema?.type, 'string');
+      } else assert.ok(response.content?.['application/json']?.schema);
+    }
     for (const name of op.path.matchAll(/\{([^}]+)\}/g)) {
       const params = [...(api.paths[op.path].parameters ?? []), ...(op.parameters ?? [])]
         .map(p => p.$ref ? resolve(api, p.$ref) : p);
@@ -85,8 +91,13 @@ test('R5 and demo coverage: all six steps, role permissions and structured error
     for (const step of op['x-demo-steps']) covered.add(step);
     assert.ok(op['x-roles'].length && op['x-roles'].every(role => ['employee', 'manager', 'admin'].includes(role)));
     assert.ok(op.description.length > 30, `access semantics: ${op.operationId}`);
-    assert.ok((op.security ?? api.security).length, `authentication: ${op.operationId}`);
-    for (const code of ['401', '403', '422', '500']) {
+    const publicHealth = op.operationId === 'getHealth';
+    if (publicHealth) {
+      assert.equal(op.path, '/health');
+      assert.equal(op.method, 'get');
+      assert.deepEqual(op.security, []);
+    } else assert.ok((op.security ?? api.security).length, `authentication: ${op.operationId}`);
+    for (const code of publicHealth ? ['500'] : ['401', '403', '422', '500']) {
       const response = op.responses[code];
       assert.ok(response, `${op.operationId}: ${code}`);
       const resolved = response.$ref ? resolve(api, response.$ref) : response;
