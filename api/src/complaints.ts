@@ -3,6 +3,7 @@ import type { Attachment, Complaint, ComplaintType, Priority } from './model.js'
 import { terminalStatuses } from './model.js';
 import { ApiError, identity, invalid, listQuery, present, queryParameters, validateBody, visibleComplaint } from './http.js';
 import { summarize } from './analytics.js';
+import { matchesComplaintText, searchWords } from './search.js';
 
 interface CreateInput {
   type: ComplaintType; categoryId: string; description: string; proposedSolution?: string;
@@ -54,6 +55,7 @@ export function registerComplaints(app: FastifyInstance) {
     const user = identity(app, request);
     const query = listQuery(request);
     const limit = query.limit ?? 20, offset = query.offset ?? 0;
+    const words = searchWords(query.q);
     const now = Date.now();
     const items = app.store.list().filter(item => user.role !== 'employee' || item.author.id === user.id)
       .map(item => present(item, now)).filter(item =>
@@ -65,8 +67,7 @@ export function registerComplaints(app: FastifyInstance) {
         && (query.overdue === undefined || item.overdue === query.overdue)
         && (query.dueAfter === undefined || Date.parse(item.dueAt) >= Date.parse(query.dueAfter))
         && (query.dueBefore === undefined || Date.parse(item.dueAt) <= Date.parse(query.dueBefore))
-        && (query.q === undefined || [item.number, item.description, item.proposedSolution ?? '']
-          .some(value => value.toLowerCase().includes(query.q!.toLowerCase()))))
+        && matchesComplaintText(item, words))
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return { items: items.slice(offset, offset + limit), total: items.length, limit, offset };
   });
