@@ -5,8 +5,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { inflateRawSync } from 'node:zlib';
 
-const script = fileURLToPath(new URL('../../infra/make-submission-archive.mjs', import.meta.url));
+const scriptUrl = new URL('../../infra/make-submission-archive.mjs', import.meta.url);
+const script = fileURLToPath(scriptUrl);
 function fixture(t, ignored = true) {
   const cwd = mkdtempSync(join(tmpdir(), 'submission-103-'));
   t.after(() => rmSync(cwd, { recursive: true, force: true }));
@@ -35,34 +37,37 @@ function fixture(t, ignored = true) {
   return { cwd, git };
 }
 function zipEntries(buffer) {
-  const names = [];
+  const entries = new Map();
   for (let pos = 0; pos + 46 <= buffer.length; pos++) {
     if (buffer.readUInt32LE(pos) !== 0x02014b50) continue;
     const length = buffer.readUInt16LE(pos + 28);
-    names.push(buffer.subarray(pos + 46, pos + 46 + length).toString('utf8'));
+    const name = buffer.subarray(pos + 46, pos + 46 + length).toString('utf8');
+    const offset = buffer.readUInt32LE(pos + 42);
+    const start = offset + 30 + buffer.readUInt16LE(offset + 26) + buffer.readUInt16LE(offset + 28);
+    const data = buffer.subarray(start, start + buffer.readUInt32LE(pos + 20));
+    entries.set(name, buffer.readUInt16LE(pos + 10) === 8 ? inflateRawSync(data) : data);
     pos += 45 + length + buffer.readUInt16LE(pos + 30) + buffer.readUInt16LE(pos + 32);
   }
-  return names;
+  return entries;
 }
 
 test('103 archive uses committed HEAD and excludes generated files, secrets and earlier archives', async t => {
-  const { cwd, git } = fixture(t);
+  const { cwd } = fixture(t);
   writeFileSync(join(cwd, 'README.md'), 'uncommitted change');
   writeFileSync(join(cwd, 'untracked.txt'), 'not committed');
-  const { createSubmissionArchive } = await import(script);
+  const { createSubmissionArchive } = await import(scriptUrl);
   const messages = [];
   const result = createSubmissionArchive({ cwd, log: text => messages.push(text) });
   assert.equal(result.exitCode, 0);
   assert.match(result.path, /submission[\\/]employee-feedback-.*\.zip$/);
-  const names = zipEntries(readFileSync(result.path));
+  const entries = zipEntries(readFileSync(result.path));
+  const names = [...entries.keys()];
   assert.ok(names.includes('README.md')); assert.ok(names.includes('api/source.js'));
   assert.ok(names.includes('.env.example'));
   assert.ok(!names.some(name => /(?:node_modules|dist|submission)\//.test(name) || /(?:^|\/)\.env(?:\.(?!example$).*)?$/.test(name) || name === 'untracked.txt'));
   assert.ok(messages.some(line => /только закоммиченное/.test(line)));
   assert.ok(messages.some(line => /✓.*МБ/.test(line)));
-  // A clean comparison archive proves README comes from HEAD, not the dirty working file.
-  assert.equal(git(['show', 'HEAD:README.md']), 'committed contents');
-  assert.ok(!readFileSync(result.path).includes(Buffer.from('uncommitted change')));
+  assert.equal(entries.get('README.md').toString('utf8'), 'committed contents');
 });
 
 test('103 warns when submission is not ignored and CLI runs without shell', async t => {
@@ -74,7 +79,7 @@ test('103 warns when submission is not ignored and CLI runs without shell', asyn
 });
 
 test('103 size limit is exactly 100 decimal MB and excess returns failure', async () => {
-  const { archiveSizeResult } = await import(script);
+  const { archiveSizeResult } = await import(scriptUrl);
   assert.equal(archiveSizeResult(100_000_000).exitCode, 0);
   const tooLarge = archiveSizeResult(100_000_001);
   assert.equal(tooLarge.exitCode, 1);
