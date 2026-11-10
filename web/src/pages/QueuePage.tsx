@@ -26,7 +26,8 @@ export default function QueuePage() {
   function apply(event: FormEvent) {
     event.preventDefault();
     if (filters.dueAfter && filters.dueBefore && filters.dueAfter > filters.dueBefore) {
-      setFilterError('Начало периода должно быть не позже окончания.'); return;
+      setFilterError('Начало периода должно быть не позже окончания.');
+      document.getElementById('due-after')?.focus(); return;
     }
     setFilterError('');
     setQuery({ limit: 20, offset: 0,
@@ -50,11 +51,11 @@ export default function QueuePage() {
       <label>Категория<select value={filters.categoryId} onChange={event => setFilters({ ...filters, categoryId: event.target.value })}><option value="">Все категории</option>{reference.data.categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <label>Статус<select value={filters.status} onChange={event => setFilters({ ...filters, status: event.target.value as Filters['status'] })}><option value="">Все статусы</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
       <label>Очередь<select value={filters.queue} onChange={event => setFilters({ ...filters, queue: event.target.value as Filters['queue'] })}><option value="">Все обращения</option><option value="unassigned">Без ответственного</option><option value="assigned">С ответственным</option></select></label>
-      <label>Срок от<input type="date" value={filters.dueAfter} onChange={event => setFilters({ ...filters, dueAfter: event.target.value })} /></label>
-      <label>Срок до<input type="date" value={filters.dueBefore} onChange={event => setFilters({ ...filters, dueBefore: event.target.value })} /></label>
+      <label>Срок от<input id="due-after" type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueAfter} onChange={event => setFilters({ ...filters, dueAfter: event.target.value })} /></label>
+      <label>Срок до<input type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueBefore} onChange={event => setFilters({ ...filters, dueBefore: event.target.value })} /></label>
       <label className="search-field">Поиск по номеру или тексту<input value={filters.q} maxLength={200} onChange={event => setFilters({ ...filters, q: event.target.value })} /></label>
       <label className="checkbox-label"><input type="checkbox" checked={filters.overdue} onChange={event => setFilters({ ...filters, overdue: event.target.checked })} />Только просроченные</label>
-      {filterError && <p role="alert" className="field-error">{filterError}</p>}
+      {filterError && <p id="filter-error" role="alert" className="field-error">{filterError}</p>}
       <div className="actions"><button className="primary-button" type="submit">Применить фильтры</button><button type="button" onClick={() => { setFilters(emptyFilters); setQuery({ limit: 20, offset: 0 }); setFilterError(''); }}>Сбросить</button></div>
     </form>}
     {result.loading && <p role="status">Загрузка очереди…</p>}
