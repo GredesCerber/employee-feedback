@@ -24,11 +24,23 @@ export interface HostedOptions {
   webRoot?: string;
 }
 
-function createApp(options: FastifyServerOptions, store: ComplaintStore) {
-  // The frontend calls /api/*; contract paths have no prefix (nginx strips it in compose).
+const stripApiPrefix = (url: string) => url.replace(/^\/api(?=\/|\?|$)/, '') || '/';
+const SPA_ROUTE = '/__spa';
+
+function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = false) {
   const app = Fastify({
     bodyLimit: 64 * 1024,
-    rewriteUrl: request => (request.url ?? '/').replace(/^\/api(?=\/|\?|$)/, '') || '/',
+    // The frontend calls /api/*; contract paths have no prefix (nginx strips it in compose).
+    // When hosting the frontend, browser page navigations (Accept: text/html) outside /api
+    // go to the SPA, because routes such as /summary exist both as page and as API endpoint.
+    rewriteUrl: request => {
+      const url = request.url ?? '/';
+      if (spa && ['GET', 'HEAD'].includes(request.method ?? '') && !/^\/(api|health)(\/|\?|$)/.test(url)
+        && (request.headers.accept ?? '').includes('text/html') && !/\.[A-Za-z0-9]+(\?|$)/.test(url.split('?')[0])) {
+        return SPA_ROUTE;
+      }
+      return stripApiPrefix(url);
+    },
     ...options,
   });
   store.seed();
@@ -51,20 +63,16 @@ export function buildApp(options: FastifyServerOptions = {}) {
 export async function buildHostedApp(options: FastifyServerOptions = {}, extra: HostedOptions = {}) {
   const store = new ComplaintStore(process.env.PERSIST_FILE, extra.database);
   await store.hydrate();
-  const app = createApp(options, store);
+  const hosting = Boolean(extra.webRoot && existsSync(extra.webRoot));
+  const app = createApp(options, store, hosting);
   app.addHook('onClose', async () => {
     await store.flush();
     await extra.database?.close();
   });
-  if (extra.webRoot && existsSync(extra.webRoot)) {
+  if (hosting && extra.webRoot) {
     await app.register(fastifyStatic, { root: extra.webRoot, wildcard: false });
-    // SPA routes (/submit, /my/..., /queue/...) fall back to index.html; other misses stay 404 JSON.
-    app.setNotFoundHandler((request, reply) => {
-      if (request.method === 'GET' && (request.headers.accept ?? '').includes('text/html')) {
-        return reply.sendFile('index.html');
-      }
-      return reply.code(404).send({ code: 'NOT_FOUND', message: 'Не найдено.' });
-    });
+    app.get(SPA_ROUTE, (_request, reply) => reply.sendFile('index.html'));
+    app.setNotFoundHandler((_request, reply) => reply.code(404).send({ code: 'NOT_FOUND', message: 'Не найдено.' }));
   }
   return app;
 }

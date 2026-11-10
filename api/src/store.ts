@@ -9,9 +9,13 @@ export class ComplaintStore {
   private readonly persistence?: FilePersistence;
 
   private readonly database?: DatabasePersistence;
-  private writes: Promise<void> = Promise.resolve();
-  /** Last database write error; a failed write does not stop later ones. */
+  /** Complaints not yet confirmed by the database; the newest snapshot per id wins. */
+  private readonly dirty = new Map<string, Complaint>();
+  private draining: Promise<void> | null = null;
+  private retryTimer: NodeJS.Timeout | null = null;
+  /** Last database write error, null after a fully successful drain. */
   writeError: unknown = null;
+  retryDelayMs = 5_000;
 
   /** `database` (DATABASE_URL) takes precedence over the single-file snapshot (PERSIST_FILE). */
   constructor(persistFile?: string, database?: DatabasePersistence) {
@@ -28,16 +32,40 @@ export class ComplaintStore {
     for (const item of await this.database.load()) this.records.set(item.id, structuredClone(item));
   }
 
-  /** Resolves when every queued database write has finished. */
-  flush(): Promise<void> { return this.writes; }
+  /** Writes every pending complaint; failures stay pending and are retried (next write, flush or timer). */
+  flush(): Promise<void> {
+    if (!this.database) return Promise.resolve();
+    this.draining ??= this.drain().finally(() => { this.draining = null; });
+    return this.draining;
+  }
+
+  private async drain(): Promise<void> {
+    const database = this.database!;
+    for (const [id, item] of [...this.dirty]) {
+      try {
+        await database.save(item);
+        if (this.dirty.get(id) === item) this.dirty.delete(id);
+        this.writeError = null;
+      } catch (error) {
+        this.writeError = error;
+        this.scheduleRetry();
+        return;
+      }
+    }
+    // Writes queued while draining.
+    if (this.dirty.size > 0 && !this.writeError) await this.drain();
+  }
+
+  private scheduleRetry(): void {
+    if (this.retryTimer) return;
+    this.retryTimer = setTimeout(() => { this.retryTimer = null; void this.flush(); }, this.retryDelayMs);
+    this.retryTimer.unref();
+  }
 
   private enqueue(item: Complaint): void {
-    const database = this.database;
-    if (!database) return;
-    const snapshot = structuredClone(item);
-    this.writes = this.writes
-      .then(() => database.save(snapshot))
-      .then(() => { this.writeError = null; }, error => { this.writeError = error; });
+    if (!this.database) return;
+    this.dirty.set(item.id, structuredClone(item));
+    void this.flush();
   }
 
   get referenceData() { return structuredClone(seedReferenceData); }

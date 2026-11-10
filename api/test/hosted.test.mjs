@@ -70,3 +70,36 @@ test('serves the built frontend, SPA routes and the /api prefix from one service
   assert.equal(missing.statusCode, 404);
   assert.equal(missing.json().code, 'NOT_FOUND');
 });
+
+test('page navigation to /summary gets the SPA, while the API route stays an API', async t => {
+  const webRoot = mkdtempSync(join(tmpdir(), 'web-'));
+  writeFileSync(join(webRoot, 'index.html'), '<!doctype html><title>app</title>');
+  const app = await buildHostedApp({}, { webRoot });
+  t.after(() => app.close());
+  const page = await app.inject({ url: '/summary', headers: { accept: 'text/html,application/xhtml+xml' } });
+  assert.equal(page.statusCode, 200);
+  assert.match(page.body, /<title>app<\/title>/);
+  const api = await app.inject({ url: '/api/summary', headers: { 'x-demo-user': 'admin-1', accept: 'application/json' } });
+  assert.equal(api.statusCode, 200);
+});
+
+test('a failed database write is retried and not lost', async () => {
+  let failing = true;
+  const persistence = fakePersistence();
+  const flaky = { ...persistence, save: async item => {
+    if (failing) throw new Error('db down');
+    return persistence.save(item);
+  } };
+  const app = await buildHostedApp({}, { database: flaky });
+  app.store.retryDelayMs = 10_000;
+  const created = await app.inject({ method: 'POST', url: '/complaints', payload: newComplaint,
+    headers: { 'x-demo-user': 'employee-1' } });
+  assert.equal(created.statusCode, 201);
+  const { id } = created.json();
+  await app.store.flush();
+  assert.ok(app.store.writeError);
+  assert.ok(!persistence.rows.has(id));
+  failing = false;
+  await app.close();
+  assert.ok(persistence.rows.has(id), 'close() must write the pending complaint once the database is back');
+});
