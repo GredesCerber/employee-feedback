@@ -7,6 +7,7 @@ import MyComplaintsPage from './pages/MyComplaintsPage';
 import ComplaintPage from './pages/ComplaintPage';
 import SummaryPage from './pages/SummaryPage';
 import QueuePage from './pages/QueuePage';
+import DashboardPage from './pages/DashboardPage';
 import { AboutPage, DemoHint, ImitationBadge, useDemoHints } from './features/demo';
 import { useTheme } from './features/theme';
 import type { ThemeChoice } from './features/theme';
@@ -16,17 +17,17 @@ import './pages.css';
 
 const navigation: Record<Role, { path: string; label: string }[]> = {
   employee: [{ path: '/my', label: 'Мои обращения' }, { path: '/submit', label: 'Новое обращение' }],
-  manager: [{ path: '/queue', label: 'Очередь обращений' }],
-  admin: [{ path: '/summary', label: 'Сводка' }],
+  manager: [{ path: '/queue', label: 'Очередь обращений' }, { path: '/dashboard', label: 'Дашборд' }],
+  admin: [{ path: '/summary', label: 'Сводка' }, { path: '/dashboard', label: 'Дашборд' }],
 };
 const home: Record<Role, string> = { employee: '/my', manager: '/queue', admin: '/summary' };
 
-function RoleRoute({ role, children }: { role: Role; children: ReactNode }) {
+function RoleRoute({ role, children }: { role: Role | Role[]; children: ReactNode }) {
   const session = useSession();
   const location = useLocation();
   // Запоминаем запрошенный адрес (с фильтрами): после переключения на нужную роль вернёмся на него.
   // Если роль только что сменили и запрошенный ранее адрес ей доступен, идём на него, иначе на домашнюю страницу роли.
-  if (session.role === role) return children;
+  if ((Array.isArray(role) ? role : [role]).includes(session.role)) return children;
   const target = returnPath(location.state, session.role) ?? home[session.role];
   return <Navigate to={target} replace state={{ from: `${location.pathname}${location.search}` }} />;
 }
@@ -69,6 +70,7 @@ function Shell() {
           <Route path="/submit" element={<RoleRoute role="employee"><SubmitPage /></RoleRoute>} />
           <Route path="/queue" element={<RoleRoute role="manager"><QueuePage /></RoleRoute>} />
           <Route path="/queue/:complaintId" element={<RoleRoute role="manager"><ComplaintPage /></RoleRoute>} />
+          <Route path="/dashboard" element={<RoleRoute role={['manager', 'admin']}><DashboardPage /></RoleRoute>} />
           <Route path="/summary" element={<RoleRoute role="admin"><SummaryPage /></RoleRoute>} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="*" element={<section className="section"><h1>Страница не найдена</h1><Link to={home[role]}>Вернуться к обращениям</Link></section>} />

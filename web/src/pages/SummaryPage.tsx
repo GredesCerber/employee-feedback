@@ -8,7 +8,7 @@ import './summary.css';
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
 const percent = new Intl.NumberFormat('ru-RU', { style: 'percent', maximumFractionDigits: 1 });
 
-type Bar = { label: string; value: number };
+export type Bar = { label: string; value: number };
 
 /** «повторяется 2 раза», «5 раз», «21 раз» */
 function timesLabel(count: number) {
@@ -20,7 +20,7 @@ function timesLabel(count: number) {
 const CHART_WIDTH = 640, LABEL_WIDTH = 230, VALUE_WIDTH = 56, ROW = 40, BAR = 22;
 
 /** Горизонтальная столбчатая диаграмма на чистом SVG. Таблица-альтернатива выводится рядом. */
-function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
+export function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
   const titleId = useId();
   const max = Math.max(0, ...bars.map(bar => bar.value));
   const track = CHART_WIDTH - LABEL_WIDTH - VALUE_WIDTH;
