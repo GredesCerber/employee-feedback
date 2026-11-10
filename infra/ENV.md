@@ -20,7 +20,20 @@
 | `RATE_LIMIT_MAX` | `api/src/rate-limit.ts`: сколько POST/PATCH на пользователя за окно, `0` отключает лимит | `30` | нет | используется |
 | `RATE_LIMIT_WINDOW_S` | `api/src/rate-limit.ts`: длина окна лимита в секундах, от 1 | `60` | нет | используется |
 | `VITE_API_BASE_URL` | `web/src/api/client.ts`: базовый адрес API, подставляется при сборке Vite; `web/.env.example`; `infra/run-demo.mjs` собирает с `/api` | `/api` | нет | используется |
-| `PERSIST_FILE` | файл, куда API сохраняет данные между перезапусками (#92); `infra/run-demo.mjs` уже передаёт его пустым при `--seed-reset` | пусто (данные только в памяти) | нет | планируется (#92) |
+| `PERSIST_FILE` | файл, куда API сохраняет данные между перезапусками (#92); `infra/run-demo.mjs` уже передаёт его пустым при `--seed-reset` | пусто (данные только в памяти) | нет | используется |
 | `DEMO_API_PORT` | `infra/serve-demo.mjs`: порт API, на который проксируется `/api`; задаёт `infra/run-demo.mjs` | выбирает `infra/run-demo.mjs` | нет | используется |
 | `DEMO_WEB_PORT` | `infra/serve-demo.mjs`: порт собранного веба; задаёт `infra/run-demo.mjs` | выбирает `infra/run-demo.mjs` | нет | используется |
 | `WEB_PORT` | `docker-compose.yml`: внешний порт веба в Docker | `8080` | нет | используется |
+| `NODE_VERSION` | платформа Render, infra/deploy/render.yaml; код приложения не читает | последняя версия линии `22` | да, на Render | планируется при ручной выкладке |
+| `CORS_ORIGINS` | api/src (#94): разрешённые origins через запятую без пути и завершающего слеша | не задано (CORS выключен) | да, при разных доменах API и веба | планируется (#94) |
+
+## Render и Vercel
+
+Для Render задайте `HOST=0.0.0.0`, `NODE_ENV=production`, `NODE_VERSION=22`;
+`PORT` платформа передаёт сама. Остальные лимиты можно оставить по умолчанию.
+В Vercel `VITE_API_BASE_URL` — HTTPS URL API без `/api` и завершающего `/`.
+Значения `VITE_*` публичны: ключи и пароли туда передавать нельзя.
+После изменения API env перезапустите API; после смены Vite env пересоберите веб.
+Для отдельных доменов требуется принятая #94 и точный origin веба в `CORS_ORIGINS`.
+Подробные шаги и откат — в [deploy/README.md](deploy/README.md).
+
