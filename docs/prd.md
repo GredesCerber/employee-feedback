@@ -1,4 +1,4 @@
-<!-- hk:prd status: draft by: - at: - -->
+<!-- hk:prd status: approved by: GredesCerber at: 2026-11-10T12:36:20Z -->
 # PRD: Система обратной связи и предложений сотрудников (ГК «Модус Трейд»)
 
 > Черновик плана первого дня. Подробности: [tz-analysis.md](tz-analysis.md), рамки: [manifest.md](manifest.md). Не одобрен: `hk kickoff --apply` создаст задачи только после `status: approved` от капитана.
