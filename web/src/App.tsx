@@ -1,4 +1,4 @@
-import { Link, Navigate, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
+import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { SessionProvider, useSession } from './app/session';
 import type { Role } from './app/session';
 import type { ReactNode } from 'react';
@@ -19,16 +19,30 @@ const home: Record<Role, string> = { employee: '/my', manager: '/queue', admin: 
 
 function RoleRoute({ role, children }: { role: Role; children: ReactNode }) {
   const session = useSession();
-  return session.role === role ? children : <Navigate to={home[session.role]} replace />;
+  const location = useLocation();
+  // Запоминаем запрошенный адрес (с фильтрами): после переключения на нужную роль вернёмся на него.
+  // Если роль только что сменили и запрошенный ранее адрес ей доступен, идём на него, иначе на домашнюю страницу роли.
+  if (session.role === role) return children;
+  const target = returnPath(location.state, session.role) ?? home[session.role];
+  return <Navigate to={target} replace state={{ from: `${location.pathname}${location.search}` }} />;
+}
+
+/** Адрес, который запрашивали до редиректа, если новая роль имеет к нему доступ. */
+function returnPath(state: unknown, next: Role): string | undefined {
+  const from = (state as { from?: unknown } | null)?.from;
+  if (typeof from !== 'string') return undefined;
+  const allowed = navigation[next].some(item => from === item.path || from.startsWith(`${item.path}/`) || from.startsWith(`${item.path}?`));
+  return allowed ? from : undefined;
 }
 
 function Shell() {
   const { role, setRole } = useSession();
   const navigate = useNavigate();
+  const location = useLocation();
   function switchRole(next: string) {
     if (next !== 'employee' && next !== 'manager' && next !== 'admin') return;
     setRole(next);
-    navigate(home[next], { replace: true });
+    navigate(returnPath(location.state, next) ?? home[next], { replace: true });
   }
   return <div className="app-shell">
     <a className="skip-link" href="#main">К содержимому</a>

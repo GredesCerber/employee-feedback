@@ -48,6 +48,14 @@ function renderAt(entry: string) {
   render(<MemoryRouter initialEntries={[entry]}><App /><LocationProbe /></MemoryRouter>);
   return user;
 }
+/** Открыть ссылку на очередь: демо стартует у сотрудника, после выбора роли «Руководитель» открывается запрошенный адрес. */
+async function openLink(entry: string) {
+  const user = renderAt(entry);
+  await screen.findByRole('heading', { level: 1, name: 'Мои обращения' });
+  await user.selectOptions(screen.getByLabelText('Демонстрационная роль'), 'manager');
+  await waitFor(() => expect(screen.getByTestId('location').textContent).toBe(entry));
+  return user;
+}
 const lastListQuery = () => requests.filter(url => url.pathname === '/complaints' && url.searchParams.get('limit') !== '1').at(-1)!.searchParams;
 const search = () => new URLSearchParams(screen.getByTestId('location').textContent!.split('?')[1] ?? '');
 
@@ -68,7 +76,7 @@ describe('#115 queue filters in the address bar', () => {
   });
 
   it('opens a shared link with filters already set and the list filtered', async () => {
-    renderAt('/queue?categoryId=no_rule_demo&status=in_progress');
+    await openLink('/queue?categoryId=no_rule_demo&status=in_progress');
     expect(await screen.findByRole('link', { name: 'A-999' })).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole('link', { name: 'A-998' })).toBeNull());
     expect((screen.getByLabelText('Категория') as HTMLSelectElement).value).toBe('no_rule_demo');
@@ -78,13 +86,13 @@ describe('#115 queue filters in the address bar', () => {
   });
 
   it('shows "Найдено: N из M" for the filtered result', async () => {
-    renderAt('/queue?categoryId=no_rule_demo');
+    await openLink('/queue?categoryId=no_rule_demo');
     expect(await screen.findByText('Найдено: 2')).toBeTruthy();
     expect(screen.getByText('из 3')).toBeTruthy();
   });
 
   it('clears the query string and shows the full list on «Сбросить»', async () => {
-    const user = renderAt('/queue?departmentId=procurement&categoryId=no_rule_demo');
+    const user = await openLink('/queue?departmentId=procurement&categoryId=no_rule_demo');
     await screen.findByText('Найдено: 2');
     await user.click(screen.getByRole('button', { name: 'Сбросить' }));
     await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/queue'));
@@ -94,7 +102,7 @@ describe('#115 queue filters in the address bar', () => {
   });
 
   it('ignores unknown values and keys in the query without an error', async () => {
-    renderAt('/queue?departmentId=nope&categoryId=%3Cscript%3E&status=bogus&queue=x&overdue=maybe&dueAfter=yesterday&foo=bar&categoryId=no_rule_demo');
+    await openLink('/queue?departmentId=nope&categoryId=%3Cscript%3E&status=bogus&queue=x&overdue=maybe&dueAfter=yesterday&foo=bar&categoryId=no_rule_demo');
     expect(await screen.findByRole('link', { name: 'A-999' })).toBeTruthy();
     await waitFor(() => expect(lastListQuery().get('departmentId')).toBeNull());
     const params = lastListQuery();
