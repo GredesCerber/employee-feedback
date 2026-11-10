@@ -8,6 +8,9 @@ import ComplaintPage from './pages/ComplaintPage';
 import SummaryPage from './pages/SummaryPage';
 import QueuePage from './pages/QueuePage';
 import { AboutPage, DemoHint, ImitationBadge, useDemoHints } from './features/demo';
+import { useTheme } from './features/theme';
+import type { ThemeChoice } from './features/theme';
+import './styles/tokens.css';
 import './shell.css';
 import './pages.css';
 
@@ -41,6 +44,7 @@ function Shell() {
   const navigate = useNavigate();
   const location = useLocation();
   const hints = useDemoHints();
+  const theme = useTheme();
   function switchRole(next: string) {
     if (next !== 'employee' && next !== 'manager' && next !== 'admin') return;
     setRole(next);
@@ -72,7 +76,7 @@ function Shell() {
       </main>
     </div>
     {/* Демо-панель после основного содержимого: не мешает порядку Tab «шапка → меню → содержимое». */}
-    <footer className="demo-controls" aria-label="Демонстрация"><label className="checkbox-label hints-toggle"><input type="checkbox" checked={hints.enabled} onChange={event => hints.set(event.target.checked)} />Подсказки демо</label><Link to="/about">О прототипе</Link></footer>
+    <footer className="demo-controls" aria-label="Демонстрация"><label className="theme-selector">Тема<select value={theme.theme} onChange={event => theme.set(event.target.value as ThemeChoice)}><option value="system">Как в системе</option><option value="light">Светлая</option><option value="dark">Тёмная</option></select></label><label className="checkbox-label hints-toggle"><input type="checkbox" checked={hints.enabled} onChange={event => hints.set(event.target.checked)} />Подсказки демо</label><Link to="/about">О прототипе</Link></footer>
   </div>;
 }
 
