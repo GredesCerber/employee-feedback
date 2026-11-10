@@ -74,7 +74,8 @@ export function registerComplaints(app: FastifyInstance) {
   app.get('/summary', async (request) => {
     identity(app, request, ['admin']);
     queryParameters(request, []);
-    return summarize(app.store.list(), app.store.referenceData.categories);
+    const { categories, departments } = app.store.referenceData;
+    return summarize(app.store.list(), categories, new Date(), departments);
   });
 
   app.get<{ Params: { complaintId: string } }>('/complaints/:complaintId', async (request) => {
