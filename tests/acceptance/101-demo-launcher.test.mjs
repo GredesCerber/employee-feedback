@@ -14,7 +14,8 @@ test('#101 dry run describes installation, builds, separate ports, proxy and see
   assert.equal(plan.apiPort, 43121); assert.equal(plan.webPort, 43122);
   assert.ok(plan.commands.some(command => command.args.includes('build')));
   assert.ok(plan.commands.every(command => command.shell === false && Array.isArray(command.args)));
-  assert.equal(plan.apiEnv.PERSIST_FILE, '');
+  assert.equal('PERSIST_FILE' in plan.apiEnv, false);
+  assert.deepEqual(plan.apiEnvUnset, ['PERSIST_FILE']);
   assert.equal(plan.webEnv.DEMO_API_PORT, '43121');
   assert.equal(plan.webBuildEnv.VITE_API_BASE_URL, '/api');
   const noInstall = spawnSync(process.execPath, ['infra/run-demo.mjs', '--dry-run', '--no-install'], { cwd: root, encoding: 'utf8' });
