@@ -7,6 +7,7 @@ import MyComplaintsPage from './pages/MyComplaintsPage';
 import ComplaintPage from './pages/ComplaintPage';
 import SummaryPage from './pages/SummaryPage';
 import QueuePage from './pages/QueuePage';
+import { AboutPage, DemoHint, ImitationBadge, useDemoHints } from './features/demo';
 import './shell.css';
 import './pages.css';
 
@@ -39,6 +40,7 @@ function Shell() {
   const { role, setRole } = useSession();
   const navigate = useNavigate();
   const location = useLocation();
+  const hints = useDemoHints();
   function switchRole(next: string) {
     if (next !== 'employee' && next !== 'manager' && next !== 'admin') return;
     setRole(next);
@@ -49,11 +51,13 @@ function Shell() {
     <header className="app-header">
       <Link className="brand" to={home[role]}><span className="brand-mark" aria-hidden="true">М</span><span>Модус Трейд<small>Обратная связь сотрудников</small></span></Link>
       <label className="role-selector">Демонстрационная роль<select value={role} onChange={event => switchRole(event.target.value)}><option value="employee">Сотрудник</option><option value="manager">Руководитель</option><option value="admin">Администратор</option></select></label>
+      <ImitationBadge hint="выбор роли — не настоящий вход, пароля и учётной записи нет" />
     </header>
     <p className="demo-notice">Демонстрация · только синтетические данные. Выбор роли имитирует вход.</p>
     <div className="workspace">
       <nav aria-label="Основное меню">{navigation[role].map(item => <NavLink key={item.path} to={item.path}>{item.label}</NavLink>)}</nav>
       <main id="main" tabIndex={-1} key={role}>
+        {hints.enabled && <DemoHint />}
         <Routes>
           <Route path="/" element={<Navigate to={home[role]} replace />} />
           <Route path="/my" element={<RoleRoute role="employee"><MyComplaintsPage /></RoleRoute>} />
@@ -62,10 +66,13 @@ function Shell() {
           <Route path="/queue" element={<RoleRoute role="manager"><QueuePage /></RoleRoute>} />
           <Route path="/queue/:complaintId" element={<RoleRoute role="manager"><ComplaintPage /></RoleRoute>} />
           <Route path="/summary" element={<RoleRoute role="admin"><SummaryPage /></RoleRoute>} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="*" element={<section className="section"><h1>Страница не найдена</h1><Link to={home[role]}>Вернуться к обращениям</Link></section>} />
         </Routes>
       </main>
     </div>
+    {/* Демо-панель после основного содержимого: не мешает порядку Tab «шапка → меню → содержимое». */}
+    <footer className="demo-controls" aria-label="Демонстрация"><label className="checkbox-label hints-toggle"><input type="checkbox" checked={hints.enabled} onChange={event => hints.set(event.target.checked)} />Подсказки демо</label><Link to="/about">О прототипе</Link></footer>
   </div>;
 }
 

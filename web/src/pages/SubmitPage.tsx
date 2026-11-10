@@ -6,6 +6,7 @@ import { ApiError } from '../api/client';
 import { errorMessage, requireData, retryAfterOf, useCooldown, useResource } from '../features/data';
 import { Loading, LoadError } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
+import { ImitationBadge } from '../features/demo';
 
 const fieldIds: Record<string, string> = { categoryId: 'category', description: 'description', proposedSolution: 'solution', type: 'complaint-type' };
 function focusFirstInvalid(errors: Record<string, string>) {
@@ -77,7 +78,7 @@ export default function SubmitPage() {
       <label htmlFor="description">Описание</label><textarea id="description" value={description} onChange={event => setDescription(event.target.value)} rows={5} maxLength={5000} required aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? 'description-error' : undefined} />
       {errors.description && <p id="description-error" role="alert" className="field-error">{errors.description}</p>}
       <label htmlFor="solution">Предлагаемое решение <span className="optional">(необязательно)</span></label><textarea id="solution" value={solution} onChange={event => setSolution(event.target.value)} rows={3} maxLength={5000} />
-      <label className="checkbox-label"><input type="checkbox" checked={attachment} onChange={event => setAttachment(event.target.checked)} />Добавить тестовое вложение</label>
+      <label className="checkbox-label"><input type="checkbox" checked={attachment} onChange={event => setAttachment(event.target.checked)} />Добавить тестовое вложение <ImitationBadge hint="не настоящий файл: сохраняются только название, тип и размер заглушки" /></label>
       <p className="field-hint">Файл-заглушка sample-request.txt: сохраняются только название, тип и размер, содержимое не загружается.</p>
       {(cooldown.active || failure) && <p role="alert" className="field-error">{cooldown.active ? cooldown.message : failure}</p>}
       <button className="primary-button" disabled={busy || cooldown.active} type="submit">{busy ? 'Отправка…' : 'Отправить обращение'}</button>
