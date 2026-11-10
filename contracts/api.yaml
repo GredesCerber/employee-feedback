@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Employee Feedback MVP API",
-    "version": "1.0.0",
-    "description": "Contract for R1-R7 and all six demo steps. Synthetic data only. JSON syntax is used as a YAML 1.2 subset so acceptance tests require only Node. Demo identity selection is a simulation, not production authentication. No anonymous submissions, real file uploads, notifications or external integrations. See x-demo-flow, x-access-policy and x-status-transitions.",
+    "version": "1.1.0",
+    "description": "Contract for R1-R8 and all six demo steps, including additions for issues #89 and #117-124. Synthetic data only. New operations describe the target interface before dependent implementations; x-implementation-issue names their delivery task. Demo identity selection is a simulation, not production authentication. No real file uploads, external notification delivery or corporate integrations. JSON syntax is a YAML 1.2 subset. See x-demo-flow, x-access-policy, x-anonymity and x-status-transitions.",
     "contact": {
       "name": "Employee Feedback team",
       "url": "https://github.com/GredesCerber/employee-feedback"
@@ -37,7 +37,7 @@
   "x-access-policy": {
     "employee": "Create and read own complaints, comment and answer clarification on own nonterminal complaints. Cannot change fields, assign, change status directly or decide.",
     "manager": "Read all complaints across departments, assign eligible managers, comment/request clarification, change status and decide. No create or aggregate analytics.",
-    "admin": "Read all complaints, reference data and summary. No complaint mutation. Category/routing administration is future scope.",
+    "admin": "Read all complaints, reference data and summary. No complaint mutation. Category/routing administration is future scope. The separate admin-only demo reset operation is allowed when DEMO_RESET_ENABLED is not false; it is not a production administration interface.",
     "authorization": "Apply role authorization before mutation. For permitted roles, hide foreign complaint existence from employees with 404. Known but forbidden role=403; missing/unknown demo identity=401. Text is plain text; UI escapes it. Unknown body/query fields, duplicate query keys, invalid formats or whitespace-only required text=422. Malformed JSON=400. Mutations are atomic; errors leave data/history unchanged."
   },
   "x-demo-identities": [
@@ -429,6 +429,9 @@
           "422": {
             "$ref": "#/components/responses/Validation"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/Internal"
           }
@@ -461,7 +464,7 @@
       "get": {
         "operationId": "listComplaints",
         "summary": "List visible complaints with filters",
-        "description": "Employees see only their own complaints. Managers and admins see all synthetic complaints, including unassigned across departments. Apply access restriction before all filters, totals and pagination. Combine filters with AND; inclusive dueAfter/dueBefore bounds, UTC comparison. Inverted dates return 422. q is a case-insensitive literal substring of number, description or proposedSolution (not regex/SQL). Stable order createdAt descending then id ascending. Empty results return 200 with items=[].",
+        "description": "Employees see only their own complaints. Managers and admins see all synthetic complaints, including unassigned across departments. Apply access restriction before all filters, totals and pagination. Combine filters with AND; inclusive dueAfter/dueBefore bounds, UTC comparison. Inverted dates return 422. q is trimmed and split on whitespace; every search word must occur as a literal substring in at least one of number, description, proposedSolution or comments.text (AND across words, order independent). Search is case-insensitive and normalizes ё to е on both sides; no regex, SQL or morphology. Different words may match different fields. Stable order createdAt descending then id ascending. Empty results return 200 with items=[].",
         "tags": [
           "Complaints"
         ],
@@ -595,7 +598,7 @@
               "minLength": 1,
               "maxLength": 200
             },
-            "description": "Literal case-insensitive search."
+            "description": "Trimmed case-insensitive search words separated by whitespace, AND across words in number, description, proposedSolution and comments.text. Normalize ё and е to the same letter. Blank-only or more than 200 characters returns 422. Authorization, other filters and stable date/id ordering still apply."
           },
           {
             "name": "limit",
@@ -736,6 +739,9 @@
           "422": {
             "$ref": "#/components/responses/Validation"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/Internal"
           }
@@ -814,6 +820,9 @@
           },
           "422": {
             "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           },
           "500": {
             "$ref": "#/components/responses/Internal"
@@ -895,6 +904,9 @@
           "422": {
             "$ref": "#/components/responses/Validation"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/Internal"
           }
@@ -974,6 +986,9 @@
           "422": {
             "$ref": "#/components/responses/Validation"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/Internal"
           }
@@ -1040,6 +1055,544 @@
           },
           "422": {
             "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/complaints/{complaintId}/undo": {
+      "post": {
+        "operationId": "undoLastAction",
+        "summary": "Undo the latest eligible manager action",
+        "description": "Manager only. Undo the latest outstanding status change or assignment made by this same user within UNDO_WINDOW_S (default 600 seconds). At the exact expiry instant and later return 409 UNDO_EXPIRED; if the last outstanding action is by another user, a comment, decision or submission, or the complaint is terminal, return 409 NOTHING_TO_UNDO. Restore the previous status, assignee, routing, firstResponseAt and dueAt snapshot atomically, recompute overdue/nextAction, update updatedAt and append an undone history event without deleting prior history. Undo itself is not an eligible action: a repeated call can unwind the previous eligible action while that action is still inside its own window. No request body is needed. Return the complete current Complaint with refreshed manager canUndo/undoExpiresAt. Errors leave all state unchanged.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          2,
+          3
+        ],
+        "x-roles": [
+          "manager"
+        ],
+        "x-implementation-issue": 117,
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Complaint"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "description": "UNDO_EXPIRED when the eligible action is outside its own window; NOTHING_TO_UNDO for unsupported action, different actor, empty stack or terminal complaint. No partial write.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "expired": {
+                    "value": {
+                      "code": "UNDO_EXPIRED",
+                      "message": "Время отмены действия истекло."
+                    }
+                  },
+                  "unavailable": {
+                    "value": {
+                      "code": "NOTHING_TO_UNDO",
+                      "message": "Нет доступного для отмены действия."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "parameters": [
+          {
+            "name": "complaintId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            },
+            "description": "Opaque complaint ID (not its displayed registration number)."
+          }
+        ]
+      }
+    },
+    "/notifications": {
+      "get": {
+        "operationId": "listNotifications",
+        "summary": "Read the simulated notification feed",
+        "description": "Employee authors receive clarification requests and decisions for their own complaints only. Managers receive unassigned-queue events, author clarification responses for complaints assigned to them, and due-soon events for their assigned or unassigned nonterminal complaints when 0 < dueAt-now < 24 hours. Other assigned complaints do not enter a manager feed. For due-soon events use createdAt=dueAt minus 24 hours and a stable id tied to complaint/deadline, so polling does not create duplicates. History events keep their original timestamp and stable id. since is an exclusive date-time lower bound; unreadCount counts returned events. No server read state or POST endpoint, no external delivery. Apply anonymity before serializing text, IDs and links. Admin is not a feed recipient and receives 403.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          3,
+          4
+        ],
+        "x-roles": [
+          "employee",
+          "manager"
+        ],
+        "x-implementation-issue": 120,
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Exclusive event timestamp lower bound (ISO 8601); invalid values return 422. A future timestamp yields an empty feed, not an error."
+          }
+        ]
+      }
+    },
+    "/complaints/similar": {
+      "get": {
+        "operationId": "findSimilarComplaints",
+        "summary": "Find visible complaints with similar wording",
+        "description": "Search only complaints readable by the current role: employees see their own records, managers/admins see the ordinary list scope. Normalize case and ё to е, tokenize Unicode letters/digits, remove a fixed documented Russian stop-word set, and compare description plus proposedSolution token sets using Jaccard similarity. Return the top three positive matches with number, category, status and score 0..1; stable tie-break by createdAt descending then id ascending. Trimmed input shorter than 10 characters, all stopwords or no matches yields items=[] with 200. Never expose other employees records to an employee via this endpoint; no real LLM or external requests.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          1,
+          6
+        ],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "x-implementation-issue": 121,
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimilarComplaints"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "parameters": [
+          {
+            "name": "text",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 5000
+            },
+            "description": "Text to compare; trimmed length <10 returns an empty list. Omitted or oversized input returns 422."
+          }
+        ]
+      }
+    },
+    "/complaints/suggest-category": {
+      "get": {
+        "operationId": "suggestCategory",
+        "summary": "Suggest a category from offline demo examples",
+        "description": "All demo roles may request an offline category suggestion for the submitted text. Use recorded api/data/ai-fixtures.json examples or a documented deterministic word rule, never a network model call. A recognized match returns an existing category id/name and source=demo-fixture; unknown or trimmed-short text returns category=null and source=none. The web labels this as Demo AI and preserves a category the user already chose.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          1
+        ],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "x-implementation-issue": 121,
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategorySuggestion"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "parameters": [
+          {
+            "name": "text",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 5000
+            },
+            "description": "Text for an offline demo suggestion; omitted or more than 5000 characters returns 422. Trimmed length <10 returns category=null and source=none."
+          }
+        ]
+      }
+    },
+    "/complaints/export": {
+      "get": {
+        "operationId": "exportComplaints",
+        "summary": "Export the filtered complaint list as CSV",
+        "description": "Manager/admin only. Apply the same authorization and AND filters as listComplaints, including q, but export all matching records without limit/offset pagination in createdAt descending then id ascending order. Return text/csv; charset=utf-8 with a UTF-8 BOM, CRLF rows and RFC 4180 quoting: double embedded quotes and quote cells containing commas, quotes or line breaks. Protect spreadsheet formula injection by prefixing an apostrophe before values beginning with =, +, - or @ (also after leading whitespace/control characters); quote the resulting value as needed. Header columns in order: номер, тип, категория, подразделение, статус, ответственный, создано, срок, просрочено, первый ответ, итог. Labels are Russian, dates ISO 8601 UTC, missing values empty, просрочено is да/нет. No author column; anonymous author identity must not appear in generated metadata or result text. Empty result returns BOM and the header row. This endpoint has no JSON success representation.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          5,
+          6
+        ],
+        "x-roles": [
+          "manager",
+          "admin"
+        ],
+        "x-implementation-issue": 119,
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "UTF-8 CSV with BOM and eleven columns, including an empty data set header.",
+            "headers": {
+              "Content-Disposition": {
+                "description": "Attachment filename for the export.",
+                "schema": {
+                  "type": "string"
+                },
+                "example": "attachment; filename=\"obrasheniya-2026-11-10.csv\""
+              }
+            },
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "﻿номер,тип,категория,подразделение,статус,ответственный,создано,срок,просрочено,первый ответ,итог\r\n"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "parameters": [
+          {
+            "name": "departmentId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            },
+            "description": "Filter by author's department ID; unknown ID returns an empty list."
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            },
+            "description": "Filter by category ID; unknown ID returns an empty list."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Status"
+            },
+            "description": "Exact status; unknown value is 422."
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ComplaintType"
+            },
+            "description": "Exact type."
+          },
+          {
+            "name": "dueAfter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Deadline greater than or equal to this timestamp."
+          },
+          {
+            "name": "dueBefore",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Deadline less than or equal to this timestamp."
+          },
+          {
+            "name": "overdue",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "true selects overdue; false selects non-overdue. Omitted means both."
+          },
+          {
+            "name": "queue",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "assigned",
+                "unassigned"
+              ]
+            },
+            "description": "Filter routing queue; assignment state is independent of status."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "description": "Trimmed case-insensitive search words separated by whitespace, AND across words in number, description, proposedSolution and comments.text. Normalize ё and е to the same letter. Blank-only or more than 200 characters returns 422. Authorization, other filters and stable date/id ordering still apply."
+          }
+        ]
+      }
+    },
+    "/demo/reset": {
+      "post": {
+        "operationId": "resetDemo",
+        "summary": "Restore the original synthetic demonstration dataset",
+        "description": "Admin only, no request body. Replace all complaints, comments, history and undo state with the immutable seed and restart numbering after the maximum seed number. Clear derived notification state; if PERSIST_FILE is enabled, persist the reset snapshot atomically before success. Return loadedCount and log a reset event without complaint text or secrets. DEMO_RESET_ENABLED=false returns 404 NOT_FOUND without changing data; after identity/role authorization, use a safe disabled-feature message. Errors must not leave a partially reset store. This is a demo feature, disabled in production.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "admin"
+        ],
+        "x-implementation-issue": 122,
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoResetResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Reset disabled by DEMO_RESET_ENABLED=false; authorized admins receive a safe unavailable-feature response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "NOT_FOUND",
+                  "message": "Сброс демо недоступен в этой среде."
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Check local API liveness",
+        "description": "Public liveness endpoint available without X-Demo-User. Returns status=ok and the version from api/package.json. It does not assert database durability, external integration readiness or authenticated user access.",
+        "tags": [
+          "Context"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
           },
           "500": {
             "$ref": "#/components/responses/Internal"
@@ -1352,6 +1905,11 @@
             },
             "maxItems": 5,
             "default": []
+          },
+          "anonymous": {
+            "type": "boolean",
+            "default": false,
+            "description": "Optional author redaction from managers and admins, including comments/history. Ownership is still stored internally. Omitted or false preserves existing identified behavior; no real authentication or protection against clues in text is promised."
           }
         },
         "description": "Author and department come from the server-resolved session, never from this body. Unknown fields are rejected. Category must exist; a category without an assignee is valid."
@@ -1400,7 +1958,15 @@
             "pattern": "^[A-Za-z0-9_-]+$"
           },
           "author": {
-            "$ref": "#/components/schemas/User"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              },
+              {
+                "$ref": "#/components/schemas/AnonymousActor"
+              }
+            ],
+            "description": "Anonymous author comments use Автор (аноним) for manager/admin readers; other actors remain User."
           },
           "kind": {
             "type": "string",
@@ -1566,7 +2132,8 @@
               "assigned",
               "status_changed",
               "commented",
-              "decided"
+              "decided",
+              "undone"
             ]
           },
           "actor": {
@@ -1576,6 +2143,9 @@
               },
               {
                 "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AnonymousActor"
               }
             ]
           },
@@ -1611,7 +2181,7 @@
             "description": "Readable event text, without private/internal notes"
           }
         },
-        "description": "Append-only timeline. actor=null means automatic routing by the system; every user action records the resolved user. Ordered by createdAt ascending then id ascending; timestamps are server generated UTC."
+        "description": "Append-only timeline. actor=null means automatic routing by the system; every user action records the resolved user. Ordered by createdAt ascending then id ascending; timestamps are server generated UTC. Anonymous-author actions are redacted according to x-anonymity. Undo appends kind=undone without deleting or rewriting prior events."
       },
       "Complaint": {
         "type": "object",
@@ -1669,7 +2239,15 @@
             "pattern": "^[A-Za-z0-9_-]+$"
           },
           "author": {
-            "$ref": "#/components/schemas/User"
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              },
+              {
+                "$ref": "#/components/schemas/AnonymousActor"
+              }
+            ],
+            "description": "User for identified submissions and the author viewing their own submission; AnonymousActor for manager/admin readers of an anonymous submission. See x-anonymity."
           },
           "description": {
             "type": "string",
@@ -1785,6 +2363,23 @@
             "maxLength": 500,
             "pattern": "\\S",
             "description": "Readable server-derived next step for the author, including unassigned or awaiting clarification."
+          },
+          "anonymous": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether author identity is redacted from other readers. Optional for compatibility; absence means false. The author can still read their own complaint and reply."
+          },
+          "canUndo": {
+            "type": "boolean",
+            "description": "Optional manager-view capability: true only if the latest eligible outstanding status/assignment action belongs to the current manager, is inside the undo window and the complaint is not terminal. Other roles omit this property."
+          },
+          "undoExpiresAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Optional manager-view deadline for the action described by canUndo. Non-null iff canUndo=true; null when no action is available. Computed by the server with UNDO_WINDOW_S; UI may hide the button at this time but API rechecks eligibility."
           }
         }
       },
@@ -1959,6 +2554,25 @@
             "type": "string",
             "format": "date-time",
             "description": "Server UTC timestamp for one consistent aggregate snapshot."
+          },
+          "byDepartment": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DepartmentSummary"
+            },
+            "description": "Optional breakdown for every known department, sorted departmentId ascending; zero counts and closedShare=0 are included. Counts all visible complaints; contains no author identity."
+          },
+          "avgResolutionHoursByCategory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryResolution"
+            },
+            "description": "Optional completion-time breakdown for every known category, sorted categoryId ascending. Include closedCount=0 and averageResolutionHours=null when no completed records exist."
+          },
+          "overdueCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Optional count of nonterminal complaints with dueAt < generatedAt, including unassigned complaints. Zero for an empty store; terminal records do not contribute."
           }
         },
         "examples": [
@@ -2006,7 +2620,10 @@
               "VALIDATION_ERROR",
               "PAYLOAD_TOO_LARGE",
               "UNSUPPORTED_MEDIA_TYPE",
-              "INTERNAL_ERROR"
+              "INTERNAL_ERROR",
+              "RATE_LIMITED",
+              "UNDO_EXPIRED",
+              "NOTHING_TO_UNDO"
             ]
           },
           "message": {
@@ -2042,6 +2659,347 @@
                 }
               }
             }
+          }
+        }
+      },
+      "AnonymousActor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "Аноним",
+              "Автор (аноним)"
+            ],
+            "description": "Аноним in Complaint.author; Автор (аноним) in author comments and history."
+          }
+        },
+        "description": "Public projection of an anonymous author. No id, departmentId, role or extra properties are allowed; no recoverable author identifier is embedded in another field."
+      },
+      "DepartmentSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "departmentId",
+          "departmentName",
+          "count",
+          "closedCount",
+          "closedShare"
+        ],
+        "properties": {
+          "departmentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "departmentName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S",
+            "description": "Department label"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "closedCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "closedShare": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "closedCount / count, or 0 if count=0. Closed means implemented, rejected or closed."
+          }
+        }
+      },
+      "CategoryResolution": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "categoryId",
+          "categoryName",
+          "closedCount",
+          "averageResolutionHours"
+        ],
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "categoryName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S",
+            "description": "Category label"
+          },
+          "closedCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "averageResolutionHours": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "Mean (closedAt-createdAt) / 3600000 for terminal complaints in this category with a closedAt. null if no completed records; unfinished records are excluded. closedCount is the denominator."
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "complaintId",
+          "complaintNumber",
+          "createdAt",
+          "message",
+          "href",
+          "simulated",
+          "disclaimer"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "clarification_requested",
+              "decision_recorded",
+              "unassigned",
+              "clarification_received",
+              "due_soon"
+            ]
+          },
+          "complaintId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "complaintNumber": {
+            "type": "string",
+            "pattern": "^A-[0-9]{3,}$",
+            "description": "Unique human-readable registration number; synthetic seed uses A-001..A-020."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "pattern": "\\S",
+            "description": "Safe readable event description, never exposing a redacted author identity."
+          },
+          "href": {
+            "type": "string",
+            "pattern": "^/(my|queue)/[A-Za-z0-9_-]+$",
+            "description": "Relative UI link to the complaint: /my/id for its employee author, /queue/id for a manager. Never an external URL."
+          },
+          "simulated": {
+            "type": "boolean",
+            "const": true
+          },
+          "disclaimer": {
+            "type": "string",
+            "const": "Имитация: в промышленной версии email / Битрикс24"
+          }
+        },
+        "description": "Deterministic stable id per event, without an author identifier. Simulated internal feed, not actual email or Bitrix delivery."
+      },
+      "NotificationList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "unreadCount",
+          "generatedAt"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          },
+          "unreadCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Only events with createdAt strictly greater than since are included; omitted since includes all eligible events. unreadCount equals returned items.length, since is a client-owned lastSeen marker, no read-state mutation/storage. Stable order createdAt descending then id ascending."
+      },
+      "SimilarComplaint": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "number",
+          "categoryId",
+          "categoryName",
+          "status",
+          "score"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "number": {
+            "type": "string",
+            "pattern": "^A-[0-9]{3,}$",
+            "description": "Unique human-readable registration number; synthetic seed uses A-001..A-020."
+          },
+          "categoryId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "categoryName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S",
+            "description": "Category label"
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Jaccard similarity: intersection size / union size of normalized non-stopword token sets. Zero if either set is empty. No live LLM call."
+          }
+        }
+      },
+      "SimilarComplaints": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimilarComplaint"
+            },
+            "maxItems": 3
+          }
+        },
+        "description": "At most three visible complaints with positive similarity, sorted score descending then createdAt descending then id ascending. No private description, author or comments returned."
+      },
+      "SuggestedCategory": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S",
+            "description": "Category label"
+          }
+        }
+      },
+      "CategorySuggestion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "source"
+        ],
+        "properties": {
+          "category": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SuggestedCategory"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Recognized existing category; null when there is no confident demo match."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "demo-fixture",
+              "none"
+            ],
+            "description": "demo-fixture is a prerecorded or deterministic demo suggestion; none means no match. No live model call is claimed."
+          }
+        }
+      },
+      "DemoResetResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "loadedCount"
+        ],
+        "properties": {
+          "loadedCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "description": "Number of complaints loaded from the immutable seed after a successful reset."
+      },
+      "Health": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "version"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "\\S",
+            "description": "API package version, independent of the OpenAPI contract version."
           }
         }
       }
@@ -2172,6 +3130,30 @@
             }
           }
         }
+      },
+      "TooManyRequests": {
+        "description": "Per-demo-user write rate limit exceeded. No mutation or history entry is applied. Wait Retry-After seconds before retrying. Limits are process-local in the MVP; a known role may still receive 429 before operation authorization when its write bucket is exhausted.",
+        "headers": {
+          "Retry-After": {
+            "description": "Positive integer seconds until the current write window permits a retry.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "code": "RATE_LIMITED",
+              "message": "Слишком много запросов. Повторите после указанного интервала."
+            }
+          }
+        }
       }
     }
   },
@@ -2179,5 +3161,10 @@
     "structural": "npx @redocly/cli@2.11.1 lint contracts/api.yaml",
     "acceptance": "node --test tests/acceptance/47-api-contract.test.mjs",
     "format": "JSON-compatible YAML 1.2; self-contained references. Built-in tests require no dependencies; the external linter checks full OpenAPI structure and examples."
+  },
+  "x-anonymity": {
+    "scope": "anonymous defaults to false. Preserve the real author internally for ownership checks and replies. This is identity redaction for readers, not protection against identification from description, attachments or indirect clues.",
+    "projection": "For anonymous complaints, managers and admins receive AnonymousActor instead of the author User in Complaint.author, Comment.author and HistoryEvent.actor whenever the actor is the complaint author. Complaint.author.name is Аноним; author comments/history use Автор (аноним). No author id or profile link is returned. The author can read their own User and reply normally. Other participants remain User.",
+    "surfaces": "Apply this projection consistently to list, detail and mutation responses. Export, similar results, summary and notifications must not leak author identifiers or names in metadata, IDs, generated text or links. User-provided text can contain identifying details; explain this limitation. No deanonymization endpoint exists."
   }
 }
