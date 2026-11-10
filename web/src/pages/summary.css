@@ -12,4 +12,16 @@
 .summary-table-panel tbody th { font-weight: 500; }
 .summary-table-panel td, .summary-table-panel thead th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .summary-table-panel .muted { font-size: 13px; }
+.summary-empty { margin: 24px 0 0; padding: 16px 20px; border: 1px dashed #b9c6d0; border-radius: 10px; background: #f8fafb; }
+.summary-chart { margin: 12px 0 20px; }
+.bar-chart { display: block; width: 100%; height: auto; overflow: visible; }
+.bar-chart text { font-size: 14px; fill: #1f2d3a; }
+.bar-chart .bar-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+.bar-track { fill: #eef2f5; }
+.bar-fill { fill: #185a85; }
+.topic-list { list-style: none; margin: 12px 0 20px; padding: 0; display: grid; gap: 8px; }
+.topic-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 12px; border: 1px solid #dce3e8; border-radius: 8px; }
+.topic-name { font-weight: 600; }
+.topic-count { color: #536577; font-size: 13px; }
+.topic-list a { margin-left: auto; font-size: 13px; }
 @media (max-width: 1050px) { .summary-metrics { grid-template-columns: 1fr; } .summary-sections { grid-template-columns: 1fr; gap: 12px; } }
