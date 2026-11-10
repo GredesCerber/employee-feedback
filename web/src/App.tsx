@@ -45,7 +45,7 @@ function Shell() {
     navigate(returnPath(location.state, next) ?? home[next], { replace: true });
   }
   return <div className="app-shell">
-    <a className="skip-link" href="#main">К содержимому</a>
+    <a className="skip-link" href="#main">Перейти к содержимому</a>
     <header className="app-header">
       <Link className="brand" to={home[role]}><span className="brand-mark" aria-hidden="true">М</span><span>Модус Трейд<small>Обратная связь сотрудников</small></span></Link>
       <label className="role-selector">Демонстрационная роль<select value={role} onChange={event => switchRole(event.target.value)}><option value="employee">Сотрудник</option><option value="manager">Руководитель</option><option value="admin">Администратор</option></select></label>
