@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import type { Attachment, Complaint, ComplaintType, Priority } from './model.js';
 import { terminalStatuses } from './model.js';
-import { ApiError, identity, invalid, present, queryParameters, validateBody, visibleComplaint } from './http.js';
+import { ApiError, identity, invalid, listQuery, present, queryParameters, validateBody, visibleComplaint } from './http.js';
+import { summarize } from './analytics.js';
 
 interface CreateInput {
   type: ComplaintType; categoryId: string; description: string; proposedSolution?: string;
@@ -51,19 +52,29 @@ export function registerComplaints(app: FastifyInstance) {
 
   app.get('/complaints', async (request) => {
     const user = identity(app, request);
-    const params = queryParameters(request, ['queue', 'limit', 'offset']);
-    const queue = params.get('queue');
-    if (queue !== null && !['assigned', 'unassigned'].includes(queue)) invalid('Неизвестная очередь.');
-    const limitText = params.get('limit') ?? '20';
-    const offsetText = params.get('offset') ?? '0';
-    if (!/^\d+$/.test(limitText) || !/^\d+$/.test(offsetText)) invalid('Некорректная пагинация.');
-    const limit = Number(limitText), offset = Number(offsetText);
-    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100 || !Number.isSafeInteger(offset)) invalid('Некорректная пагинация.');
-    const items = app.store.list().filter(item => (user.role !== 'employee' || item.author.id === user.id)
-      && (queue === null || item.routing.queue === queue))
-      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || a.id.localeCompare(b.id));
+    const query = listQuery(request);
+    const limit = query.limit ?? 20, offset = query.offset ?? 0;
     const now = Date.now();
-    return { items: items.slice(offset, offset + limit).map(item => present(item, now)), total: items.length, limit, offset };
+    const items = app.store.list().filter(item => user.role !== 'employee' || item.author.id === user.id)
+      .map(item => present(item, now)).filter(item =>
+        (query.departmentId === undefined || item.departmentId === query.departmentId)
+        && (query.categoryId === undefined || item.categoryId === query.categoryId)
+        && (query.status === undefined || item.status === query.status)
+        && (query.type === undefined || item.type === query.type)
+        && (query.queue === undefined || item.routing.queue === query.queue)
+        && (query.overdue === undefined || item.overdue === query.overdue)
+        && (query.dueAfter === undefined || Date.parse(item.dueAt) >= Date.parse(query.dueAfter))
+        && (query.dueBefore === undefined || Date.parse(item.dueAt) <= Date.parse(query.dueBefore))
+        && (query.q === undefined || [item.number, item.description, item.proposedSolution ?? '']
+          .some(value => value.toLowerCase().includes(query.q!.toLowerCase()))))
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    return { items: items.slice(offset, offset + limit), total: items.length, limit, offset };
+  });
+
+  app.get('/summary', async (request) => {
+    identity(app, request, ['admin']);
+    queryParameters(request, []);
+    return summarize(app.store.list(), app.store.referenceData.categories);
   });
 
   app.get<{ Params: { complaintId: string } }>('/complaints/:complaintId', async (request) => {
