@@ -40,7 +40,8 @@ export function listQuery(request: FastifyRequest): ListQuery {
 }
 
 export class ApiError extends Error {
-  constructor(public statusCode: number, public code: string, message: string) { super(message); }
+  constructor(public statusCode: number, public code: string, message: string,
+    public details?: { field: string; message: string }[]) { super(message); }
 }
 export function invalid(message = 'Некорректные поля запроса.'): never {
   throw new ApiError(422, 'VALIDATION_ERROR', message);
@@ -51,7 +52,13 @@ export function validateBody<T>(name: string, value: unknown): T {
     validate = ajv.compile({ $ref: `contract#/components/schemas/${name}` });
     validators.set(name, validate);
   }
-  if (!validate(value)) invalid();
+  if (!validate(value)) {
+    const details = validate.errors?.filter(error => error.keyword === 'maxLength').map(error => ({
+      field: error.instancePath.slice(1).split('/').map(part => part.replace(/~1/g, '/').replace(/~0/g, '~')).join('.'),
+      message: `Допустимо не более ${error.params.limit} символов.`,
+    }));
+    throw new ApiError(422, 'VALIDATION_ERROR', 'Некорректные поля запроса.', details?.length ? details : undefined);
+  }
   return value as T;
 }
 export function identity(app: FastifyInstance, request: FastifyRequest, roles?: Role[]): User {
@@ -88,7 +95,8 @@ export function configureErrors(app: FastifyInstance) {
     }
   });
   app.setErrorHandler((error, request, reply) => {
-    if (error instanceof ApiError) return reply.code(error.statusCode).send({ code: error.code, message: error.message });
+    if (error instanceof ApiError) return reply.code(error.statusCode).send({ code: error.code, message: error.message,
+      ...(error.details ? { details: error.details } : {}) });
     const status = (error as { statusCode?: number }).statusCode;
     if (status === 400) return reply.code(400).send({ code: 'BAD_REQUEST', message: 'Некорректный JSON или запрос.' });
     if (status === 413) return reply.code(413).send({ code: 'PAYLOAD_TOO_LARGE', message: 'Запрос слишком большой.' });
