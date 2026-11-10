@@ -44,7 +44,7 @@
 
 ```hk-team
 GredesCerber: api, contracts, review   # капитан: бэкенд и ревью
-punyzxc: web                           # Дамек: фронтенд
+punyzxc: web                           # Дамекер: фронтенд
 Ami-m1nzyi: design                     # Аминат: дизайн, сильные модели GPT
 Wohorchik: research                    # Вадим: ресёрч и мелочи
 ```
@@ -190,7 +190,7 @@ req: [R10]
 
 ```hk-task
 id: T8
-title: Позиция фронтенда: суть ТЗ, состав продукта и идеи (Дамек)
+title: Позиция фронтенда: суть ТЗ, состав продукта и идеи (Дамекер)
 epic: E4
 area: web
 tier: mid
