@@ -4,6 +4,7 @@ import { createServer } from 'node:net';
 import { dirname, delimiter, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
+import { childEnv, seedResetUnset } from './demo-env.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const help = `Запуск: node infra/run-demo.mjs [флаги]
@@ -53,7 +54,9 @@ async function main() {
   let webPort = options['--web-port'] ?? (options['--dry-run'] ? 5173 : await freePort());
   while (webPort === apiPort && !options['--web-port']) webPort = options['--dry-run'] ? apiPort + 1 : await freePort();
   if (webPort === apiPort) throw new Error('API и веб требуют разных портов.');
-  const apiEnv = { HOST: '127.0.0.1', PORT: String(apiPort), ...(options['--seed-reset'] ? { PERSIST_FILE: '' } : {}) };
+  const apiEnv = { HOST: '127.0.0.1', PORT: String(apiPort) };
+  // --seed-reset: PERSIST_FILE исключается из окружения API целиком (не пустая строка), файл не трогается.
+  const apiEnvUnset = seedResetUnset(Boolean(options['--seed-reset']));
   const webEnv = { DEMO_API_PORT: String(apiPort), DEMO_WEB_PORT: String(webPort) };
   const webBuildEnv = { VITE_API_BASE_URL: '/api' };
   const npm = npmCli();
@@ -63,10 +66,10 @@ async function main() {
     commands.push({ cmd: process.execPath, args: [npm, '--prefix', folder, 'run', 'build'], shell: false, env: folder === 'web' ? webBuildEnv : {} });
   }
   const servers = [
-    { cmd: process.execPath, args: ['api/dist/server.js'], shell: false, env: apiEnv },
+    { cmd: process.execPath, args: ['api/dist/server.js'], shell: false, env: apiEnv, unset: apiEnvUnset },
     { cmd: process.execPath, args: ['infra/serve-demo.mjs'], shell: false, env: webEnv },
   ];
-  if (options['--dry-run']) { console.log(JSON.stringify({ apiPort, webPort, apiEnv, webEnv, webBuildEnv, commands: [...commands, ...servers] }, null, 2)); return; }
+  if (options['--dry-run']) { console.log(JSON.stringify({ apiPort, webPort, apiEnv, apiEnvUnset, webEnv, webBuildEnv, commands: [...commands, ...servers] }, null, 2)); return; }
   const children = new Set(); let stopping = false;
   async function stop() {
     if (stopping) return; stopping = true;
@@ -81,7 +84,7 @@ async function main() {
   const signal = () => { void stop(); };
   process.once('SIGINT', signal); process.once('SIGTERM', signal);
   function start(command) {
-    const child = spawn(command.cmd, command.args, { cwd: root, env: { ...process.env, ...command.env }, shell: false, windowsHide: true, stdio: 'inherit' });
+    const child = spawn(command.cmd, command.args, { cwd: root, env: childEnv(process.env, command.env, command.unset), shell: false, windowsHide: true, stdio: 'inherit' });
     children.add(child); child.once('close', () => children.delete(child)); return child;
   }
   try {
