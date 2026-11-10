@@ -1,0 +1,15 @@
+.summary-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
+.summary-toolbar p { margin: 0; font-size: 13px; }
+.summary-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.metric-card { background: #f0f5f8; border: 1px solid #dce3e8; border-radius: 10px; padding: 20px; }
+.metric-card h2 { font-size: 15px; margin: 0; font-weight: 600; }
+.metric-value { margin: 18px 0 8px; font-size: clamp(24px, 3vw, 36px); line-height: 1.2; font-weight: 700; color: #185a85; }
+.metric-card .muted { font-size: 13px; margin-bottom: 0; }
+.summary-sections { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; margin-top: 16px; }
+.summary-table-panel table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.summary-table-panel th, .summary-table-panel td { padding: 14px 8px; border-bottom: 1px solid #dce3e8; text-align: left; overflow-wrap: anywhere; }
+.summary-table-panel thead th { font-weight: 500; color: #536577; font-size: 12px; }
+.summary-table-panel tbody th { font-weight: 500; }
+.summary-table-panel td, .summary-table-panel thead th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.summary-table-panel .muted { font-size: 13px; }
+@media (max-width: 1050px) { .summary-metrics { grid-template-columns: 1fr; } .summary-sections { grid-template-columns: 1fr; gap: 12px; } }

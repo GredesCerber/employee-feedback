@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import SubmitPage from './pages/SubmitPage';
 import MyComplaintsPage from './pages/MyComplaintsPage';
 import ComplaintPage from './pages/ComplaintPage';
+import SummaryPage from './pages/SummaryPage';
 import './shell.css';
 import './pages.css';
 
@@ -48,7 +49,7 @@ function Shell() {
           <Route path="/my/:complaintId" element={<RoleRoute role="employee"><ComplaintPage /></RoleRoute>} />
           <Route path="/submit" element={<RoleRoute role="employee"><SubmitPage /></RoleRoute>} />
           <Route path="/queue" element={<RoleRoute role="manager"><Section title="Очередь обращений" /></RoleRoute>} />
-          <Route path="/summary" element={<RoleRoute role="admin"><Section title="Сводка" /></RoleRoute>} />
+          <Route path="/summary" element={<RoleRoute role="admin"><SummaryPage /></RoleRoute>} />
           <Route path="*" element={<section className="section"><h1>Страница не найдена</h1><Link to={home[role]}>Вернуться к обращениям</Link></section>} />
         </Routes>
       </main>
