@@ -1,0 +1,11 @@
+# Allowlist: только исходники, нужные для сборки единого образа.
+*
+!web/**
+web/node_modules
+web/dist
+!api/package.json
+!api/package-lock.json
+!api/tsconfig.json
+!api/src/**
+!api/data/**
+!contracts/api.yaml
