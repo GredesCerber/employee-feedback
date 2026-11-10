@@ -11,10 +11,10 @@ const contract = JSON.parse(readFileSync(new URL('../../contracts/api.yaml', imp
 ajv.addSchema(contract, 'contract');
 const validError = ajv.compile({ $ref: 'contract#/components/schemas/Error' });
 const seed = 0x5eed0097;
+const atoms = [null, [], {}, true, false, 0, -1, Number.MAX_VALUE, Number.MAX_SAFE_INTEGER + 1,
+    '', ' ', '\0', '漢字 العربية', '🙂🚀', "'; DROP TABLE complaints; --", '<img src=x onerror=alert(1)>', 'x'.repeat(5001)];
 function randomValues(initial, count) {
   let state = initial >>> 0;
-  const atoms = [null, [], {}, true, false, 0, -1, Number.MAX_VALUE, Number.MAX_SAFE_INTEGER + 1,
-    '', ' ', '\0', '漢字 العربية', '🙂🚀', "'; DROP TABLE complaints; --", '<img src=x onerror=alert(1)>', 'x'.repeat(5001)];
   return Array.from({ length: count }, () => {
     state ^= state << 13; state ^= state >>> 17; state ^= state << 5;
     return structuredClone(atoms[(state >>> 0) % atoms.length]);
@@ -63,7 +63,7 @@ test('#97 seeded boundary inputs cover every write operation without 5xx or dive
   assert.deepEqual([...writes].sort(), mutations.map(op => op.operationId).sort(), 'Add fuzz fixtures for every new write operation');
   let checked = 0;
   for (const operation of mutations) {
-    const values = [null, [], {}, Number.MAX_VALUE, ...randomValues(seed, 24)];
+    const values = [...atoms, ...randomValues(seed, 24)];
     const inputs = [...values, ...Object.keys(operation.body).flatMap(key => values.map(value => ({ ...operation.body, [key]: value })))];
     for (const input of inputs) {
       const response = await invoke(operation, input); checked++;
