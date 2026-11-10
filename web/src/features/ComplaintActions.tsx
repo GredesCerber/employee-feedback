@@ -76,7 +76,10 @@ export function ManagerActions({ item, onUpdated }: { item: Complaint; onUpdated
 
   function postComment(kind: CommentKind) {
     if (!comment.trim()) { mutation.setError('Введите текст сообщения.', 'manager-comment'); return; }
-    void mutation.run(async () => requireData((await api.POST('/complaints/{complaintId}/comments', { params: { path }, body: { kind, text: comment.trim() } })).data),
+    void mutation.run(async () => {
+      requireData((await api.POST('/complaints/{complaintId}/comments', { params: { path }, body: { kind, text: comment.trim() } })).data);
+      setComment('');
+    },
       kind === 'clarification_request' ? 'Запрос уточнения отправлен автору.' : 'Комментарий добавлен.');
   }
 
