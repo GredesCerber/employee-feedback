@@ -48,7 +48,7 @@ test('#8 у каждого экрана указаны роли; маршрут�
   const text = document();
   const app = read('web/src/App.tsx');
   for (const [id, label] of nodes()) {
-    assert.match(label, /Роли?: (employee|manager|admin)(?:, (employee|manager|admin))*(?:<br\/>|$)/, `${id}: нет роли`);
+    assert.match(label, /Рол[ьи]: (employee|manager|admin)(?:, (employee|manager|admin))*(?:<br\/>|$)/, `${id}: нет роли`);
   }
   const routes = [...app.matchAll(/<Route path="([^"]+)" element={<RoleRoute role="([^"]+)"/g)];
   for (const [, path, role] of routes) {
