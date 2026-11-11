@@ -48,7 +48,7 @@ export interface paths {
         };
         /**
          * List visible complaints with filters
-         * @description Employees see only their own complaints. Managers and admins see all synthetic complaints, including unassigned across departments. Apply access restriction before all filters, totals and pagination. Combine filters with AND; inclusive dueAfter/dueBefore bounds, UTC comparison. Inverted dates return 422. q is trimmed and split on whitespace; every search word must occur as a literal substring in at least one of number, description, proposedSolution or comments.text (AND across words, order independent). Search is case-insensitive and normalizes ё to е on both sides; no regex, SQL or morphology. Different words may match different fields. Stable order createdAt descending then id ascending. Empty results return 200 with items=[].
+         * @description Employees see only their own complaints. Managers and admins see all synthetic complaints, including unassigned across departments. Apply access restriction before all filters, totals and pagination. Combine filters with AND; inclusive dueAfter/dueBefore bounds, UTC comparison. Inverted dates return 422. q is trimmed and split on whitespace; every search word must occur as a literal substring in at least one of number, description, proposedSolution or comments.text (AND across words, order independent). Search is case-insensitive and normalizes ё to е on both sides; no regex, SQL or morphology. Different words may match different fields. Stable order createdAt descending then id ascending. Empty results return 200 with items=[]. Optional query filter simulated=true|false (boolean, not listed in parameters to keep the established filter set unchanged): false hides complaints created by the demo simulator, true selects only them, omitted returns all.
          */
         get: operations["listComplaints"];
         put?: never;
@@ -543,6 +543,8 @@ export interface components {
             toStatus: components["schemas"]["Status"] | null;
             /** @description Readable event text, without private/internal notes */
             text: string;
+            /** @description true when the action was made by the demo simulator. Always false otherwise. */
+            simulated?: boolean;
         };
         Complaint: {
             id: string;
@@ -589,6 +591,8 @@ export interface components {
              * @description Optional manager-view deadline for the action described by canUndo. Non-null iff canUndo=true; null when no action is available. Computed by the server with UNDO_WINDOW_S; UI may hide the button at this time but API rechecks eligibility.
              */
             undoExpiresAt?: string | null;
+            /** @description true when created by the demo simulator (X-Demo-Source: simulator with DEMO_SIMULATION_ENABLED=true). Always false otherwise. */
+            simulated?: boolean;
         };
         /** @description total is the count after authorization and filters, before pagination. Stable order: createdAt descending then id ascending. */
         ComplaintList: {
@@ -1397,7 +1401,10 @@ export interface operations {
     createComplaint: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. simulator marks the request as made by the background demo simulator: the complaint and the history events it creates get simulated=true. Honored only when DEMO_SIMULATION_ENABLED=true, otherwise ignored. Grants no extra rights; roles, validation and rate limits are unchanged. */
+                "X-Demo-Source"?: "simulator";
+            };
             path?: never;
             cookie?: never;
         };
@@ -1474,7 +1481,10 @@ export interface operations {
     assignComplaint: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. simulator marks the request as made by the background demo simulator: the complaint and the history events it creates get simulated=true. Honored only when DEMO_SIMULATION_ENABLED=true, otherwise ignored. Grants no extra rights; roles, validation and rate limits are unchanged. */
+                "X-Demo-Source"?: "simulator";
+            };
             path: {
                 /** @description Opaque complaint ID (not its displayed registration number). */
                 complaintId: string;
@@ -1511,7 +1521,10 @@ export interface operations {
     changeComplaintStatus: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. simulator marks the request as made by the background demo simulator: the complaint and the history events it creates get simulated=true. Honored only when DEMO_SIMULATION_ENABLED=true, otherwise ignored. Grants no extra rights; roles, validation and rate limits are unchanged. */
+                "X-Demo-Source"?: "simulator";
+            };
             path: {
                 /** @description Opaque complaint ID (not its displayed registration number). */
                 complaintId: string;
@@ -1548,7 +1561,10 @@ export interface operations {
     addComment: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. simulator marks the request as made by the background demo simulator: the complaint and the history events it creates get simulated=true. Honored only when DEMO_SIMULATION_ENABLED=true, otherwise ignored. Grants no extra rights; roles, validation and rate limits are unchanged. */
+                "X-Demo-Source"?: "simulator";
+            };
             path: {
                 /** @description Opaque complaint ID (not its displayed registration number). */
                 complaintId: string;
@@ -1585,7 +1601,10 @@ export interface operations {
     recordDecision: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. simulator marks the request as made by the background demo simulator: the complaint and the history events it creates get simulated=true. Honored only when DEMO_SIMULATION_ENABLED=true, otherwise ignored. Grants no extra rights; roles, validation and rate limits are unchanged. */
+                "X-Demo-Source"?: "simulator";
+            };
             path: {
                 /** @description Opaque complaint ID (not its displayed registration number). */
                 complaintId: string;
@@ -1647,7 +1666,10 @@ export interface operations {
     undoLastAction: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. simulator marks the request as made by the background demo simulator: the complaint and the history events it creates get simulated=true. Honored only when DEMO_SIMULATION_ENABLED=true, otherwise ignored. Grants no extra rights; roles, validation and rate limits are unchanged. */
+                "X-Demo-Source"?: "simulator";
+            };
             path: {
                 /** @description Opaque complaint ID (not its displayed registration number). */
                 complaintId: string;

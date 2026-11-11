@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Complaint, User } from './model.js';
 import { terminalStatuses } from './model.js';
 import type { ComplaintStore } from './store.js';
-import { ApiError, identity, present, queryParameters, visibleComplaint } from './http.js';
+import { ApiError, identity, present, queryParameters, isSimulated, visibleComplaint } from './http.js';
 
 const DEFAULT_WINDOW_S = 600;
 
@@ -74,7 +74,7 @@ export function registerUndo(app: FastifyInstance) {
     item.updatedAt = now;
     item.history.push({ id: `${item.id}-event-${String(item.history.length + 1).padStart(6, '0')}`,
       kind: 'undone', actor: user, createdAt: now, fromStatus: previousStatus, toStatus: item.status,
-      text: 'Руководитель отменил последнее действие.' });
+      text: 'Руководитель отменил последнее действие.', simulated: isSimulated(request) });
     app.store.save(item);
     const state = stateOf(app, item.id)!;
     state.entries.pop();
