@@ -116,3 +116,12 @@ test('SEED_RELATIVE_DATES=1: /summary показывает просроченн�
   assert.equal(overdue.length, summary.overdueCount);
   for (const item of overdue) assert.ok(!terminal.includes(item.status), `${item.number}: завершённое не считается просроченным`);
 });
+
+test('демо-запуск и хостинг включают SEED_RELATIVE_DATES=1, переменная описана в infra/ENV.md', async () => {
+  const { readFileSync } = await import('node:fs');
+  const read = path => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
+  assert.match(read('infra/run-demo.mjs'), /apiEnv = \{[^}]*SEED_RELATIVE_DATES: '1'/);
+  assert.match(read('infra/hosted.Dockerfile'), /^ENV .*\bSEED_RELATIVE_DATES=1\b/m);
+  assert.match(read('infra/render.yaml'), /- key: SEED_RELATIVE_DATES\r?\n\s+value: "1"/);
+  assert.match(read('infra/ENV.md'), /^\| `SEED_RELATIVE_DATES` \|.*api\/src\/seed\.ts/m);
+});
