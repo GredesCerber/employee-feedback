@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type { Attachment, Complaint, ComplaintType, Priority, User } from './model.js';
+import type { Attachment, Complaint, ComplaintType, ComplaintView, Priority, User } from './model.js';
 import { terminalStatuses } from './model.js';
 import { ApiError, identity, invalid, listQuery, type ListQuery, present, queryParameters, validateBody, visibleComplaint } from './http.js';
 import { summarize, trends } from './analytics.js';
@@ -7,7 +7,7 @@ import { matchesComplaintText, searchWords } from './search.js';
 
 interface CreateInput {
   type: ComplaintType; categoryId: string; description: string; proposedSolution?: string;
-  priority?: Priority; attachments?: Attachment[];
+  priority?: Priority; attachments?: Attachment[]; anonymous?: boolean;
 }
 
 const typeLabels: Record<string, string> = { problem: 'Проблема', suggestion: 'Предложение', praise: 'Похвала' };
@@ -16,11 +16,11 @@ const statusLabels: Record<string, string> = { new: 'Новое', in_review: 'Н
 const csvHeader = ['номер', 'тип', 'категория', 'подразделение', 'статус', 'ответственный', 'создано', 'срок',
   'просрочено', 'первый ответ', 'итог'];
 
-function filteredComplaints(app: FastifyInstance, user: User, query: ListQuery): Complaint[] {
+function filteredComplaints(app: FastifyInstance, user: User, query: ListQuery): ComplaintView[] {
   const words = searchWords(query.q);
   const now = Date.now();
   return app.store.list().filter(item => user.role !== 'employee' || item.author.id === user.id)
-    .map(item => present(item, now)).filter(item =>
+    .map(item => present(item, now, user)).filter(item =>
       (query.departmentId === undefined || item.departmentId === query.departmentId)
       && (query.categoryId === undefined || item.categoryId === query.categoryId)
       && (query.status === undefined || item.status === query.status)
@@ -67,6 +67,7 @@ export function registerComplaints(app: FastifyInstance) {
     const item: Complaint = {
       id: `complaint-${index}`, number: `A-${String(index).padStart(3, '0')}`, type: body.type,
       categoryId: category.id, departmentId: user.departmentId, author: user,
+      ...(body.anonymous !== undefined ? { anonymous: body.anonymous } : {}),
       description: body.description.trim(), proposedSolution: body.proposedSolution?.trim() ?? null,
       priority: body.priority ?? 'medium', attachments: body.attachments ?? [], status: 'new', assignee,
       routing: assignee ? { queue: 'assigned', reason: 'category_rule' } : { queue: 'unassigned', reason: 'no_rule' },
@@ -124,7 +125,7 @@ export function registerComplaints(app: FastifyInstance) {
   app.get<{ Params: { complaintId: string } }>('/complaints/:complaintId', async (request) => {
     const user = identity(app, request);
     queryParameters(request, []);
-    return present(visibleComplaint(app, request.params.complaintId, user));
+    return present(visibleComplaint(app, request.params.complaintId, user), Date.now(), user);
   });
 
   app.patch<{ Params: { complaintId: string } }>('/complaints/:complaintId/assignment', async (request) => {
@@ -135,7 +136,7 @@ export function registerComplaints(app: FastifyInstance) {
     const assignee = app.store.users.find(candidate => candidate.id === body.assigneeId && candidate.role === 'manager');
     if (!assignee) invalid('Ответственным может быть только известный руководитель.');
     if (terminalStatuses.includes(item.status)) throw new ApiError(409, 'INVALID_TRANSITION', 'Завершённое обращение нельзя переназначить.');
-    if (item.assignee?.id === assignee.id) return present(item);
+    if (item.assignee?.id === assignee.id) return present(item, Date.now(), user);
     const now = new Date().toISOString();
     item.assignee = assignee;
     item.routing = { queue: 'assigned', reason: 'manual_assignment' };
@@ -144,6 +145,6 @@ export function registerComplaints(app: FastifyInstance) {
     item.history.push({ id: `${item.id}-event-${String(item.history.length + 1).padStart(6, '0')}`,
       kind: 'assigned', actor: user, createdAt: now, fromStatus: null, toStatus: null, text: 'Руководитель назначил ответственного.' });
     app.store.save(item);
-    return present(item);
+    return present(item, Date.now(), user);
   });
 }

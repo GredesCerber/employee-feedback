@@ -41,7 +41,7 @@ export function registerLifecycle(app: FastifyInstance) {
     appendHistory(item, user, now, 'status_changed', 'Руководитель изменил статус.', previous, item.status);
     update(item, user, now);
     app.store.save(item);
-    return present(item);
+    return present(item, Date.now(), user);
   });
 
   app.post<{ Params: { complaintId: string } }>('/complaints/:complaintId/comments', async (request, reply) => {
@@ -74,7 +74,7 @@ export function registerLifecycle(app: FastifyInstance) {
     }
     update(item, user, now);
     app.store.save(item);
-    return reply.code(201).send(present(item));
+    return reply.code(201).send(present(item, Date.now(), user));
   });
 
   app.post<{ Params: { complaintId: string } }>('/complaints/:complaintId/decision', async (request, reply) => {
@@ -91,6 +91,6 @@ export function registerLifecycle(app: FastifyInstance) {
     appendHistory(item, user, now, 'decided', item.decision.explanation, previous, item.status);
     update(item, user, now);
     app.store.save(item);
-    return reply.code(201).send(present(item));
+    return reply.code(201).send(present(item, Date.now(), user));
   });
 }
