@@ -1,3 +1,4 @@
+import { useI18n, digestTemplate } from '../i18n';
 import { useCallback, useId } from 'react';
 import { useSession } from '../app/session';
 import { requireData, useResource } from './data';
@@ -5,6 +6,7 @@ import { dateLabel, LoadError } from './complaint';
 import './weeklyDigest.css';
 
 export function WeeklyDigest({ department }: { department: string }) {
+  const { t, locale } = useI18n();
   const { api } = useSession();
   const heading = useId();
   const load = useCallback(async () => {
@@ -18,25 +20,25 @@ export function WeeklyDigest({ department }: { department: string }) {
   const result = useResource(load);
   const digest = result.data;
   return <section className="dashboard-panel weekly-digest" aria-labelledby={heading}>
-    <div className="digest-heading"><h2 id={heading}>Сводка за неделю</h2>
-      {!result.loading && !result.error && <button type="button" aria-label="Обновить сводку за неделю" onClick={result.reload}>Обновить</button>}
+    <div className="digest-heading"><h2 id={heading}>{t("Сводка за неделю")}</h2>
+      {!result.loading && !result.error && <button type="button" aria-label={t("Обновить сводку за неделю")} onClick={result.reload}>{t("Обновить")}</button>}
     </div>
     {result.loading && <div className="digest-skeleton" aria-busy="true">
-      <p role="status">Загрузка сводки…</p>
+      <p role="status">{t("Загрузка сводки…")}</p>
       <span aria-hidden="true" /><span aria-hidden="true" /><span aria-hidden="true" />
     </div>}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {digest && <>
       <p><span className="imitation-badge" title={digest.source === 'llm'
-        ? 'Текст составила модель по агрегатам. Проверьте выводы по указанным числам.'
-        : 'Шаблон по агрегатам: без ключа, при недоступной модели или пустом периоде.'}>
-        {digest.source === 'llm' ? 'ИИ' : 'Шаблон (без ИИ)'}
+        ? t("Текст составила модель по агрегатам. Проверьте выводы по указанным числам.")
+        : t("Шаблон по агрегатам: без ключа, при недоступной модели или пустом периоде.")}>
+        {digest.source === 'llm' ? t("ИИ") : t("Шаблон (без ИИ)")}
       </span></p>
-      <p className="digest-text">{digest.text}</p>
-      {digest.highlights.length > 0 && <ul aria-label="Главное за неделю">{digest.highlights.map((item, index) => <li key={index}>{item}</li>)}</ul>}
-      {digest.source === 'template' && <p className="field-hint">Без ИИ: ключ не настроен, модель недоступна или за период нет обращений.</p>}
-      <p className="field-hint">Период: {dateLabel(digest.period.from)} — {dateLabel(digest.period.to)}.</p>
-      <p className="field-hint">Сводка рассчитана на <time dateTime={digest.generatedAt}>{dateLabel(digest.generatedAt)}</time>. Повторный запрос может использовать кэш до 60 секунд.</p>
+      <p className="digest-text">{digest.source === 'template' ? digestTemplate(locale, digest.text) : digest.text}</p>
+      {digest.highlights.length > 0 && <ul aria-label={t("Главное за неделю")}>{digest.highlights.map((item, index) => <li key={index}>{digest.source === 'template' ? digestTemplate(locale, item) : item}</li>)}</ul>}
+      {digest.source === 'template' && <p className="field-hint">{t("Без ИИ: ключ не настроен, модель недоступна или за период нет обращений.")}</p>}
+      <p className="field-hint">{t("Период:")} {dateLabel(digest.period.from, locale)} — {dateLabel(digest.period.to, locale)}.</p>
+      <p className="field-hint">{t("Сводка рассчитана на")} <time dateTime={digest.generatedAt}>{dateLabel(digest.generatedAt, locale)}</time>{t(". Повторный запрос может использовать кэш до 60 секунд.")}</p>
     </>}
   </section>;
 }

@@ -378,6 +378,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/complaints/{complaintId}/translations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Translate one selected message without changing its original
+         * @description Explicit user action only. Check session and complaint visibility before contacting the provider. Send only selected text (1–5000 characters) and targetLocale. Never send identity, IDs, attachments or other messages. No key or provider failure returns 503; no fabricated translation or local template fallback. Per-user write rate limit applies. Missing/foreign complaint returns the same 404.
+         */
+        post: operations["translateComplaintText"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -472,12 +492,12 @@ export interface components {
             priority?: components["schemas"]["Priority"];
             /** @default [] */
             attachments?: components["schemas"]["Attachment"][];
+            location?: components["schemas"]["GeoPoint"];
             /**
              * @description Optional author redaction from managers and admins, including comments/history. Ownership is still stored internally. Omitted or false preserves existing identified behavior; no real authentication or protection against clues in text is promised.
              * @default false
              */
             anonymous?: boolean;
-            location?: components["schemas"]["GeoPoint"];
         };
         /** @description Optional point chosen by the author. Stored only as coordinates; never embedded in description or proposedSolution, and never sent to AI classification or summaries. */
         GeoPoint: {
@@ -567,6 +587,8 @@ export interface components {
             description: string;
             proposedSolution: string | null;
             priority: components["schemas"]["Priority"];
+            /** @description Optional chosen point on the map. Absent when the author did not choose one; null is never used. */
+            location?: components["schemas"]["GeoPoint"];
             attachments: components["schemas"]["Attachment"][];
             status: components["schemas"]["Status"];
             assignee: components["schemas"]["User"] | null;
@@ -592,8 +614,6 @@ export interface components {
              * @default false
              */
             anonymous?: boolean;
-            /** @description Optional chosen point on the map. Absent when the author did not choose one; null is never used. */
-            location?: components["schemas"]["GeoPoint"];
             /** @description Optional manager-view capability: true only if the latest eligible outstanding status/assignment action belongs to the current manager, is inside the undo window and the complaint is not terminal. Other roles omit this property. */
             canUndo?: boolean;
             /**
@@ -684,7 +704,7 @@ export interface components {
         };
         Error: {
             /** @enum {string} */
-            code: "BAD_REQUEST" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "INVALID_TRANSITION" | "VALIDATION_ERROR" | "PAYLOAD_TOO_LARGE" | "UNSUPPORTED_MEDIA_TYPE" | "INTERNAL_ERROR" | "RATE_LIMITED" | "UNDO_EXPIRED" | "NOTHING_TO_UNDO";
+            code: "BAD_REQUEST" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "INVALID_TRANSITION" | "VALIDATION_ERROR" | "PAYLOAD_TOO_LARGE" | "UNSUPPORTED_MEDIA_TYPE" | "INTERNAL_ERROR" | "RATE_LIMITED" | "UNDO_EXPIRED" | "NOTHING_TO_UNDO" | "TRANSLATION_UNAVAILABLE";
             /** @description Safe human-readable explanation without stack traces or secrets */
             message: string;
             details?: {
@@ -1147,6 +1167,21 @@ export interface components {
             /** @description All nonterminal overdue complaints in the filtered store, including unassigned, sorted overdueHours descending then id ascending. Empty store yields []. */
             overdue: components["schemas"]["OverdueComplaint"][];
             totals: components["schemas"]["AnalyticsTotals"];
+        };
+        /** @description Select existing text of a visible complaint. comment requires commentId. Other fields forbid commentId. Original text is never modified. */
+        TranslationRequest: {
+            /** @enum {string} */
+            field: "description" | "proposedSolution" | "comment" | "decision" | "actions";
+            /** @enum {string} */
+            targetLocale: "ru" | "en" | "kk";
+            commentId?: string;
+        };
+        TranslationResponse: {
+            translatedText: string;
+            /** @enum {string} */
+            targetLocale: "ru" | "en" | "kk";
+            /** @constant */
+            source: "llm";
         };
     };
     responses: {
@@ -1969,6 +2004,98 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             422: components["responses"]["Validation"];
             500: components["responses"]["Internal"];
+        };
+    };
+    translateComplaintText: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                complaintId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TranslationRequest"];
+            };
+        };
+        responses: {
+            /** @description Translated plain text; original complaint remains unchanged. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TranslationResponse"];
+                };
+            };
+            /** @description Malformed JSON */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing demo session */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            /** @description Missing or inaccessible complaint */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Request too large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unsupported content type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Invalid locale, source or comment */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+            /** @description Translation unavailable; original remains available */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
 }

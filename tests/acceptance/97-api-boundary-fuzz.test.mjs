@@ -26,10 +26,11 @@ const mutations = [
   { operationId: 'assignComplaint', method: 'PATCH', path: '/complaints/complaint-1/assignment', user: 'manager-1', body: { assigneeId: 'manager-2' } },
   { operationId: 'changeComplaintStatus', method: 'PATCH', path: '/complaints/complaint-1/status', user: 'manager-1', body: { status: 'in_review' } },
   { operationId: 'addComment', method: 'POST', path: '/complaints/complaint-1/comments', user: 'manager-1', body: { kind: 'comment', text: 'Комментарий.' } },
+  { operationId: 'translateComplaintText', method: 'POST', path: '/complaints/complaint-1/translations', user: 'manager-1', body: { field: 'description', targetLocale: 'en' } },
   { operationId: 'recordDecision', method: 'POST', path: '/complaints/complaint-1/decision', user: 'manager-1', body: { outcome: 'rejected', explanation: 'Причина.' } },
 ];
 async function invoke(operation, payload) {
-  const app = buildApp();
+  const app = buildApp({}, { translator: { enabled: true, translate: async () => 'translated fixture' } });
   try { return await app.inject({ method: operation.method, url: operation.path,
     headers: { 'x-demo-user': operation.user, 'content-type': 'application/json' }, payload: JSON.stringify(payload) }); }
   finally { await app.close(); }

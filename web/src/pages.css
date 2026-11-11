@@ -76,7 +76,7 @@ legend { font-weight: 600; padding: 0 8px; }
 .loading-indicator { display: flex; align-items: center; gap: 10px; color: var(--color-text-muted); margin: 20px 0; }
 .spinner { width: 18px; height: 18px; border: 3px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 0.8s linear infinite; flex: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 .empty-state { padding: 16px 20px; border: 1px dashed var(--color-border-dashed); border-radius: 10px; background: var(--color-surface-subtle); margin-top: 16px; }
 .empty-state p { margin: 0 0 4px; }
 .load-error button:disabled { opacity: 0.6; cursor: not-allowed; }

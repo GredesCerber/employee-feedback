@@ -11,6 +11,8 @@ import { registerUndo } from './undo.js';
 import { registerDiscovery } from './discovery.js';
 import { registerNotifications } from './notifications.js';
 import { registerDigest } from './digest.js';
+import { registerTranslations } from './translations.js';
+import type { TextTranslator } from './ai/translate.js';
 import { registerRateLimit } from './rate-limit.js';
 import { registerSecurity } from './security.js';
 import { aiConfigFromEnv, createAiProvider, type AiProvider } from './ai/provider.js';
@@ -24,6 +26,8 @@ const { version } = JSON.parse(
 ) as { version: string };
 
 export interface HostedOptions {
+  /** Injectable translation transport for offline tests. */
+  translator?: TextTranslator;
   /** Database storage (DATABASE_URL); omitted means in-memory or PERSIST_FILE. */
   database?: DatabasePersistence;
   /** Directory with the built frontend (web/dist). When set, the API serves it too. */
@@ -33,7 +37,7 @@ export interface HostedOptions {
 const stripApiPrefix = (url: string) => url.replace(/^\/api(?=\/|\?|$)/, '') || '/';
 const SPA_ROUTE = '/__spa';
 
-function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = false) {
+function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = false, translator?: TextTranslator) {
   const app = Fastify({
     bodyLimit: 64 * 1024,
     // The frontend calls /api/*; contract paths have no prefix (nginx strips it in compose).
@@ -64,12 +68,13 @@ function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = f
   registerUndo(app);
   registerNotifications(app);
   registerDigest(app);
+  registerTranslations(app, translator);
   return app;
 }
 
 /** Build an isolated app without opening a port, for tests and embedding. */
-export function buildApp(options: FastifyServerOptions = {}) {
-  return createApp(options, new ComplaintStore(process.env.PERSIST_FILE));
+export function buildApp(options: FastifyServerOptions = {}, extra: Pick<HostedOptions, 'translator'> = {}) {
+  return createApp(options, new ComplaintStore(process.env.PERSIST_FILE), false, extra.translator);
 }
 
 /** App with database storage and optional frontend hosting (single-service deploy). */
@@ -77,7 +82,7 @@ export async function buildHostedApp(options: FastifyServerOptions = {}, extra: 
   const store = new ComplaintStore(process.env.PERSIST_FILE, extra.database);
   await store.hydrate();
   const hosting = Boolean(extra.webRoot && existsSync(extra.webRoot));
-  const app = createApp(options, store, hosting);
+  const app = createApp(options, store, hosting, extra.translator);
   app.addHook('onClose', async () => {
     await store.flush();
     await extra.database?.close();

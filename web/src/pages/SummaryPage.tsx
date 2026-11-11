@@ -1,3 +1,4 @@
+import { useI18n, localeNames, referenceLabel, type Locale } from '../i18n';
 import { useCallback, useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
@@ -9,13 +10,14 @@ import { useRevealOnView } from '../features/designMotion';
 import './summary.css';
 
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
-const hours = (value: number | null) => value === null ? '—' : `${number.format(value)} ч`;
-const percent = new Intl.NumberFormat('ru-RU', { style: 'percent', maximumFractionDigits: 1 });
+const hours = (value: number | null, locale: Locale) => value === null ? '—' : `${new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 }).format(value)} ${locale === 'en' ? 'h' : locale === 'kk' ? 'сағ' : 'ч'}`;
 
 export type Bar = { label: string; value: number };
 
 /** «повторяется 2 раза», «5 раз», «21 раз» */
-function timesLabel(count: number) {
+function timesLabel(count: number, locale: Locale) {
+  if (locale === 'en') return `repeated ${new Intl.NumberFormat(localeNames[locale]).format(count)} ${new Intl.PluralRules(localeNames[locale]).select(count) === 'one' ? 'time' : 'times'}`;
+  if (locale === 'kk') return `${new Intl.NumberFormat(localeNames[locale]).format(count)} рет қайталанады`;
   const mod10 = count % 10, mod100 = count % 100;
   const word = mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? 'раза' : 'раз';
   return `повторяется ${number.format(count)} ${word}`;
@@ -62,6 +64,8 @@ function labelLines(label: string, width: number) {
  * Таблица-альтернатива выводится рядом.
  */
 export function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
+  const { locale } = useI18n();
+  const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const titleId = useId();
   const { ref, width } = useContainerWidth();
   const reveal = useRevealOnView<HTMLDivElement>();
@@ -98,6 +102,9 @@ export function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
 }
 
 export default function SummaryPage() {
+  const { t, locale } = useI18n();
+  const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
+  const percent = new Intl.NumberFormat(localeNames[locale], { style: 'percent', maximumFractionDigits: 1 });
   const { api } = useSession();
   const load = useCallback(async () => requireData((await api.GET('/summary')).data), [api]);
   const result = useResource(load);
@@ -108,59 +115,59 @@ export default function SummaryPage() {
     setResetStep('busy'); setResetMessage(null);
     try {
       const done = requireData((await api.POST('/demo/reset')).data);
-      setResetStep('idle'); setResetMessage({ text: `Демо сброшено: загружено ${number.format(done.loadedCount)} обращений.`, error: false });
+      setResetStep('idle'); setResetMessage({ text: t('Демо сброшено: загружено {count} обращений.', { count: number.format(done.loadedCount) }), error: false });
       result.reload();
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) { setResetStep('unavailable'); return; }
       setResetStep('idle'); setResetMessage({ text: error instanceof ApiError ? error.message : 'Не удалось сбросить демо. Повторите попытку.', error: true });
     }
   };
-  const typeBars = summary?.byType.map(item => ({ label: typeLabels[item.type], value: item.count })) ?? [];
-  const topicBars = summary?.recurringTopics.map(topic => ({ label: topic.categoryName, value: topic.count })) ?? [];
-  return <section className="section summary-page"><p className="eyebrow">Обзор обратной связи</p><h1>Сводка</h1>
-    <p className="muted">Результаты рассмотрения и темы, к которым сотрудники возвращаются чаще.</p>
-    {result.loading && <Loading label="Загрузка сводки…" />}
+  const typeBars = summary?.byType.map(item => ({ label: t(typeLabels[item.type]), value: item.count })) ?? [];
+  const topicBars = summary?.recurringTopics.map(topic => ({ label: referenceLabel(locale, 'category', topic.categoryId, topic.categoryName), value: topic.count })) ?? [];
+  return <section className="section summary-page"><p className="eyebrow">{t("Обзор обратной связи")}</p><h1>{t("Сводка")}</h1>
+    <p className="muted">{t("Результаты рассмотрения и темы, к которым сотрудники возвращаются чаще.")}</p>
+    {result.loading && <Loading label={t("Загрузка сводки…")} />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {summary && <>
       <CompletionSignal total={summary.total} closed={summary.closedCount} />
-      <div className="summary-toolbar"><p className="muted">Сводка на <time dateTime={summary.generatedAt}>{dateLabel(summary.generatedAt)}</time></p><button onClick={result.reload}>Обновить сводку</button></div>
+      <div className="summary-toolbar"><p className="muted">{t("Сводка на")} <time dateTime={summary.generatedAt}>{dateLabel(summary.generatedAt, locale)}</time></p><button onClick={result.reload}>{t("Обновить сводку")}</button></div>
       <div className="summary-reset">
-        {resetStep === 'unavailable' ? <p className="muted">Недоступно в этой среде</p>
-          : resetStep === 'idle' ? <button type="button" onClick={() => setResetStep('confirm')}>Сбросить демо</button>
-          : <div role="group" aria-label="Подтверждение сброса демо" className="summary-reset-confirm">
-            <p>Все изменения будут потеряны, данные вернутся к исходным. Продолжить?</p>
-            <button type="button" onClick={resetDemo} disabled={resetStep === 'busy'}>Подтвердить сброс</button>{' '}
-            <button type="button" onClick={() => setResetStep('idle')} disabled={resetStep === 'busy'}>Отмена</button>
+        {resetStep === 'unavailable' ? <p className="muted">{t("Недоступно в этой среде")}</p>
+          : resetStep === 'idle' ? <button type="button" onClick={() => setResetStep('confirm')}>{t("Сбросить демо")}</button>
+          : <div role="group" aria-label={t("Подтверждение сброса демо")} className="summary-reset-confirm">
+            <p>{t("Все изменения будут потеряны, данные вернутся к исходным. Продолжить?")}</p>
+            <button type="button" onClick={resetDemo} disabled={resetStep === 'busy'}>{t("Подтвердить сброс")}</button>{' '}
+            <button type="button" onClick={() => setResetStep('idle')} disabled={resetStep === 'busy'}>{t("Отмена")}</button>
           </div>}
         {resetMessage && (resetMessage.error ? <p role="alert">{resetMessage.text}</p> : <p role="status" className="muted">{resetMessage.text}</p>)}
       </div>
       <div className="summary-metrics">
-        <section className="metric-card" aria-labelledby="summary-total"><h2 id="summary-total">Всего обращений</h2><p className="metric-value">{number.format(summary.total)}</p><p className="muted">За всё время</p></section>
-        <section className="metric-card" aria-labelledby="summary-closed"><h2 id="summary-closed">Доля закрытых</h2><p className="metric-value">{percent.format(summary.closedShare)}</p><p className="muted">Завершено {number.format(summary.closedCount)} из {number.format(summary.total)}. Включены реализованные, отклонённые и закрытые.</p></section>
-        <section className="metric-card" aria-labelledby="summary-response"><h2 id="summary-response">Среднее время первого ответа</h2><p className="metric-value">{summary.averageFirstResponseHours === null ? 'Нет ответов' : `${number.format(summary.averageFirstResponseHours)} ч`}</p><p className="muted">{summary.respondedCount > 0 ? `По ${number.format(summary.respondedCount)} обращениям с первым ответом` : 'Показатель появится после первого ответа руководителя'}</p></section>
-        {summary.overdueCount !== undefined && <section className="metric-card summary-overdue" aria-labelledby="summary-overdue"><h2 id="summary-overdue">Просрочено<span className="visually-hidden">: {number.format(summary.overdueCount)}</span></h2><p className="metric-value" aria-hidden="true">{number.format(summary.overdueCount)}</p><p className="muted">Срок прошёл, решения нет.</p><Link to="/queue?overdue=1">Открыть просроченные в очереди</Link></section>}
+        <section className="metric-card" aria-labelledby="summary-total"><h2 id="summary-total">{t("Всего обращений")}</h2><p className="metric-value">{number.format(summary.total)}</p><p className="muted">{t("За всё время")}</p></section>
+        <section className="metric-card" aria-labelledby="summary-closed"><h2 id="summary-closed">{t("Доля закрытых")}</h2><p className="metric-value">{percent.format(summary.closedShare)}</p><p className="muted">{t("Завершено")} {number.format(summary.closedCount)} {t("из")} {number.format(summary.total)}{t(". Включены реализованные, отклонённые и закрытые.")}</p></section>
+        <section className="metric-card" aria-labelledby="summary-response"><h2 id="summary-response">{t("Среднее время первого ответа")}</h2><p className="metric-value">{summary.averageFirstResponseHours === null ? t("Нет ответов") : `${number.format(summary.averageFirstResponseHours)} ч`}</p><p className="muted">{summary.respondedCount > 0 ? `По ${number.format(summary.respondedCount)} обращениям с первым ответом` : t("Показатель появится после первого ответа руководителя")}</p></section>
+        {summary.overdueCount !== undefined && <section className="metric-card summary-overdue" aria-labelledby="summary-overdue"><h2 id="summary-overdue">{t("Просрочено")}<span className="visually-hidden">: {number.format(summary.overdueCount)}</span></h2><p className="metric-value" aria-hidden="true">{number.format(summary.overdueCount)}</p><p className="muted">{t("Срок прошёл, решения нет.")}</p><Link to="/queue?overdue=1">{t("Открыть просроченные в очереди")}</Link></section>}
       </div>
-      {summary.total === 0 && <p className="summary-empty" role="status">Обращений пока нет — диаграммы появятся после первой подачи.</p>}
+      {summary.total === 0 && <p className="summary-empty" role="status">{t("Обращений пока нет — диаграммы появятся после первой подачи.")}</p>}
       <div className="summary-sections">
-        <section className="summary-table-panel"><h2>Обращения по типам</h2>
-          {summary.total > 0 && <figure className="summary-chart"><BarChart title="Обращения по типам" bars={typeBars} /></figure>}
-          <table aria-label="Обращения по типам"><thead><tr><th scope="col">Тип</th><th scope="col">Количество</th></tr></thead><tbody>{summary.byType.map(item => <tr key={item.type}><th scope="row">{typeLabels[item.type]}</th><td>{number.format(item.count)}</td></tr>)}</tbody></table>
+        <section className="summary-table-panel"><h2>{t("Обращения по типам")}</h2>
+          {summary.total > 0 && <figure className="summary-chart"><BarChart title={t("Обращения по типам")} bars={typeBars} /></figure>}
+          <table aria-label={t("Обращения по типам")}><thead><tr><th scope="col">{t("Тип")}</th><th scope="col">{t("Количество")}</th></tr></thead><tbody>{summary.byType.map(item => <tr key={item.type}><th scope="row">{t(typeLabels[item.type])}</th><td>{number.format(item.count)}</td></tr>)}</tbody></table>
         </section>
-        <section className="summary-table-panel"><h2>Повторяющиеся темы</h2><p className="muted">Категории, в которых есть минимум два обращения.</p>
-          {summary.recurringTopics.length === 0 ? <p>Повторяющихся тем пока нет.</p> : <>
-            <figure className="summary-chart"><BarChart title="Повторяющиеся темы по категориям" bars={topicBars} /></figure>
-            <ul className="topic-list" aria-label="Повторяющиеся темы">{summary.recurringTopics.map(topic => <li key={topic.categoryId}>
-              <span className="topic-name">{topic.categoryName}</span> <span className="topic-count">{timesLabel(topic.count)}</span>{' '}
-              <Link to={`/queue?categoryId=${encodeURIComponent(topic.categoryId)}`}>Открыть в очереди</Link>
+        <section className="summary-table-panel"><h2>{t("Повторяющиеся темы")}</h2><p className="muted">{t("Категории, в которых есть минимум два обращения.")}</p>
+          {summary.recurringTopics.length === 0 ? <p>{t("Повторяющихся тем пока нет.")}</p> : <>
+            <figure className="summary-chart"><BarChart title={t("Повторяющиеся темы по категориям")} bars={topicBars} /></figure>
+            <ul className="topic-list" aria-label={t("Повторяющиеся темы")}>{summary.recurringTopics.map(topic => <li key={topic.categoryId}>
+              <span className="topic-name">{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</span> <span className="topic-count">{timesLabel(topic.count, locale)}</span>{' '}
+              <Link to={`/queue?categoryId=${encodeURIComponent(topic.categoryId)}`}>{t("Открыть в очереди")}</Link>
             </li>)}</ul>
-            <table aria-label="Повторяющиеся темы"><thead><tr><th scope="col">Категория</th><th scope="col">Количество</th></tr></thead><tbody>{summary.recurringTopics.map(topic => <tr key={topic.categoryId}><th scope="row">{topic.categoryName}</th><td>{number.format(topic.count)}</td></tr>)}</tbody></table>
+            <table aria-label={t("Повторяющиеся темы")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Количество")}</th></tr></thead><tbody>{summary.recurringTopics.map(topic => <tr key={topic.categoryId}><th scope="row">{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</th><td>{number.format(topic.count)}</td></tr>)}</tbody></table>
           </>}
         </section>
-        {summary.byDepartment && <section className="summary-table-panel"><h2>Обращения по подразделениям</h2>
-          <table aria-label="Обращения по подразделениям"><thead><tr><th scope="col">Подразделение</th><th scope="col">Обращений</th><th scope="col">Закрыто</th><th scope="col">Доля закрытых</th></tr></thead><tbody>{summary.byDepartment.map(item => <tr key={item.departmentId}><th scope="row">{item.departmentName}</th><td>{number.format(item.count)}</td><td>{number.format(item.closedCount)}</td><td>{percent.format(item.closedShare)}</td></tr>)}</tbody></table>
+        {summary.byDepartment && <section className="summary-table-panel"><h2>{t("Обращения по подразделениям")}</h2>
+          <table aria-label={t("Обращения по подразделениям")}><thead><tr><th scope="col">{t("Подразделение")}</th><th scope="col">{t("Обращений")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Доля закрытых")}</th></tr></thead><tbody>{summary.byDepartment.map(item => <tr key={item.departmentId}><th scope="row">{referenceLabel(locale, 'department', item.departmentId, item.departmentName)}</th><td>{number.format(item.count)}</td><td>{number.format(item.closedCount)}</td><td>{percent.format(item.closedShare)}</td></tr>)}</tbody></table>
         </section>}
-        {summary.avgResolutionHoursByCategory && <section className="summary-table-panel"><h2>Время решения по категориям</h2>
-          <table aria-label="Время решения по категориям"><thead><tr><th scope="col">Категория</th><th scope="col">Закрыто</th><th scope="col">Среднее время</th></tr></thead><tbody>{summary.avgResolutionHoursByCategory.map(item => <tr key={item.categoryId}><th scope="row">{item.categoryName}</th><td>{number.format(item.closedCount)}</td><td>{hours(item.averageResolutionHours)}</td></tr>)}</tbody></table>
+        {summary.avgResolutionHoursByCategory && <section className="summary-table-panel"><h2>{t("Время решения по категориям")}</h2>
+          <table aria-label={t("Время решения по категориям")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Среднее время")}</th></tr></thead><tbody>{summary.avgResolutionHoursByCategory.map(item => <tr key={item.categoryId}><th scope="row">{referenceLabel(locale, 'category', item.categoryId, item.categoryName)}</th><td>{number.format(item.closedCount)}</td><td>{hours(item.averageResolutionHours, locale)}</td></tr>)}</tbody></table>
         </section>}
       </div>
     </>}

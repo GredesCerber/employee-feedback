@@ -7,7 +7,7 @@
 Без Docker, с Node.js >=22.12.0 и npm:
 
 ```sh
-node infra/run-demo.mjs
+npm run demo
 ```
 
 При отсутствии `node_modules` устанавливает зависимости из lockfile, собирает API

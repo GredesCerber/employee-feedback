@@ -1829,6 +1829,144 @@
           }
         ]
       }
+    },
+    "/complaints/{complaintId}/translations": {
+      "post": {
+        "operationId": "translateComplaintText",
+        "tags": [
+          "Complaints"
+        ],
+        "summary": "Translate one selected message without changing its original",
+        "description": "Explicit user action only. Check session and complaint visibility before contacting the provider. Send only selected text (1–5000 characters) and targetLocale. Never send identity, IDs, attachments or other messages. No key or provider failure returns 503; no fabricated translation or local template fallback. Per-user write rate limit applies. Missing/foreign complaint returns the same 404.",
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "complaintId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranslationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Translated plain text; original complaint remains unchanged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranslationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing demo session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Missing or inaccessible complaint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported content type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid locale, source or comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          },
+          "503": {
+            "description": "Translation unavailable; original remains available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-demo-steps": [
+          3,
+          4
+        ]
+      }
     }
   },
   "components": {
@@ -2136,13 +2274,13 @@
             "maxItems": 5,
             "default": []
           },
+          "location": {
+            "$ref": "#/components/schemas/GeoPoint"
+          },
           "anonymous": {
             "type": "boolean",
             "default": false,
             "description": "Optional author redaction from managers and admins, including comments/history. Ownership is still stored internally. Omitted or false preserves existing identified behavior; no real authentication or protection against clues in text is promised."
-          },
-          "location": {
-            "$ref": "#/components/schemas/GeoPoint"
           }
         },
         "description": "Author and department come from the server-resolved session, never from this body. Unknown fields are rejected. Category must exist; a category without an assignee is valid."
@@ -2533,6 +2671,10 @@
           "priority": {
             "$ref": "#/components/schemas/Priority"
           },
+          "location": {
+            "$ref": "#/components/schemas/GeoPoint",
+            "description": "Optional chosen point on the map. Absent when the author did not choose one; null is never used."
+          },
           "attachments": {
             "type": "array",
             "items": {
@@ -2628,10 +2770,6 @@
             "type": "boolean",
             "default": false,
             "description": "Whether author identity is redacted from other readers. Optional for compatibility; absence means false. The author can still read their own complaint and reply."
-          },
-          "location": {
-            "$ref": "#/components/schemas/GeoPoint",
-            "description": "Optional chosen point on the map. Absent when the author did not choose one; null is never used."
           },
           "canUndo": {
             "type": "boolean",
@@ -2891,7 +3029,8 @@
               "INTERNAL_ERROR",
               "RATE_LIMITED",
               "UNDO_EXPIRED",
-              "NOTHING_TO_UNDO"
+              "NOTHING_TO_UNDO",
+              "TRANSLATION_UNAVAILABLE"
             ]
           },
           "message": {
@@ -3836,6 +3975,69 @@
             }
           }
         ]
+      },
+      "TranslationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "targetLocale"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "description",
+              "proposedSolution",
+              "comment",
+              "decision",
+              "actions"
+            ]
+          },
+          "targetLocale": {
+            "type": "string",
+            "enum": [
+              "ru",
+              "en",
+              "kk"
+            ]
+          },
+          "commentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        },
+        "description": "Select existing text of a visible complaint. comment requires commentId. Other fields forbid commentId. Original text is never modified."
+      },
+      "TranslationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "translatedText",
+          "targetLocale",
+          "source"
+        ],
+        "properties": {
+          "translatedText": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15000
+          },
+          "targetLocale": {
+            "type": "string",
+            "enum": [
+              "ru",
+              "en",
+              "kk"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "const": "llm"
+          }
+        }
       }
     },
     "responses": {

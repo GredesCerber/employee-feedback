@@ -11,6 +11,8 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: "3000"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      AI_MODEL: "${AI_MODEL:-}"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
       interval: 5s

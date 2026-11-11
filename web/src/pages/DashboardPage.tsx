@@ -1,3 +1,4 @@
+import { useI18n, localeNames, referenceLabel } from '../i18n';
 import { useCallback, useId } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSession } from '../app/session';
@@ -11,7 +12,6 @@ import { WeeklyDigest } from '../features/weeklyDigest';
 import './dashboard.css';
 
 type DayCount = components['schemas']['DayCount'];
-const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
 
 /** «2026-11-10» → «10.11» без перевода часового пояса: даты в ответе уже в UTC. */
 const shortDate = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}`;
@@ -20,6 +20,8 @@ const LINE = { height: 188, left: 44, right: 20, top: 14, bottom: 45 };
 
 /** Линейный график «обращения по дням» на чистом SVG: оси с подписями, точки, таблица-альтернатива рядом. */
 function LineChart({ title, days }: { title: string; days: DayCount[] }) {
+  const { t, locale } = useI18n();
+  const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const titleId = useId();
   const { ref, width } = useContainerWidth();
   const reveal = useRevealOnView<HTMLDivElement>();
@@ -48,14 +50,16 @@ function LineChart({ title, days }: { title: string; days: DayCount[] }) {
       <polyline className="line-path" points={points} />
       {days.map((day, index) => <circle key={day.date} data-point={day.date} className="line-point" cx={x(index)} cy={y(day.count)} r={days.length === 1 ? 3 : 2} />)}
     </g>
-    <text className="chart-axis-title" x={LINE.left + plotWidth / 2} y={LINE.height - 6} textAnchor="middle">Дата</text>
-    <text className="chart-axis-title" x={14} y={LINE.top + plotHeight / 2} textAnchor="middle" transform={`rotate(-90 14 ${LINE.top + plotHeight / 2})`}>Обращений</text>
+    <text className="chart-axis-title" x={LINE.left + plotWidth / 2} y={LINE.height - 6} textAnchor="middle">{t("Дата")}</text>
+    <text className="chart-axis-title" x={14} y={LINE.top + plotHeight / 2} textAnchor="middle" transform={`rotate(-90 14 ${LINE.top + plotHeight / 2})`}>{t("Обращений")}</text>
     </svg>
   </div></div>;
 }
 
 function CountTable({ label, head, rows }: { label: string; head: string; rows: { key: string; name: string; count: number }[] }) {
-  return <table className="dashboard-table" aria-label={label}><thead><tr><th scope="col">{head}</th><th scope="col">Количество</th></tr></thead>
+  const { t, locale } = useI18n();
+  const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
+  return <table className="dashboard-table" aria-label={label}><thead><tr><th scope="col">{head}</th><th scope="col">{t("Количество")}</th></tr></thead>
     <tbody>{rows.map(row => <tr key={row.key}><th scope="row">{row.name}</th><td>{number.format(row.count)}</td></tr>)}</tbody></table>;
 }
 
@@ -64,6 +68,8 @@ function Tile({ id, title, value, note }: { id: string; title: string; value: st
 }
 
 export default function DashboardPage() {
+  const { t, locale } = useI18n();
+  const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const { api, role } = useSession();
   const [params, setParams] = useSearchParams();
   const department = params.get('department')?.trim() ?? '';
@@ -81,59 +87,59 @@ export default function DashboardPage() {
   }
   return <section className="section dashboard-page">
     <header className="dashboard-header">
-      <div><p className="eyebrow">Обзор обратной связи</p><h1>Дашборд</h1>
-        <p className="muted">Как меняется нагрузка и какие обращения требуют внимания.</p></div>
-      {reference.data && <label className="dashboard-department">Подразделение<select value={department} onChange={event => selectDepartment(event.target.value)}>
-        <option value="">Все подразделения</option>
-        {reference.data.departments.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+      <div><p className="eyebrow">{t("Обзор обратной связи")}</p><h1>{t("Дашборд")}</h1>
+        <p className="muted">{t("Как меняется нагрузка и какие обращения требуют внимания.")}</p></div>
+      {reference.data && <label className="dashboard-department">{t("Подразделение")}<select value={department} onChange={event => selectDepartment(event.target.value)}>
+        <option value="">{t("Все подразделения")}</option>
+        {reference.data.departments.map(item => <option key={item.id} value={item.id}>{referenceLabel(locale, 'department', item.id, item.name)}</option>)}
       </select></label>}
     </header>
     {trends && <div className="dashboard-toolbar">
-      <p className="muted">Данные на <time dateTime={trends.generatedAt}>{dateLabel(trends.generatedAt)}</time></p>
-      <button onClick={result.reload}>Обновить</button>
+      <p className="muted">{t("Данные на")} <time dateTime={trends.generatedAt}>{dateLabel(trends.generatedAt, locale)}</time></p>
+      <button onClick={result.reload}>{t("Обновить")}</button>
     </div>}
-    {result.loading && <Loading label="Загрузка дашборда…" />}
+    {result.loading && <Loading label={t("Загрузка дашборда…")} />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {trends && totals && <>
-      <CompletionSignal total={totals.total} closed={totals.closedCount} scope={department ? 'Выбранное подразделение' : undefined} />
+      <CompletionSignal total={totals.total} closed={totals.closedCount} scope={department ? t("Выбранное подразделение") : undefined} />
       <div className="dashboard-tiles">
-        <Tile id="dash-total" title="Всего обращений" value={number.format(totals.total)} note="С учётом закрытых" />
-        <Tile id="dash-open" title="Открытых" value={number.format(totals.openCount)} note={`Закрыто ${number.format(totals.closedCount)}`} />
-        <Tile id="dash-overdue" title="Просрочено" value={number.format(totals.overdueCount)} note="Срок прошёл, решения нет" />
-        <Tile id="dash-resolution" title="Среднее время решения" value={totals.averageResolutionHours === null ? 'Нет закрытых' : `${number.format(totals.averageResolutionHours)} ч`}
-          note="От подачи до закрытия" />
+        <Tile id="dash-total" title={t("Всего обращений")} value={number.format(totals.total)} note={t("С учётом закрытых")} />
+        <Tile id="dash-open" title={t("Открытых")} value={number.format(totals.openCount)} note={`${t("Закрыто")} ${number.format(totals.closedCount)}`} />
+        <Tile id="dash-overdue" title={t("Просрочено")} value={number.format(totals.overdueCount)} note={t("Срок прошёл, решения нет")} />
+        <Tile id="dash-resolution" title={t("Среднее время решения")} value={totals.averageResolutionHours === null ? t("Нет закрытых") : `${number.format(totals.averageResolutionHours)} ${locale === 'en' ? 'h' : locale === 'kk' ? t("сағ") : t("ч")}`}
+          note={t("От подачи до закрытия")} />
       </div>
-      {empty && <p className="summary-empty" role="status">Обращений пока нет — графики появятся после первой подачи.</p>}
+      {empty && <p className="summary-empty" role="status">{t("Обращений пока нет — графики появятся после первой подачи.")}</p>}
       <div className="dashboard-grid dashboard-overview">
-        {!empty && <section className="dashboard-panel"><h2>Обращения по дням</h2><p className="muted">Последние 14 дней, UTC.</p>
-          <figure className="dashboard-chart"><LineChart title="Обращения по дням" days={trends.byDay} /></figure>
-          <details><summary>Таблица по дням</summary>
-            <CountTable label="Обращения по дням" head="Дата" rows={trends.byDay.map(day => ({ key: day.date, name: shortDate(day.date), count: day.count }))} />
+        {!empty && <section className="dashboard-panel"><h2>{t("Обращения по дням")}</h2><p className="muted">{t("Последние 14 дней, UTC.")}</p>
+          <figure className="dashboard-chart"><LineChart title={t("Обращения по дням")} days={trends.byDay} /></figure>
+          <details><summary>{t("Таблица по дням")}</summary>
+            <CountTable label={t("Обращения по дням")} head={t("Дата")} rows={trends.byDay.map(day => ({ key: day.date, name: shortDate(day.date), count: day.count }))} />
           </details>
         </section>}
         <section className="dashboard-panel dashboard-overdue">
-          <div className="dashboard-panel-heading"><h2>Просроченные</h2><span className="dashboard-panel-count" aria-hidden="true">{number.format(totals.overdueCount)}</span></div>
-          {trends.overdue.length === 0 ? <p>Просроченных обращений нет.</p>
-            : <ul className="overdue-list" aria-label="Просроченные обращения">{trends.overdue.map(item => <li key={item.id}>
+          <div className="dashboard-panel-heading"><h2>{t("Просроченные")}</h2><span className="dashboard-panel-count" aria-hidden="true">{number.format(totals.overdueCount)}</span></div>
+          {trends.overdue.length === 0 ? <p>{t("Просроченных обращений нет.")}</p>
+            : <ul className="overdue-list" aria-label={t("Просроченные обращения")}>{trends.overdue.map(item => <li key={item.id}>
               <div className="overdue-info">
                 {role === 'manager' ? <Link to={`/queue/${encodeURIComponent(item.id)}`}>{item.number}</Link> : <span className="overdue-number">{item.number}</span>}
-                <span className="muted">{item.categoryName}</span>
+                <span className="muted">{referenceLabel(locale, 'category', item.categoryId, item.categoryName)}</span>
               </div>
-              <span className="overdue-hours"><span className="visually-hidden">просрочено на </span>{number.format(Math.round(item.overdueHours))} ч</span>
+              <span className="overdue-hours"><span className="visually-hidden">{t("просрочено на")} </span>{number.format(Math.round(item.overdueHours))} {t("ч")}</span>
             </li>)}</ul>}
-          {role !== 'manager' && trends.overdue.length > 0 && <p className="muted">Карточки открывает руководитель в очереди обращений.</p>}
+          {role !== 'manager' && trends.overdue.length > 0 && <p className="muted">{t("Карточки открывает руководитель в очереди обращений.")}</p>}
         </section>
       </div>
       {!empty && <div className="dashboard-grid">
-        <section className="dashboard-panel"><h2>По категориям</h2>
-          <figure className="dashboard-chart"><BarChart title="Обращения по категориям" bars={trends.byCategory.map(item => ({ label: item.categoryName, value: item.count }))} />
-            <figcaption className="chart-axis-note">По горизонтали — число обращений</figcaption></figure>
-          <CountTable label="Обращения по категориям" head="Категория" rows={trends.byCategory.map(item => ({ key: item.categoryId, name: item.categoryName, count: item.count }))} />
+        <section className="dashboard-panel"><h2>{t("По категориям")}</h2>
+          <figure className="dashboard-chart"><BarChart title={t("Обращения по категориям")} bars={trends.byCategory.map(item => ({ label: referenceLabel(locale, 'category', item.categoryId, item.categoryName), value: item.count }))} />
+            <figcaption className="chart-axis-note">{t("По горизонтали — число обращений")}</figcaption></figure>
+          <CountTable label={t("Обращения по категориям")} head={t("Категория")} rows={trends.byCategory.map(item => ({ key: item.categoryId, name: referenceLabel(locale, 'category', item.categoryId, item.categoryName), count: item.count }))} />
         </section>
-        <section className="dashboard-panel"><h2>По подразделениям</h2>
-          <figure className="dashboard-chart"><BarChart title="Обращения по подразделениям" bars={trends.byDepartment.map(item => ({ label: item.departmentName, value: item.count }))} />
-            <figcaption className="chart-axis-note">По горизонтали — число обращений</figcaption></figure>
-          <CountTable label="Обращения по подразделениям" head="Подразделение" rows={trends.byDepartment.map(item => ({ key: item.departmentId, name: item.departmentName, count: item.count }))} />
+        <section className="dashboard-panel"><h2>{t("По подразделениям")}</h2>
+          <figure className="dashboard-chart"><BarChart title={t("Обращения по подразделениям")} bars={trends.byDepartment.map(item => ({ label: referenceLabel(locale, 'department', item.departmentId, item.departmentName), value: item.count }))} />
+            <figcaption className="chart-axis-note">{t("По горизонтали — число обращений")}</figcaption></figure>
+          <CountTable label={t("Обращения по подразделениям")} head={t("Подразделение")} rows={trends.byDepartment.map(item => ({ key: item.departmentId, name: referenceLabel(locale, 'department', item.departmentId, item.departmentName), count: item.count }))} />
         </section>
       </div>}
     </>}

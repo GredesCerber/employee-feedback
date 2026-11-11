@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ApiError, tooManyRequests } from '../api/client';
+import { useI18n } from '../i18n';
 
 export function errorMessage(error: unknown): string {
   return error instanceof ApiError ? error.message : 'Не удалось получить ответ сервера. Повторите попытку.';
@@ -30,6 +31,7 @@ export function useResource<T>(load: () => Promise<T>) {
 
 /** Обратный отсчёт блокировки после 429. `start(n)` блокирует на n секунд. */
 export function useCooldown(initialSeconds = 0) {
+  const { locale } = useI18n();
   const [until, setUntil] = useState(() => (initialSeconds > 0 ? Date.now() + initialSeconds * 1000 : 0));
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -45,7 +47,7 @@ export function useCooldown(initialSeconds = 0) {
   return {
     seconds,
     active: seconds > 0,
-    message: seconds > 0 ? tooManyRequests(seconds) : '',
+    message: seconds > 0 ? (locale === 'ru' ? tooManyRequests(seconds) : locale === 'en' ? `Too many requests. Try again in ${seconds} s.` : `Сұраулар тым көп. ${seconds} секундтан кейін қайталаңыз.`) : '',
     start(value: number) { const current = Date.now(); setNow(current); setUntil(current + value * 1000); },
   };
 }
