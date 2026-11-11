@@ -4,11 +4,12 @@ import { Link } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { ApiError } from '../api/client';
 import { errorMessage, requireData, retryAfterOf, useCooldown, useResource } from '../features/data';
-import { Loading, LoadError } from '../features/complaint';
+import { dateLabel, Loading, LoadError } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
 import { ImitationBadge } from '../features/demo';
 import { AnonymousBadge } from '../features/complaintMeta';
 import { SimilarList, SuggestionNote, useSubmitAssist } from '../features/submitAssist';
+import '../styles/feedback-layout.css';
 
 const fieldIds: Record<string, string> = { categoryId: 'category', description: 'description', proposedSolution: 'solution', type: 'complaint-type' };
 function focusFirstInvalid(errors: Record<string, string>) {
@@ -80,15 +81,20 @@ export default function SubmitPage() {
 
   if (created) return <><section className="section">
     <p className="eyebrow">Отправлено</p><h1 ref={resultHeading} tabIndex={-1}>Обращение зарегистрировано</h1>
-    <p className="registration-number">{created.number}</p>{(created.anonymous ?? anonymous) && <p><AnonymousBadge /></p>}<p>{created.nextAction}</p>
+    <p className="registration-number">{created.number}</p>{(created.anonymous ?? anonymous) && <p><AnonymousBadge /></p>}
+    <dl className="metadata registration-meta">
+      <div><dt>Ответственный</dt><dd>{created.assignee?.name ?? 'Ожидает назначения'}</dd></div>
+      <div><dt>Срок</dt><dd>{Number.isFinite(Date.parse(created.dueAt)) ? dateLabel(created.dueAt) : 'Срок не указан'}</dd></div>
+    </dl>
+    <div className="next-action"><h2>Следующий шаг</h2><p>{created.nextAction}</p></div>
     <div className="actions"><Link className="primary-link" to={`/my/${created.id}`}>Открыть обращение</Link><Link to="/my">К моим обращениям</Link></div>
   </section>{announcement}</>;
 
-  return <><section className="section"><p className="eyebrow">Обратная связь</p><h1>Новое обращение</h1>
+  return <><section className="section submit-page"><p className="eyebrow">Обратная связь</p><h1>Новое обращение</h1>
     <p className="muted">Сообщите о проблеме или предложите улучшение. Обращение видят вы, руководители и администраторы.</p>
     {reference.loading && <Loading label="Загрузка категорий…" />}
     {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
-    {reference.data && <form onSubmit={submit} noValidate className="complaint-form">
+    {reference.data && <div className="submit-layout"><form onSubmit={submit} noValidate className="complaint-form">
       <label htmlFor="complaint-type">Тип обращения</label><select id="complaint-type" value={type} onChange={event => setType(event.target.value as Complaint['type'])}><option value="problem">Проблема</option><option value="suggestion">Предложение</option><option value="praise">Благодарность</option></select>
       <label htmlFor="category">Категория</label><select id="category" value={categoryId} onChange={event => chooseCategory(event.target.value)} required aria-invalid={Boolean(errors.categoryId)} aria-describedby={errors.categoryId ? 'category-error' : undefined}><option value="">Выберите категорию</option>{reference.data.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
       {errors.categoryId && <p id="category-error" role="alert" className="field-error">{errors.categoryId}</p>}
@@ -107,6 +113,13 @@ export default function SubmitPage() {
       <p className="field-hint">Файл-заглушка sample-request.txt: сохраняются только название, тип и размер, содержимое не загружается.</p>
       {(cooldown.active || failure) && <p role="alert" className="field-error">{cooldown.active ? cooldown.message : failure}</p>}
       <button className="primary-button" disabled={busy || cooldown.active} type="submit">{busy ? 'Отправка…' : 'Отправить обращение'}</button>
-    </form>}
+    </form><aside className="submit-guide" aria-labelledby="submit-guide-heading">
+      <h2 id="submit-guide-heading">Что будет дальше</h2>
+      <ol>
+        <li><strong>Регистрация.</strong> Вы получите номер обращения.</li>
+        <li><strong>Рассмотрение.</strong> Ответственный изучит обращение и при необходимости задаст вопрос.</li>
+        <li><strong>Решение.</strong> Итог и пояснение появятся в «Моих обращениях».</li>
+      </ol>
+    </aside></div>}
   </section>{announcement}</>;
 }

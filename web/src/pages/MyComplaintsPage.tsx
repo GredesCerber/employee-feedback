@@ -5,6 +5,7 @@ import { requireData, useResource } from '../features/data';
 import { AnonymousBadge } from '../features/complaintMeta';
 import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../features/complaint';
 import { lastComplaintPath, readLastComplaint } from '../features/lastComplaint';
+import '../styles/feedback-layout.css';
 
 export default function MyComplaintsPage() {
   const { api, role } = useSession();
@@ -12,19 +13,25 @@ export default function MyComplaintsPage() {
   const [lastId] = useState(() => readLastComplaint(role));
   const load = useCallback(async () => requireData((await api.GET('/complaints', { params: { query: { limit: 20, offset } } })).data), [api, offset]);
   const result = useResource(load);
-  return <section className="section"><p className="eyebrow">Личный кабинет</p><h1>Мои обращения</h1>
-    {lastId && <p><Link to={lastComplaintPath(role, lastId)}>Вернуться к последнему обращению</Link></p>}
+  return <section className="section my-complaints-page">
+    <div className="feedback-heading">
+      <div><p className="eyebrow">Личный кабинет</p><h1>Мои обращения</h1></div>
+      {result.data && result.data.total > 0 && <Link className="primary-link" to="/submit">Подать обращение</Link>}
+    </div>
+    {lastId && <p className="feedback-return"><Link to={lastComplaintPath(role, lastId)}>Вернуться к последнему обращению</Link></p>}
     {result.loading && <Loading label="Загрузка обращений…" />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {result.data && <>
-      {result.data.total === 0 ? <div><p>У вас пока нет обращений.</p><Link to="/submit">Подать первое обращение</Link></div> : <>
+      {result.data.total === 0 ? <div className="empty-state"><p>У вас пока нет обращений.</p><div className="actions"><Link className="primary-link" to="/submit">Подать первое обращение</Link></div></div> : <>
         <p className="muted">Всего обращений: {result.data.total}</p>
         <ul className="complaint-list">{result.data.items.map(item => <li key={item.id} className="complaint-item">
           <div className="item-header"><Link className="complaint-number" to={`/my/${item.id}`}>{item.number}</Link>{item.anonymous && <AnonymousBadge />}<StatusBadge status={item.status} /></div>
           <p className="item-description">{item.description}</p>
           <p className="muted">{typeLabels[item.type]} · {dateLabel(item.createdAt)}</p>
-          <p>{item.nextAction}</p>
-          {item.overdue && <p className="overdue">Просрочено · срок {dateLabel(item.dueAt)}</p>}
+          <dl className="my-next-action">
+            <div><dt>Следующий шаг</dt><dd className={item.status === 'awaiting_clarification' ? 'answer-needed' : undefined}>{item.nextAction}</dd></div>
+            <div><dt>Срок</dt><dd className={item.overdue ? 'overdue' : undefined}>{item.overdue && 'Просрочено · срок '}{dateLabel(item.dueAt)}</dd></div>
+          </dl>
         </li>)}</ul>
         {result.data.total > 20 && <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(value => Math.max(0, value - 20))}>Назад</button><span>Страница {Math.floor(offset / 20) + 1} из {Math.max(1, Math.ceil(result.data.total / 20))}</span><button disabled={offset + result.data.items.length >= result.data.total} onClick={() => setOffset(value => value + 20)}>Далее</button></div>}
       </>}

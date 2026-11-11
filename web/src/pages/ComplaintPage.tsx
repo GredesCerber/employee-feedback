@@ -50,7 +50,10 @@ export default function ComplaintPage() {
   useEffect(() => {
     if (item && focusPending.current) { focusPending.current = false; heading.current?.focus(); }
   }, [item]);
-  return <section className="section"><Link to={role === 'manager' ? '/queue' : '/my'}>{role === 'manager' ? 'К очереди' : 'К моим обращениям'}</Link>
+  const queueSearch = (location.state as { queueSearch?: unknown } | null)?.queueSearch;
+  const back = role === 'manager' ? { pathname: '/queue', search: typeof queueSearch === 'string' ? queueSearch : '' } : '/my';
+  const hasManagerActions = role === 'manager' && item && !['implemented', 'rejected', 'closed'].includes(item.status);
+  return <section className="section complaint-detail"><Link to={back}>{role === 'manager' ? 'К очереди' : 'К моим обращениям'}</Link>
     <p className={notice ? 'muted' : 'visually-hidden'} aria-live="polite">{notice}</p>
     {result.loading && <><h1>Обращение</h1><Loading label="Загрузка обращения…" /></>}
     {result.error && <><h1>Обращение недоступно</h1><LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} /></>}
@@ -59,21 +62,50 @@ export default function ComplaintPage() {
       <div className="next-action"><h2>Следующий шаг</h2><p>{item.nextAction}</p></div>
       <UndoAction item={item} onUpdated={onUpdated} />
       {role === 'employee' && <AuthorReply item={item} onUpdated={onUpdated} />}
-      <dl className="metadata"><div><dt>Тип</dt><dd>{typeLabels[item.type]}</dd></div>
-        <div><dt>Категория</dt><dd>{referenceName(reference.data?.categories, item.categoryId, reference.loading)}</dd></div>
-        <div><dt>Подразделение</dt><dd>{referenceName(reference.data?.departments, item.departmentId, reference.loading)}</dd></div>
-        <div><dt>Приоритет</dt><dd>{priorityLabels[item.priority]}</dd></div>
-        <div><dt>Автор</dt><dd>{authorLabel(item)}</dd></div>
-        <div><dt>Ответственный</dt><dd>{item.assignee?.name ?? 'Ожидает назначения'}</dd></div>
-        <div><dt>Как назначен</dt><dd>{routingReasonLabels[item.routing.reason]}</dd></div><div><dt>Создано</dt><dd>{dateLabel(item.createdAt)}</dd></div><div><dt>Срок</dt><dd className={item.overdue ? 'overdue' : ''}>{item.overdue ? 'Просрочено · ' : ''}{dateLabel(item.dueAt)}</dd></div></dl>
-      {!item.assignee && <p className="fallback-queue-hint">{fallbackQueueHint}</p>}
-      <h2>Описание</h2><p className="preserve-lines">{item.description}</p>
-      {item.proposedSolution && <><h2>Предлагаемое решение</h2><p className="preserve-lines">{item.proposedSolution}</p></>}
-      {item.attachments.length > 0 && <><h2>Тестовые вложения <ImitationBadge hint="не настоящий файл: содержимое не загружается" /></h2><p className="muted">Сохранены только сведения о файлах-заглушках, содержимое недоступно.</p><ul>{item.attachments.map((file, index) => <li key={`${file.name}-${index}`}>{file.name} · {file.sizeBytes} байт</li>)}</ul></>}
-      {item.decision && <div className="decision"><h2>Итог рассмотрения</h2><StatusBadge status={item.decision.outcome} /><p className="preserve-lines">{item.decision.explanation}</p>{item.decision.actions && <><h3>Дальнейшие действия</h3><p className="preserve-lines">{item.decision.actions}</p></>}<p className="muted">{item.decision.author.name} · {dateLabel(item.decision.createdAt)}</p></div>}
-      <h2>Комментарии</h2>{item.comments.length === 0 ? <p className="muted">Комментариев пока нет.</p> : <ul className="timeline">{item.comments.map(comment => <li key={comment.id} className={`comment comment-${comment.kind}`}><CommentKindBadge kind={comment.kind} /> <strong>{comment.author.name}</strong><p className="preserve-lines">{comment.text}</p><time dateTime={comment.createdAt}>{dateLabel(comment.createdAt)}</time></li>)}</ul>}
-      <h2>История обращения</h2><ol className="timeline">{item.history.map(event => <li key={event.id}><p className="preserve-lines">{event.text}{event.simulated && <> <ImitationBadge hint="создано демо-симулятором" /></>}</p><p className="muted">{event.actor?.name ?? 'Система'} · <time dateTime={event.createdAt}>{dateLabel(event.createdAt)}</time></p></li>)}</ol>
-      {role === 'manager' && <ManagerActions key={`${item.id}-${item.status}`} item={item} onUpdated={onUpdated} />}
+      <div className={hasManagerActions ? 'detail-layout has-management' : 'detail-layout'}>
+        <div className="detail-record">
+          <div className="detail-copy">
+            <dl className="metadata">
+              <div><dt>Ответственный</dt><dd>{item.assignee?.name ?? 'Ожидает назначения'}</dd></div>
+              <div><dt>Срок</dt><dd className={item.overdue ? 'overdue' : ''}>{item.overdue ? 'Просрочено · ' : ''}{dateLabel(item.dueAt)}</dd></div>
+              <div><dt>Приоритет</dt><dd>{priorityLabels[item.priority]}</dd></div>
+              <div><dt>Тип</dt><dd>{typeLabels[item.type]}</dd></div>
+              <div><dt>Категория</dt><dd>{referenceName(reference.data?.categories, item.categoryId, reference.loading)}</dd></div>
+              <div><dt>Подразделение</dt><dd>{referenceName(reference.data?.departments, item.departmentId, reference.loading)}</dd></div>
+              <div><dt>Автор</dt><dd>{authorLabel(item)}</dd></div>
+              <div><dt>Как назначен</dt><dd>{routingReasonLabels[item.routing.reason]}</dd></div>
+              <div><dt>Создано</dt><dd>{dateLabel(item.createdAt)}</dd></div>
+            </dl>
+            {!item.assignee && <p className="fallback-queue-hint">{fallbackQueueHint}</p>}
+            <h2>Описание</h2><p className="preserve-lines">{item.description}</p>
+            {item.proposedSolution && <><h2>Предлагаемое решение</h2><p className="preserve-lines">{item.proposedSolution}</p></>}
+            {item.attachments.length > 0 && <>
+              <h2>Тестовые вложения <ImitationBadge hint="не настоящий файл: содержимое не загружается" /></h2>
+              <p className="muted">Сохранены только сведения о файлах-заглушках, содержимое недоступно.</p>
+              <ul>{item.attachments.map((file, index) => <li key={`${file.name}-${index}`}>{file.name} · {file.sizeBytes} байт</li>)}</ul>
+            </>}
+            {item.decision && <div className="decision">
+              <h2>Итог рассмотрения</h2><StatusBadge status={item.decision.outcome} />
+              <p className="preserve-lines">{item.decision.explanation}</p>
+              {item.decision.actions && <><h3>Дальнейшие действия</h3><p className="preserve-lines">{item.decision.actions}</p></>}
+              <p className="muted">{item.decision.author.name} · {dateLabel(item.decision.createdAt)}</p>
+            </div>}
+          </div>
+          <div className="detail-history">
+            <h2>Комментарии</h2>
+            {item.comments.length === 0 ? <p className="muted">Комментариев пока нет.</p> : <ul className="timeline">{item.comments.map(comment => <li key={comment.id} className={`comment comment-${comment.kind}`}>
+              <CommentKindBadge kind={comment.kind} /> <strong>{comment.author.name}</strong>
+              <p className="preserve-lines">{comment.text}</p><time dateTime={comment.createdAt}>{dateLabel(comment.createdAt)}</time>
+            </li>)}</ul>}
+            <h2>История обращения</h2>
+            <ol className="timeline">{item.history.map(event => <li key={event.id}>
+              <p className="preserve-lines">{event.text}{event.simulated && <> <ImitationBadge hint="создано демо-симулятором" /></>}</p>
+              <p className="muted">{event.actor?.name ?? 'Система'} · <time dateTime={event.createdAt}>{dateLabel(event.createdAt)}</time></p>
+            </li>)}</ol>
+          </div>
+        </div>
+        {hasManagerActions && <ManagerActions key={`${item.id}-${item.status}`} item={item} onUpdated={onUpdated} />}
+      </div>
     </>}
   </section>;
 }
