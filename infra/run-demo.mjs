@@ -54,7 +54,8 @@ async function main() {
   let webPort = options['--web-port'] ?? (options['--dry-run'] ? 5173 : await freePort());
   while (webPort === apiPort && !options['--web-port']) webPort = options['--dry-run'] ? apiPort + 1 : await freePort();
   if (webPort === apiPort) throw new Error('API и веб требуют разных портов.');
-  const apiEnv = { HOST: '127.0.0.1', PORT: String(apiPort) };
+  // SEED_RELATIVE_DATES=1: даты демо-данных считаются от «сегодня», чтобы на показе не всё было просрочено (#215).
+  const apiEnv = { HOST: '127.0.0.1', PORT: String(apiPort), SEED_RELATIVE_DATES: '1' };
   // --seed-reset: PERSIST_FILE исключается из окружения API целиком (не пустая строка), файл не трогается.
   const apiEnvUnset = seedResetUnset(Boolean(options['--seed-reset']));
   const webEnv = { DEMO_API_PORT: String(apiPort), DEMO_WEB_PORT: String(webPort) };

@@ -7,11 +7,14 @@ import { configureErrors } from './http.js';
 import { registerComplaints } from './complaints.js';
 import { registerLifecycle } from './lifecycle.js';
 import { registerUndo } from './undo.js';
+import { registerDiscovery } from './discovery.js';
+import { registerNotifications } from './notifications.js';
 import { registerRateLimit } from './rate-limit.js';
 import { registerSecurity } from './security.js';
+import { aiConfigFromEnv, createAiProvider, type AiProvider } from './ai/provider.js';
 
 declare module 'fastify' {
-  interface FastifyInstance { store: ComplaintStore }
+  interface FastifyInstance { store: ComplaintStore; ai: AiProvider }
 }
 
 const { version } = JSON.parse(
@@ -46,13 +49,17 @@ function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = f
   });
   store.seed();
   app.decorate('store', store);
+  // Without ANTHROPIC_API_KEY the provider never touches the network (recorded examples and keyword rules only).
+  app.decorate('ai', createAiProvider(aiConfigFromEnv()));
   registerSecurity(app);
   registerRateLimit(app);
   configureErrors(app);
   app.get('/health', async () => ({ status: 'ok', version }));
   registerComplaints(app);
+  registerDiscovery(app);
   registerLifecycle(app);
   registerUndo(app);
+  registerNotifications(app);
   return app;
 }
 

@@ -24,6 +24,9 @@
 | `PERSIST_FILE` | файл, куда API сохраняет данные между перезапусками (#92); `infra/run-demo.mjs` уже передаёт его пустым при `--seed-reset` | пусто (данные только в памяти) | нет | используется |
 | `DATABASE_URL` | `api/src/server.ts`: строка подключения Postgres (Neon и др.); включает хранение в БД и имеет приоритет над `PERSIST_FILE`; см. раздел «Выкладка на хостинг» в `infra/README.md` | пусто (данные в памяти или в `PERSIST_FILE`) | да, для единого сервиса на Render | используется |
 | `WEB_ROOT` | `api/src/server.ts`: папка со сборкой фронта, которую API отдаёт сам | `../../web/dist` от `dist/` API (пропускается, если папки нет) | нет | используется |
+| `SEED_RELATIVE_DATES` | `api/src/seed.ts`: при значении `1` даты 20 seed-обращений считаются от начала текущего дня (UTC): 4 открытых просрочены, у остальных срок в будущем; `infra/run-demo.mjs`, `infra/hosted.Dockerfile` и `infra/render.yaml` задают `1` | не задана (фиксированные даты от 1 ноября 2026) | нет | используется |
+| `ANTHROPIC_API_KEY` | `api/src/ai/provider.ts` (#149): ключ Anthropic для живой подсказки категории; при ошибке или таймауте (3 с) ответ строят правила слов; в журнал и ответы не попадает; `api/.env.example` | пусто (ИИ выключен, сети нет: записанные примеры и правила слов) | нет | используется |
+| `AI_MODEL` | `api/src/ai/provider.ts` (#149): модель Claude для подсказки категории; `api/.env.example` | `claude-haiku-5-5` | нет | используется |
 | `DEMO_API_PORT` | `infra/serve-demo.mjs`: порт API, на который проксируется `/api`; задаёт `infra/run-demo.mjs` | выбирает `infra/run-demo.mjs` | нет | используется |
 | `DEMO_WEB_PORT` | `infra/serve-demo.mjs`: порт собранного веба; задаёт `infra/run-demo.mjs` | выбирает `infra/run-demo.mjs` | нет | используется |
 | `WEB_PORT` | `docker-compose.yml`: внешний порт веба в Docker | `8080` | нет | используется |

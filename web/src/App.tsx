@@ -9,6 +9,7 @@ import SummaryPage from './pages/SummaryPage';
 import QueuePage from './pages/QueuePage';
 import DashboardPage from './pages/DashboardPage';
 import { AboutPage, DemoHint, ImitationBadge, useDemoHints } from './features/demo';
+import { NotificationBell } from './features/notifications';
 import { useTheme } from './features/theme';
 import type { ThemeChoice } from './features/theme';
 import './styles/tokens.css';
@@ -72,6 +73,8 @@ function Shell() {
     <p className="demo-notice">Демонстрация · только синтетические данные. Выбор роли имитирует вход.</p>
     <div className="workspace">
       <nav aria-label="Основное меню">{navigation[role].map(item => <NavLink key={item.path} to={item.path}>{item.label}</NavLink>)}</nav>
+      {/* Колокольчик стоит в DOM после меню (порядок Tab «шапка → меню» не меняется), а в шапку выводится стилями. */}
+      {role !== 'admin' && <NotificationBell key={`bell-${role}`} role={role} />}
       <main id="main" tabIndex={-1} key={role}>
         {hints.enabled && <DemoHint />}
         <Routes>
