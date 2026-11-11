@@ -178,7 +178,7 @@ test('#146 ответ 429: ждёт Retry-After, повторяет запрос
 });
 
 test('#146 настоящий лимит API: симулятор переживает 429 и завершает прогон с кодом 0', async t => {
-  const api = await startApi(t, { RATE_LIMIT_MAX: '3', RATE_LIMIT_WINDOW_S: '1' });
+  const api = await startApi(t, { RATE_LIMIT_MAX: '1', RATE_LIMIT_WINDOW_S: '1' });
   const { o, io } = quickIo({ sleep: undefined });
   const code = await main(['--max-events', '12', '--seed', '2', '--interval', '0', '--api-url', api.url], { env: { DEMO_SIMULATION_ENABLED: 'true' }, ...io });
   assert.equal(code, 0, o.out.join('\n'));
