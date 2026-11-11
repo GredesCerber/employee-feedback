@@ -93,7 +93,7 @@ export function ManagerActions({ item, onUpdated }: { item: Complaint; onUpdated
         event.preventDefault();
         if (!assigneeId) { mutation.setError('Выберите ответственного.', 'assignee'); return; }
         void mutation.run(async () => requireData((await api.PATCH('/complaints/{complaintId}/assignment', { params: { path }, body: { assigneeId } })).data), 'Ответственный назначен.');
-      }}><label htmlFor="assignee">Назначить ответственного</label><select id="assignee" aria-required="true" {...mutation.invalid('assignee', 'manager-action-error')} value={assigneeId} onChange={event => setAssignee(event.target.value)}><option value="">Выберите руководителя</option>{reference.data.assignees.map(user => <option value={user.id} key={user.id}>{user.name}</option>)}</select><button type="submit">Назначить</button></form>}
+      }}><label htmlFor="assignee">Назначить ответственного</label><select id="assignee" aria-required="true" {...mutation.invalid('assignee', 'manager-action-error')} value={assigneeId} onChange={event => setAssignee(event.target.value)}><option value="">Назначить ответственного</option>{reference.data.assignees.map(user => <option value={user.id} key={user.id}>{user.name}</option>)}</select><button type="submit">Назначить</button></form>}
     </fieldset>
     <fieldset disabled={mutation.busy}><legend>Статус и обсуждение</legend>
       <div className="actions">{(['in_review', 'in_progress'] as const).filter(status => allowed.includes(status)).map(status => <button key={status} onClick={() => void mutation.run(async () => requireData((await api.PATCH('/complaints/{complaintId}/status', { params: { path }, body: { status } })).data), 'Статус обращения изменён.')}>{status === 'in_progress' ? 'Взять в работу' : item.status === 'new' ? 'Начать рассмотрение' : 'Вернуть на рассмотрение'}</button>)}</div>
@@ -104,7 +104,8 @@ export function ManagerActions({ item, onUpdated }: { item: Complaint; onUpdated
       if (!explanation.trim()) { mutation.setError('Объясните решение или причину отказа.', 'explanation'); return; }
       void mutation.run(async () => requireData((await api.POST('/complaints/{complaintId}/decision', { params: { path }, body: { outcome, explanation: explanation.trim(), ...(actions.trim() ? { actions: actions.trim() } : {}) } })).data), 'Итог рассмотрения зафиксирован.');
     }}><label htmlFor="outcome">Итог рассмотрения</label><select id="outcome" value={outcome} onChange={event => setOutcome(event.target.value as Outcome)}>{outcomes.map(value => <option key={value} value={value}>{statusLabels[value]}</option>)}</select>
-      <label htmlFor="explanation">Обоснование решения</label><textarea id="explanation" aria-required="true" {...mutation.invalid('explanation', 'manager-action-error')} rows={4} maxLength={5000} value={explanation} onChange={event => setExplanation(event.target.value)} />
+      {item.status === 'new' && outcomes.length === 1 && <p className="muted">Сейчас доступен только отказ: чтобы выбрать другой итог, сначала начните рассмотрение.</p>}
+      <label htmlFor="explanation">{outcome === 'rejected' ? 'Мотивированный отказ' : 'Обоснование решения'}</label><textarea id="explanation" aria-required="true" {...mutation.invalid('explanation', 'manager-action-error')} rows={4} maxLength={5000} value={explanation} onChange={event => setExplanation(event.target.value)} />
       <label htmlFor="decision-actions">Дальнейшие действия (необязательно)</label><textarea id="decision-actions" rows={2} maxLength={5000} value={actions} onChange={event => setActions(event.target.value)} />
       <button type="submit" className="primary-button">Зафиксировать итог</button>
     </form></fieldset>}

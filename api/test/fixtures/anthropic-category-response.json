@@ -1,0 +1,12 @@
+{
+  "id": "msg_fixture_149_category",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-haiku-5-5",
+  "content": [
+    { "type": "text", "text": "{\"categoryId\":\"it\"}" }
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": { "input_tokens": 412, "output_tokens": 9 }
+}
