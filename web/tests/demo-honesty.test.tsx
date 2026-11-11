@@ -122,11 +122,12 @@ describe('#116 «О прототипе» page', () => {
     }
   });
 
-  it('matches api/concept/access.md: anonymous submission is planned, demo sign-in is simulated', () => {
+  it('keeps the missing anonymous form flag separate from API progress and labels demo sign-in', () => {
     const access = read('api/concept/access.md');
-    expect(access).toMatch(/\*\*Статус:\*\* план/);
+    expect(access).toMatch(/Анонимная подача/);
     const anonymous = ABOUT_ROWS.find(row => row.source === 'access' && row.feature.startsWith('Анонимная подача'))!;
-    expect(anonymous.plan).toBeTruthy();
+    expect(anonymous.plan).toMatch(/флажок.*форм/i);
+    expect(JSON.stringify(anonymous)).not.toMatch(/контракт запрещает/);
     expect(anonymous.done).toBeUndefined();
     expect(access).toMatch(/имитация входа/i);
   });
