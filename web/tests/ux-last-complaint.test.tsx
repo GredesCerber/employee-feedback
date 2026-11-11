@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { LastComplaintButton } from '../src/features/LastComplaint';
+import { LastComplaintButton } from '../src/features/ResumeComplaint';
 import { createApiClient } from '../src/api/client';
 import { readLastComplaint, saveLastComplaint, useRememberComplaint } from '../src/features/lastComplaintStore';
 

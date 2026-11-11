@@ -481,10 +481,6 @@ export interface components {
             /** @constant */
             isPlaceholder: true;
         };
-        Location: {
-            latitude: number;
-            longitude: number;
-        };
         /** @description Author and department come from the server-resolved session, never from this body. Unknown fields are rejected. Category must exist; a category without an assignee is valid. */
         CreateComplaint: {
             type: components["schemas"]["ComplaintType"];
@@ -496,13 +492,12 @@ export interface components {
             priority?: components["schemas"]["Priority"];
             /** @default [] */
             attachments?: components["schemas"]["Attachment"][];
-            location?: components["schemas"]["Location"];
+            location?: components["schemas"]["GeoPoint"];
             /**
              * @description Optional author redaction from managers and admins, including comments/history. Ownership is still stored internally. Omitted or false preserves existing identified behavior; no real authentication or protection against clues in text is promised.
              * @default false
              */
             anonymous?: boolean;
-            location?: components["schemas"]["GeoPoint"];
         };
         /** @description Optional point chosen by the author. Stored only as coordinates; never embedded in description or proposedSolution, and never sent to AI classification or summaries. */
         GeoPoint: {
@@ -592,7 +587,8 @@ export interface components {
             description: string;
             proposedSolution: string | null;
             priority: components["schemas"]["Priority"];
-            location?: components["schemas"]["Location"];
+            /** @description Optional chosen point on the map. Absent when the author did not choose one; null is never used. */
+            location?: components["schemas"]["GeoPoint"];
             attachments: components["schemas"]["Attachment"][];
             status: components["schemas"]["Status"];
             assignee: components["schemas"]["User"] | null;
@@ -618,8 +614,6 @@ export interface components {
              * @default false
              */
             anonymous?: boolean;
-            /** @description Optional chosen point on the map. Absent when the author did not choose one; null is never used. */
-            location?: components["schemas"]["GeoPoint"];
             /** @description Optional manager-view capability: true only if the latest eligible outstanding status/assignment action belongs to the current manager, is inside the undo window and the complaint is not terminal. Other roles omit this property. */
             canUndo?: boolean;
             /**

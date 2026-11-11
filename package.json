@@ -2,6 +2,15 @@
   "name": "employee-feedback",
   "private": true,
   "scripts": {
+    "demo": "node infra/run-demo.mjs",
+    "dev": "node infra/run-demo.mjs",
+    "start": "node infra/run-demo.mjs",
+    "demo:reset": "node infra/run-demo.mjs --seed-reset",
+    "build": "npm --prefix api run build && npm --prefix web run build",
+    "test:e2e": "npm --prefix tests/e2e run e2e",
     "demo:sim": "node scripts/demo-sim/index.mjs"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

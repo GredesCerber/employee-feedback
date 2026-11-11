@@ -11,7 +11,7 @@ import QueuePage from './pages/QueuePage';
 import DashboardPage from './pages/DashboardPage';
 import { AboutPage, DemoHint, ImitationBadge, useDemoHints } from './features/demo';
 import { NotificationBell } from './features/notifications';
-import { LastComplaintButton } from './features/LastComplaint';
+import { LastComplaintButton } from './features/ResumeComplaint';
 import { useTheme } from './features/theme';
 import type { ThemeChoice } from './features/theme';
 import './styles/tokens.css';
