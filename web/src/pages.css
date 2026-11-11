@@ -79,6 +79,12 @@ legend { font-weight: 600; padding: 0 8px; }
 .empty-state { padding: 16px 20px; border: 1px dashed var(--color-border-dashed); border-radius: 10px; background: var(--color-surface-subtle); margin-top: 16px; }
 .empty-state p { margin: 0 0 4px; }
 .load-error button:disabled { opacity: 0.6; cursor: not-allowed; }
+.similar-box, .suggestion-note { border: 1px dashed var(--color-border-strong); border-radius: 8px; padding: 10px 12px; }
+.similar-list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+.similar-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.complaint-form button.suggest-button { margin-top: 0; }
+.suggestion-note { font-size: 14px; }
+.complaint-form .suggestion-note button { margin: 6px 0 0; }
 
 .queue-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 24px 0 0; }
 .queue-toolbar .search-field { display: grid; gap: 6px; flex: 1 1 260px; font-size: 14px; }
