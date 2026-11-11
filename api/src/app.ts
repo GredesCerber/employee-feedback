@@ -7,6 +7,7 @@ import { configureErrors } from './http.js';
 import { registerComplaints } from './complaints.js';
 import { registerLifecycle } from './lifecycle.js';
 import { registerDiscovery } from './discovery.js';
+import { registerNotifications } from './notifications.js';
 import { registerRateLimit } from './rate-limit.js';
 import { registerSecurity } from './security.js';
 
@@ -53,6 +54,7 @@ function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = f
   registerComplaints(app);
   registerDiscovery(app);
   registerLifecycle(app);
+  registerNotifications(app);
   return app;
 }
 
