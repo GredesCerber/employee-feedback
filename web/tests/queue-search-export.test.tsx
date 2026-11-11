@@ -62,7 +62,7 @@ describe('queue search', () => {
     expect(await screen.findByRole('link', { name: 'A-777' })).toBeTruthy();
     const withQ = listRequests().filter(url => url.searchParams.has('q'));
     expect(withQ).toHaveLength(1);
-    expect(withQ[0].searchParams.get('q')).toBe('закупка');
+    expect(withQ[0]!.searchParams.get('q')).toBe('закупка');
   });
 
   it('restores the search field from the address and keeps other filters when searching', async () => {
@@ -97,8 +97,8 @@ describe('queue CSV export', () => {
     const user = await openQueue('/queue?status=in_review&q=болт');
     await user.click(screen.getByRole('button', { name: 'Скачать CSV' }));
     await waitFor(() => expect(downloads).toHaveLength(1));
-    expect(downloads[0].name).toMatch(/^obrasheniya-\d{4}-\d{2}-\d{2}\.csv$/);
-    expect(downloads[0].href).toBe('blob:csv');
+    expect(downloads[0]!.name).toMatch(/^obrasheniya-\d{4}-\d{2}-\d{2}\.csv$/);
+    expect(downloads[0]!.href).toBe('blob:csv');
     const exportRequest = requests.find(url => url.pathname === '/complaints/export')!;
     expect(exportRequest.searchParams.get('q')).toBe('болт');
     expect(exportRequest.searchParams.get('status')).toBe('in_review');
@@ -109,6 +109,7 @@ describe('queue CSV export', () => {
   it('shows an error and no file when the export fails', async () => {
     vi.stubGlobal('fetch', vi.fn(async (request: Request) => {
       const url = new URL(request.url);
+      requests.push(url);
       if (url.pathname === '/reference-data') return Response.json(reference);
       if (url.pathname === '/complaints/export') return Response.json({ code: 'INTERNAL', message: 'boom' }, { status: 500 });
       return Response.json({ items: [item('A-001')], total: 1, limit: 20, offset: 0 });
