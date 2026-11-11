@@ -16,7 +16,7 @@ COPY api/src ./src
 RUN npm run build && npm prune --omit=dev
 
 FROM node:22-alpine
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000 SEED_RELATIVE_DATES=1
 WORKDIR /app
 COPY contracts/api.yaml contracts/api.yaml
 COPY api/data api/data
