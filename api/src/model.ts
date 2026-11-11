@@ -16,7 +16,7 @@ export interface Comment {
 }
 export interface HistoryEvent {
   id: string; kind: 'created' | 'assigned' | 'status_changed' | 'commented' | 'decided' | 'undone';
-  actor: User | null; createdAt: string; fromStatus: Status | null; toStatus: Status | null; text: string;
+  actor: User | null; createdAt: string; fromStatus: Status | null; toStatus: Status | null; text: string; simulated?: boolean;
 }
 export interface Decision {
   outcome: 'implemented' | 'rejected' | 'closed'; explanation: string; actions: string | null;
@@ -30,6 +30,8 @@ export interface Complaint {
   createdAt: string; updatedAt: string; dueAt: string; firstResponseAt: string | null;
   closedAt: string | null; overdue: boolean; comments: Comment[]; history: HistoryEvent[];
   decision: Decision | null; nextAction: string;
+  /** Created by the demo simulator (X-Demo-Source header, DEMO_SIMULATION_ENABLED=true). */
+  simulated?: boolean;
   canUndo?: boolean; undoExpiresAt?: string | null;
 }
 

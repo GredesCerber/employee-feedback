@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { Comment, Complaint, Decision, HistoryEvent, Status, User } from './model.js';
 import { terminalStatuses } from './model.js';
-import { ApiError, contract, identity, queryParameters, validateBody, visibleComplaint } from './http.js';
+import { ApiError, contract, identity, queryParameters, validateBody, isSimulated, visibleComplaint } from './http.js';
 import { presentFor, recordAction, snapshot } from './undo.js';
 
 const transitions = contract['x-status-transitions'] as Record<Status, Status[]>;
@@ -16,9 +16,9 @@ function timestamp(item: Complaint): string {
   return new Date(Math.max(Date.now(), Date.parse(item.updatedAt))).toISOString();
 }
 function appendHistory(item: Complaint, actor: User, createdAt: string, kind: HistoryEvent['kind'],
-  text: string, fromStatus: Status | null = null, toStatus: Status | null = null) {
+  text: string, fromStatus: Status | null = null, toStatus: Status | null = null, simulated = false) {
   item.history.push({ id: `${item.id}-event-${String(item.history.length + 1).padStart(6, '0')}`,
-    kind, actor, createdAt, fromStatus, toStatus, text });
+    kind, actor, createdAt, fromStatus, toStatus, text, simulated });
 }
 function update(item: Complaint, actor: User, now: string) {
   item.updatedAt = now;
@@ -40,7 +40,7 @@ export function registerLifecycle(app: FastifyInstance) {
     const now = timestamp(item), previous = item.status;
     const before = snapshot(item), lengthBefore = item.history.length;
     item.status = body.status;
-    appendHistory(item, user, now, 'status_changed', 'Руководитель изменил статус.', previous, item.status);
+    appendHistory(item, user, now, 'status_changed', 'Руководитель изменил статус.', previous, item.status, isSimulated(request));
     update(item, user, now);
     app.store.save(item);
     recordAction(app, item, user, before, lengthBefore);
@@ -69,11 +69,11 @@ export function registerLifecycle(app: FastifyInstance) {
     const text = body.text.trim();
     item.comments.push({ id: `${item.id}-comment-${String(item.comments.length + 1).padStart(6, '0')}`,
       author: user, kind: body.kind, text, createdAt: now });
-    appendHistory(item, user, now, 'commented', text);
+    appendHistory(item, user, now, 'commented', text, null, null, isSimulated(request));
     if (target !== previous) {
       item.status = target;
       appendHistory(item, user, now, 'status_changed', body.kind === 'clarification_request'
-        ? 'Запрошено уточнение у автора.' : 'Автор ответил на запрос уточнения.', previous, target);
+        ? 'Запрошено уточнение у автора.' : 'Автор ответил на запрос уточнения.', previous, target, isSimulated(request));
     }
     update(item, user, now);
     app.store.save(item);
@@ -91,7 +91,7 @@ export function registerLifecycle(app: FastifyInstance) {
       author: user, createdAt: now };
     item.status = body.outcome;
     item.closedAt = now;
-    appendHistory(item, user, now, 'decided', item.decision.explanation, previous, item.status);
+    appendHistory(item, user, now, 'decided', item.decision.explanation, previous, item.status, isSimulated(request));
     update(item, user, now);
     app.store.save(item);
     return reply.code(201).send(presentFor(app, item, user));

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { Attachment, Complaint, ComplaintType, Priority, User } from './model.js';
 import { terminalStatuses } from './model.js';
-import { ApiError, identity, invalid, listQuery, type ListQuery, queryParameters, validateBody, visibleComplaint } from './http.js';
+import { ApiError, identity, invalid, listQuery, type ListQuery, queryParameters, validateBody, isSimulated, visibleComplaint } from './http.js';
 import { presentFor, recordAction, snapshot } from './undo.js';
 import { summarize, trends } from './analytics.js';
 import { matchesComplaintText, searchWords } from './search.js';
@@ -26,6 +26,7 @@ function filteredComplaints(app: FastifyInstance, user: User, query: ListQuery):
       && (query.categoryId === undefined || item.categoryId === query.categoryId)
       && (query.status === undefined || item.status === query.status)
       && (query.type === undefined || item.type === query.type)
+      && (query.simulated === undefined || (item.simulated ?? false) === query.simulated)
       && (query.queue === undefined || item.routing.queue === query.queue)
       && (query.overdue === undefined || item.overdue === query.overdue)
       && (query.dueAfter === undefined || Date.parse(item.dueAt) >= Date.parse(query.dueAfter))
@@ -64,6 +65,7 @@ export function registerComplaints(app: FastifyInstance) {
     if (!category) invalid('Неизвестная категория.');
     const assignee = app.store.users.find(candidate => candidate.id === category.assigneeId && candidate.role === 'manager') ?? null;
     const now = new Date().toISOString();
+    const simulated = isSimulated(request);
     const index = app.store.nextNumber();
     const item: Complaint = {
       id: `complaint-${index}`, number: `A-${String(index).padStart(3, '0')}`, type: body.type,
@@ -74,11 +76,12 @@ export function registerComplaints(app: FastifyInstance) {
       createdAt: now, updatedAt: now, dueAt: new Date(Date.parse(now) + category.dueInDays * 86400000).toISOString(),
       firstResponseAt: null, closedAt: null, overdue: false, comments: [], decision: null,
       history: [{ id: `complaint-${index}-event-000001`, kind: 'created', actor: user, createdAt: now,
-        fromStatus: null, toStatus: 'new', text: 'Обращение зарегистрировано.' }],
+        fromStatus: null, toStatus: 'new', text: 'Обращение зарегистрировано.', simulated }],
       nextAction: assignee ? 'Ответственный рассмотрит обращение до указанного срока.' : 'Ожидается назначение ответственного руководителем.',
+      simulated,
     };
     if (assignee) item.history.push({ id: `complaint-${index}-event-000002`, kind: 'assigned', actor: null,
-      createdAt: now, fromStatus: null, toStatus: null, text: 'Ответственный назначен по категории.' });
+      createdAt: now, fromStatus: null, toStatus: null, text: 'Ответственный назначен по категории.', simulated });
     app.store.save(item);
     return reply.code(201).send(item);
   });
@@ -144,7 +147,8 @@ export function registerComplaints(app: FastifyInstance) {
     item.updatedAt = now;
     item.nextAction = 'Ответственный рассмотрит обращение до указанного срока.';
     item.history.push({ id: `${item.id}-event-${String(item.history.length + 1).padStart(6, '0')}`,
-      kind: 'assigned', actor: user, createdAt: now, fromStatus: null, toStatus: null, text: 'Руководитель назначил ответственного.' });
+      kind: 'assigned', actor: user, createdAt: now, fromStatus: null, toStatus: null, text: 'Руководитель назначил ответственного.',
+      simulated: isSimulated(request) });
     app.store.save(item);
     recordAction(app, item, user, before, lengthBefore);
     return presentFor(app, item, user);

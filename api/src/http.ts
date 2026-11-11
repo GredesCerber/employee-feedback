@@ -10,23 +10,29 @@ const ajv = new Ajv2020({ strict: false, allErrors: true, formats: fullFormats }
 ajv.addSchema(contract, 'contract');
 const validators = new Map<string, ReturnType<typeof ajv.compile>>();
 const listParameters = contract.paths['/complaints'].get.parameters as { name: string; schema: Record<string, unknown> }[];
+// `simulated` is an additive filter documented in the operation description, outside the fixed parameter list.
+const extraListFilters = ['simulated'];
 const listQueryValidator = ajv.compile({ type: 'object', additionalProperties: false,
-  properties: Object.fromEntries(listParameters.map(parameter => [parameter.name,
-    parameter.schema.$ref ? { $ref: `contract${parameter.schema.$ref}` } : parameter.schema])) });
+  properties: Object.fromEntries([...listParameters.map(parameter => [parameter.name,
+    parameter.schema.$ref ? { $ref: `contract${parameter.schema.$ref}` } : parameter.schema]),
+    ...extraListFilters.map(name => [name, { type: 'boolean' }])]) });
 
 export interface ListQuery {
   departmentId?: string; categoryId?: string; status?: string; type?: string;
   dueAfter?: string; dueBefore?: string; overdue?: boolean; queue?: string; q?: string;
-  limit?: number; offset?: number;
+  limit?: number; offset?: number; simulated?: boolean;
 }
 export function listQuery(request: FastifyRequest, paginated = true): ListQuery {
-  const params = queryParameters(request, listParameters.map(parameter => parameter.name)
+  const params = queryParameters(request, [...listParameters.map(parameter => parameter.name), ...extraListFilters]
     .filter(name => paginated || (name !== 'limit' && name !== 'offset')));
   const value: Record<string, unknown> = {};
   for (const [key, input] of params) {
     if (key === 'limit' || key === 'offset') {
       if (!/^\d+$/.test(input) || !Number.isSafeInteger(Number(input))) invalid('Некорректная пагинация.');
       value[key] = Number(input);
+    } else if (key === 'simulated') {
+      if (!['true', 'false'].includes(input)) invalid('Фильтр simulated задаётся true или false.');
+      value[key] = input === 'true';
     } else if (key === 'overdue') {
       if (!['true', 'false'].includes(input)) invalid('Просрочка задаётся true или false.');
       value[key] = input === 'true';
@@ -78,8 +84,13 @@ export function visibleComplaint(app: FastifyInstance, id: string, user: User): 
   }
   return item;
 }
+/** Simulator marker: only with DEMO_SIMULATION_ENABLED=true and `X-Demo-Source: simulator`; otherwise ignored. */
+export function isSimulated(request: FastifyRequest): boolean {
+  return process.env.DEMO_SIMULATION_ENABLED === 'true' && request.headers['x-demo-source'] === 'simulator';
+}
 export function present(item: Complaint, now = Date.now()): Complaint {
-  return { ...item, overdue: !terminalStatuses.includes(item.status) && Date.parse(item.dueAt) < now };
+  return { ...item, simulated: item.simulated ?? false,
+    history: item.history.map(event => ({ ...event, simulated: event.simulated ?? false })), overdue: !terminalStatuses.includes(item.status) && Date.parse(item.dueAt) < now };
 }
 export function queryParameters(request: FastifyRequest, allowed: string[]): URLSearchParams {
   const params = new URL(request.url, 'http://localhost').searchParams;
