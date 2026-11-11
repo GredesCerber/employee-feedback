@@ -96,6 +96,19 @@ export class ComplaintStore {
     this.records.set(copy.id, copy);
     this.enqueue(copy);
   }
+  /**
+   * Replace everything with the immutable seed. Durable storage is rewritten first,
+   * memory is published only afterwards, so a failure leaves the store untouched.
+   */
+  async reset(): Promise<number> {
+    const seed = seedComplaints();
+    this.persistence?.save(seed);
+    await this.database?.replaceAll(seed);
+    this.dirty.clear();
+    this.records.clear();
+    for (const item of seed) this.records.set(item.id, structuredClone(item));
+    return seed.length;
+  }
   get(id: string): Complaint | undefined {
     const record = this.records.get(id);
     return record ? structuredClone(record) : undefined;

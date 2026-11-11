@@ -21,6 +21,7 @@
 | `RATE_LIMIT_WINDOW_S` | `api/src/rate-limit.ts`: длина окна лимита в секундах, от 1 | `60` | нет | используется |
 | `VITE_API_BASE_URL` | `web/src/api/client.ts`: базовый адрес API, подставляется при сборке Vite; `web/.env.example`; `infra/run-demo.mjs` собирает с `/api` | `/api` | нет | используется |
 | `PERSIST_FILE` | файл, куда API сохраняет данные между перезапусками (#92); `infra/run-demo.mjs` уже передаёт его пустым при `--seed-reset` | пусто (данные только в памяти) | нет | используется |
+| `DEMO_RESET_ENABLED` | `api/src/demo.ts`: `false` отключает `POST /demo/reset` (ответ 404), любое другое значение оставляет сброс демо-данных включённым | включено | нет | используется |
 | `DATABASE_URL` | `api/src/server.ts`: строка подключения Postgres (Neon и др.); включает хранение в БД и имеет приоритет над `PERSIST_FILE`; см. раздел «Выкладка на хостинг» в `infra/README.md` | пусто (данные в памяти или в `PERSIST_FILE`) | да, для единого сервиса на Render | используется |
 | `WEB_ROOT` | `api/src/server.ts`: папка со сборкой фронта, которую API отдаёт сам | `../../web/dist` от `dist/` API (пропускается, если папки нет) | нет | используется |
 | `DEMO_API_PORT` | `infra/serve-demo.mjs`: порт API, на который проксируется `/api`; задаёт `infra/run-demo.mjs` | выбирает `infra/run-demo.mjs` | нет | используется |

@@ -5,6 +5,8 @@ import type { Complaint } from './model.js';
 export interface DatabasePersistence {
   load(): Promise<Complaint[]>;
   save(item: Complaint): Promise<void>;
+  /** Atomically replace all stored complaints (demo reset). */
+  replaceAll(items: Complaint[]): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -30,6 +32,22 @@ export async function createPgPersistence(connectionString: string): Promise<Dat
          ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`,
         [item.id, JSON.stringify(item)],
       );
+    },
+    async replaceAll(items) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM complaints');
+        for (const item of items) {
+          await client.query('INSERT INTO complaints (id, data) VALUES ($1, $2::jsonb)', [item.id, JSON.stringify(item)]);
+        }
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK').catch(() => undefined);
+        throw error;
+      } finally {
+        client.release();
+      }
     },
     close: () => pool.end(),
   };
