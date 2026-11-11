@@ -115,7 +115,7 @@ describe('manager queue acceptance', () => {
     await asAuthor(user);
     expect(screen.getAllByText('Уточните номер заявки.').length).toBeGreaterThan(0);
     await user.type(screen.getByLabelText('Ваш ответ на уточнение'), 'Номер заявки 123.');
-    await user.click(screen.getByRole('button', { name: 'Отправить уточнение' }));
+    await user.click(screen.getByRole('button', { name: 'Отправить ответ' }));
     expect(await screen.findByText('Номер заявки 123.')).toBeTruthy();
     expect(screen.getByText('На рассмотрении')).toBeTruthy();
     expect(screen.queryByLabelText('Ваш ответ на уточнение')).toBeNull();

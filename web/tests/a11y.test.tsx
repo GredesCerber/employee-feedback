@@ -108,7 +108,7 @@ describe('доступность форм', () => {
     current.status = 'awaiting_clarification';
     const user = userEvent.setup(); open(`/my/${current.id}`);
     const reply = await screen.findByLabelText('Ваш ответ на уточнение');
-    await user.click(screen.getByRole('button', { name: 'Отправить уточнение' }));
+    await user.click(screen.getByRole('button', { name: 'Отправить ответ' }));
     await waitFor(() => expect(document.activeElement).toBe(reply));
     expectDescribedByAlert(reply);
   });
