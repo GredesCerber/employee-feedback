@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useSession } from '../app/session';
 import type { components } from '../api/client';
 import { ImitationBadge } from './demo';
+import { LoadError } from './complaint';
+import { retryAfterOf } from './data';
 
 type Notification = components['schemas']['Notification'];
 
@@ -25,8 +27,18 @@ function useNotifications(role: string) {
   const [items, setItems] = useState<Notification[]>([]);
   const [lastSeen, setLastSeenState] = useState<string | null>(() => readLastSeen(role));
   const lastSeenRef = useRef(lastSeen);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<{ attempt: number; retryAfter?: number }>();
+  const inFlight = useRef(false);
+  const blockedUntil = useRef(0);
+  const attempt = useRef(0);
 
   const load = useCallback(async () => {
+    if (inFlight.current || Date.now() < blockedUntil.current) return;
+    inFlight.current = true;
+    const currentAttempt = ++attempt.current;
+    setLoading(true);
+    setError(undefined);
     try {
       const since = lastSeenRef.current ?? undefined;
       const { data } = await api.GET('/notifications', { params: { query: since ? { since } : {} } });
@@ -37,7 +49,14 @@ function useNotifications(role: string) {
         for (const entry of fresh) byId.set(entry.id, entry);
         return [...byId.values()].sort((a, b) => time(b.createdAt) - time(a.createdAt) || a.id.localeCompare(b.id));
       });
-    } catch { /* сеть или сервер недоступны: оставляем прежний список, повторим через 30 с */ }
+    } catch (failure) {
+      const retryAfter = retryAfterOf(failure);
+      blockedUntil.current = retryAfter === undefined ? 0 : Date.now() + retryAfter * 1000;
+      setError({ attempt: currentAttempt, retryAfter });
+    } finally {
+      inFlight.current = false;
+      setLoading(false);
+    }
   }, [api]);
 
   useEffect(() => {
@@ -56,7 +75,7 @@ function useNotifications(role: string) {
   }, [items, role]);
 
   const unread = items.filter(entry => time(entry.createdAt) > time(lastSeen)).length;
-  return { items, unread, markSeen };
+  return { items, unread, markSeen, loading, error, reload: load };
 }
 
 function formatTime(value: string) {
@@ -66,7 +85,7 @@ function formatTime(value: string) {
 
 /** Колокольчик уведомлений (R8): имитация ленты событий внутри приложения. */
 export function NotificationBell({ role }: { role: string }) {
-  const { items, unread, markSeen } = useNotifications(role);
+  const { items, unread, markSeen, loading, error, reload } = useNotifications(role);
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -85,8 +104,12 @@ export function NotificationBell({ role }: { role: string }) {
     </button>
     {open && <section id={panelId} className="notification-panel" role="region" aria-label="Уведомления">
       <h2 className="notification-title">Уведомления <ImitationBadge hint={IMITATION_HINT} /></h2>
+      {loading && <p className="muted" role="status">Обновление уведомлений…</p>}
+      {!loading && error && <LoadError key={error.attempt}
+        message="Не удалось обновить уведомления. Повторяем автоматически каждые 30 секунд."
+        retry={() => { void reload(); }} retryAfter={error.retryAfter} />}
       {items.length === 0
-        ? <p className="muted notification-empty">Новых уведомлений нет</p>
+        ? !loading && !error && <p className="muted notification-empty">Новых уведомлений нет</p>
         : <ul className="notification-list">{items.map(entry => <li key={entry.id}>
           <Link to={entry.href} onClick={() => close()}>{entry.message}</Link>{entry.simulated && <> <ImitationBadge hint="создано демо-симулятором" /></>}
           <small className="muted">{entry.complaintNumber} · {formatTime(entry.createdAt)}</small>

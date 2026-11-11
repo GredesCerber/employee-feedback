@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
+import { AnonymousBadge } from '../features/complaintMeta';
 import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../features/complaint';
 
 export default function MyComplaintsPage() {
@@ -16,7 +17,7 @@ export default function MyComplaintsPage() {
       {result.data.total === 0 ? <div><p>У вас пока нет обращений.</p><Link to="/submit">Подать первое обращение</Link></div> : <>
         <p className="muted">Всего обращений: {result.data.total}</p>
         <ul className="complaint-list">{result.data.items.map(item => <li key={item.id} className="complaint-item">
-          <div className="item-header"><Link className="complaint-number" to={`/my/${item.id}`}>{item.number}</Link><StatusBadge status={item.status} /></div>
+          <div className="item-header"><Link className="complaint-number" to={`/my/${item.id}`}>{item.number}</Link>{item.anonymous && <AnonymousBadge />}<StatusBadge status={item.status} /></div>
           <p className="item-description">{item.description}</p>
           <p className="muted">{typeLabels[item.type]} · {dateLabel(item.createdAt)}</p>
           <p>{item.nextAction}</p>

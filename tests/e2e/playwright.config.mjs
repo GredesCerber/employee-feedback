@@ -8,6 +8,9 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const external = process.env.E2E_BASE_URL;
 const ci = Boolean(process.env.CI);
+// Трейс и скриншот выключены по умолчанию; `playwright test --trace on` включает оба (воркеры наследуют env).
+const args = process.argv;
+if (args.includes('--trace=on') || args.some((arg, i) => arg === '--trace' && args[i + 1] === 'on')) process.env.E2E_TRACE = 'on';
 
 export default defineConfig({
   testDir: '.',
@@ -24,8 +27,8 @@ export default defineConfig({
     locale: 'ru-RU',
     timezoneId: 'Asia/Omsk',
     actionTimeout: 15_000,
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
+    trace: 'off',
+    screenshot: process.env.E2E_TRACE === 'on' ? 'only-on-failure' : 'off',
     ...devices['Desktop Chrome'],
   },
   webServer: external ? undefined : [
