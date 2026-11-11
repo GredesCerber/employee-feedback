@@ -6,7 +6,7 @@ import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../featu
 import { AuthorReply, ManagerActions } from '../features/ComplaintActions';
 import { UndoAction } from '../features/UndoAction';
 import { ImitationBadge } from '../features/demo';
-import { authorLabel, CommentKindBadge, fallbackQueueHint, priorityLabels, referenceName, routingReasonLabels } from '../features/complaintMeta';
+import { AnonymousBadge, authorLabel, CommentKindBadge, fallbackQueueHint, priorityLabels, referenceName, routingReasonLabels } from '../features/complaintMeta';
 import './complaint.css';
 
 export default function ComplaintPage() {
@@ -43,7 +43,7 @@ export default function ComplaintPage() {
     {result.loading && <><h1>Обращение</h1><Loading label="Загрузка обращения…" /></>}
     {result.error && <><h1>Обращение недоступно</h1><LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} /></>}
     {item && <>
-      <div className="detail-header"><h1 ref={heading} tabIndex={-1}>Обращение {item.number}</h1>{item.simulated && <ImitationBadge hint="создано демо-симулятором" />}<StatusBadge status={item.status} /></div>
+      <div className="detail-header"><h1 ref={heading} tabIndex={-1}>Обращение {item.number}</h1>{item.simulated && <ImitationBadge hint="создано демо-симулятором" />}{item.anonymous && <AnonymousBadge />}<StatusBadge status={item.status} /></div>
       <div className="next-action"><h2>Следующий шаг</h2><p>{item.nextAction}</p></div>
       <UndoAction item={item} onUpdated={onUpdated} />
       {role === 'employee' && <AuthorReply item={item} onUpdated={onUpdated} />}
