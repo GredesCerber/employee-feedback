@@ -1,10 +1,14 @@
 // #127 (R8): колокольчик уведомлений: счётчик, список, переход, пустое состояние, опрос раз в 30 с без дублей.
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import App from '../src/App';
 
+const contractPath = existsSync(resolve('contracts/api.yaml')) ? resolve('contracts/api.yaml') : resolve('../contracts/api.yaml');
+const reference = JSON.parse(readFileSync(contractPath, 'utf8')).components.schemas.ReferenceData.examples[0];
 const DISCLAIMER = 'Имитация: в промышленной версии email / Битрикс24';
 type Item = { id: string; kind: string; complaintId: string; complaintNumber: string; createdAt: string; message: string; href: string; simulated: true; disclaimer: string };
 const item = (id: string, over: Partial<Item> = {}): Item => ({
@@ -30,6 +34,7 @@ beforeEach(() => {
       const items = (feeds[request.headers.get('X-Demo-User') ?? ''] ?? []).filter(entry => !since || Date.parse(entry.createdAt) > Date.parse(since));
       return Response.json({ items, unreadCount: items.length, generatedAt: '2026-11-11T00:00:00.000Z' });
     }
+    if (url.pathname === '/reference-data') return Response.json(reference);
     return Response.json({ items: [], total: 0, limit: 20, offset: 0 });
   }));
 });
