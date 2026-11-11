@@ -28,3 +28,8 @@
 .topic-count { color: var(--color-text-muted); font-size: 13px; }
 .topic-list a { margin-left: auto; font-size: 13px; }
 @media (max-width: 1050px) { .summary-metrics { grid-template-columns: 1fr; } .summary-sections { grid-template-columns: 1fr; gap: 12px; } }
+
+.summary-reset { margin: 0 0 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.summary-reset p { margin: 0; font-size: 13px; }
+.summary-overdue { margin-top: 16px; }
+.summary-overdue a { font-size: 14px; }
