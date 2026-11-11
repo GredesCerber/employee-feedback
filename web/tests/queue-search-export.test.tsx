@@ -24,7 +24,7 @@ beforeEach(() => {
     if (url.pathname === '/complaints/export') return new Response('﻿номер,тип\r\n', { headers: { 'Content-Type': 'text/csv; charset=utf-8' } });
     if (url.pathname === '/complaints') {
       const q = url.searchParams.get('q');
-      if (q === 'нетТакого') return Response.json({ items: [], total: 0, limit: 20, offset: 0 });
+      if (q === 'нетТакого' || url.searchParams.get('status') === 'rejected') return Response.json({ items: [], total: 0, limit: 20, offset: 0 });
       const items = q ? [item('A-777')] : [item('A-001'), item('A-002')];
       return Response.json({ items, total: items.length, limit: 20, offset: 0 });
     }
@@ -50,6 +50,25 @@ async function openQueue(entry = '/queue') {
 }
 
 describe('queue search', () => {
+  it.each([
+    '/queue?status=rejected',
+    '/queue?status=rejected&q=нетТакого&departmentId=procurement&categoryId=cross_department&queue=unassigned&overdue=1&hideSimulated=1&dueAfter=2026-11-01&dueBefore=2026-11-20',
+  ])('#264 resets every condition from the empty queue without opening filters: %s', async entry => {
+    const user = await openQueue(entry);
+    const reset = await screen.findByRole('button', { name: 'Сбросить фильтры', exact: true });
+    expect(screen.getByRole('button', { name: 'Фильтры', exact: true }).getAttribute('aria-expanded')).toBe('false');
+    expect(document.getElementById('queue-filters')!.contains(reset)).toBe(false);
+    await user.click(reset);
+    expect(await screen.findByRole('link', { name: 'A-001' })).toBeTruthy();
+    expect(urlParams().toString()).toBe('');
+    expect((screen.getByLabelText('Поиск по номеру или тексту') as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText('Статус') as HTMLSelectElement).value).toBe('');
+    expect((screen.getByLabelText('Скрыть имитацию') as HTMLInputElement).checked).toBe(false);
+    const params = listRequests().at(-1)!.searchParams;
+    expect(params.get('offset')).toBe('0');
+    expect([...params.keys()].sort()).toEqual(['limit', 'offset']);
+  });
+
   it('sends q and updates the address only after a 300 ms pause, one request for the whole input', async () => {
     const user = await openQueue();
     const before = listRequests().length;

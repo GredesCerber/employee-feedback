@@ -140,6 +140,6 @@ describe('#114 empty states with a next step', () => {
     mode.list = 'empty';
     await open('/queue', 'manager');
     expect(await screen.findByText('По выбранным фильтрам обращений нет.')).toBeTruthy();
-    expect(screen.getByText(/Измените условия или нажмите «Сбросить»/)).toBeTruthy();
+    expect(screen.getByText(/Измените условия или нажмите «Сбросить фильтры»/)).toBeTruthy();
   });
 });
