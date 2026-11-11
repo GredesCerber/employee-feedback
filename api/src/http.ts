@@ -19,8 +19,9 @@ export interface ListQuery {
   dueAfter?: string; dueBefore?: string; overdue?: boolean; queue?: string; q?: string;
   limit?: number; offset?: number;
 }
-export function listQuery(request: FastifyRequest): ListQuery {
-  const params = queryParameters(request, listParameters.map(parameter => parameter.name));
+export function listQuery(request: FastifyRequest, paginated = true): ListQuery {
+  const params = queryParameters(request, listParameters.map(parameter => parameter.name)
+    .filter(name => paginated || (name !== 'limit' && name !== 'offset')));
   const value: Record<string, unknown> = {};
   for (const [key, input] of params) {
     if (key === 'limit' || key === 'offset') {
@@ -33,6 +34,7 @@ export function listQuery(request: FastifyRequest): ListQuery {
   }
   if (!listQueryValidator(value)) invalid('Некорректный фильтр.');
   const result = value as ListQuery;
+  if (result.q !== undefined && result.q.trim() === '') invalid('Поисковый запрос не может быть пустым.');
   if (result.dueAfter && result.dueBefore && Date.parse(result.dueAfter) > Date.parse(result.dueBefore)) {
     invalid('Начало диапазона срока позже окончания.');
   }
