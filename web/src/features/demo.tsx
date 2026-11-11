@@ -62,8 +62,8 @@ export function DemoHint() {
 }
 
 /** Бейдж «Имитация» с объяснением, что за ним нет настоящей системы. */
-export function ImitationBadge({ hint }: { hint: string }) {
-  return <span className="imitation-badge" title={hint}>Имитация<span className="visually-hidden">: {hint}</span></span>;
+export function ImitationBadge({ hint, label = 'Имитация' }: { hint: string; label?: string }) {
+  return <span className="imitation-badge" title={hint}>{label}<span className="visually-hidden">: {hint}</span></span>;
 }
 
 export type AboutRow = {
@@ -89,7 +89,7 @@ export const ABOUT_ROWS: AboutRow[] = [
   { req: 'R6', source: 'prototype-approach', feature: 'Поиск по номеру, фильтры, просроченные', done: '✓', plan: 'сохранённые фильтры', build: 'фильтры уже сохраняются в адресе страницы (#115)' },
   { req: 'R7', source: 'prototype-approach', feature: 'Сводка: типы, доля закрытых, время первого ответа, повторы', done: '✓ по тестовым датам', imitation: 'повторы по совпадению категории и ключевых слов', plan: 'семантический поиск дублей' },
   { req: 'R8', source: 'prototype-approach', feature: 'Уведомления автору и ответственным', imitation: '✓ список событий и значок внутри приложения', plan: 'email, Битрикс24', build: 'в текущей сборке ещё нет, колокольчик — задача #127' },
-  { req: 'R1, R7', source: 'prototype-approach', feature: 'ИИ-помощник (подсказка категории, черновик ответа)', imitation: '✓ записанные ответы модели на обращения датасета, метка «демо ИИ»', plan: 'живой API после решения по безопасности данных (ТЗ п. 3.5)', build: 'в текущей сборке ещё нет, задача #128' },
+  { req: 'R1, R7', source: 'prototype-approach', feature: 'ИИ-помощник (подсказка категории, черновик ответа)', imitation: '✓ записанные ответы модели на обращения датасета, метка «демо ИИ»', plan: 'живой API после решения по безопасности данных (ТЗ п. 3.5)', build: 'в форме подачи есть похожие обращения и кнопка «Подсказать категорию» с бейджем «Демо ИИ» (#128); черновика ответа пока нет' },
   { req: 'R9', source: 'app', feature: 'Концепция, пользователи, граница MVP и план развития', done: 'материалы защиты и docs/' },
   { req: 'R10', source: 'app', feature: 'Прототип интерфейса: основные экраны и переходы', done: '✓ этот интерфейс: подача, мои обращения, карточка, очередь, сводка' },
   { req: 'R11', source: 'prototype-approach', feature: 'Интеграция с 1С УТ и Битрикс24', plan: 'описание в техконцепции (R11), реализация после уточнений' },
