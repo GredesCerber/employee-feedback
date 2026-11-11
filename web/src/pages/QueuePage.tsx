@@ -10,6 +10,7 @@ import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, StatusBadge, statusLabels } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
 import { ImitationBadge } from '../features/demo';
+import { PageCompletionSignal } from '../features/CompletionSignal';
 import '../styles/feedback-layout.css';
 
 type Query = NonNullable<paths['/complaints']['get']['parameters']['query']>;
@@ -228,6 +229,7 @@ export default function QueuePage() {
     {(result.loading || stale) && <Loading label={t("Загрузка очереди…")} />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {shown && !stale && <><p className="muted queue-counter" aria-live="polite"><span>{t("Найдено:")} {number.format(shown.total)}</span>{overall.data !== undefined && <> <span>{t("из")} {number.format(overall.data)}</span></>}</p>
+      <PageCompletionSignal items={shown.items} />
       {shown.items.length === 0 ? <div className="empty-state"><p>{applied.q ? t('По запросу «{query}» обращений нет.', { query: applied.q }) : t("По выбранным фильтрам обращений нет.")}</p><p className="muted">{t("Измените условия или нажмите «Сбросить фильтры», чтобы увидеть всю очередь.")}</p><div className="actions"><button type="button" onClick={() => { reset(); heading.current?.focus(); }}>{t("Сбросить фильтры")}</button>{applied.q && <button type="button" onClick={clearSearch}>{t("Сбросить поиск")}</button>}</div></div> : <>
         <div className="queue-list-header" aria-hidden="true"><span>{t("Обращение")}</span><span>{t("Статус")}</span><span>{t("Ответственный")}</span><span>{t("Срок")}</span></div>
         <ul className="complaint-list queue-list">{shown.items.map(item => <li className="complaint-item" key={item.id}>

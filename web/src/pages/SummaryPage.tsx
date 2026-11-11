@@ -68,7 +68,7 @@ export function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
   const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const titleId = useId();
   const { ref, width } = useContainerWidth();
-  const reveal = useRevealOnView<HTMLDivElement>();
+  const revealBar = useRevealOnView<SVGGElement>();
   const max = Math.max(0, ...bars.map(bar => bar.value));
   const labelColumn = Math.max(80, ...bars.map(bar => labelWidth(bar.label)));
   const stacked = width < 560 || labelColumn > width * 0.45;
@@ -81,13 +81,13 @@ export function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
     height += stacked ? 38 + (lines.length - 1) * LABEL_LINE : ROW;
     return { ...bar, lines, y };
   });
-  return <div ref={reveal} className="chart-motion"><div ref={ref} className="bar-chart-frame">
+  return <div ref={ref} className="bar-chart-frame">
     <svg className="bar-chart" role="img" aria-labelledby={titleId} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
       <title id={titleId}>{`${title}: ${bars.map(bar => `${bar.label} ${number.format(bar.value)}`).join(', ')}`}</title>
       {rows.map(bar => {
         const filled = max > 0 ? Math.round((bar.value / max) * track) : 0;
         const barY = stacked ? bar.y + 21 + (bar.lines.length - 1) * LABEL_LINE : bar.y + (ROW - BAR) / 2;
-        return <g key={bar.label} data-bar={bar.label}>
+        return <g key={bar.label} ref={revealBar} data-bar={bar.label}>
           {stacked
             ? <text className="bar-label" x={0} y={bar.y + 9} textAnchor="start" dominantBaseline="middle">{bar.lines.map((line, index) =>
               <tspan key={index} x={0} dy={index === 0 ? 0 : LABEL_LINE}>{index ? ` ${line}` : line}</tspan>)}</text>
@@ -98,10 +98,11 @@ export function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
         </g>;
       })}
     </svg>
-  </div></div>;
+  </div>;
 }
 
 export default function SummaryPage() {
+  const revealPanel = useRevealOnView<HTMLElement>();
   const { t, locale } = useI18n();
   const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const percent = new Intl.NumberFormat(localeNames[locale], { style: 'percent', maximumFractionDigits: 1 });
@@ -141,7 +142,7 @@ export default function SummaryPage() {
           </div>}
         {resetMessage && (resetMessage.error ? <p role="alert">{resetMessage.text}</p> : <p role="status" className="muted">{resetMessage.text}</p>)}
       </div>
-      <div className="summary-metrics">
+      <div ref={revealPanel} className="summary-metrics reveal-panel">
         <section className="metric-card" aria-labelledby="summary-total"><h2 id="summary-total">{t("Всего обращений")}</h2><p className="metric-value">{number.format(summary.total)}</p><p className="muted">{t("За всё время")}</p></section>
         <section className="metric-card" aria-labelledby="summary-closed"><h2 id="summary-closed">{t("Доля закрытых")}</h2><p className="metric-value">{percent.format(summary.closedShare)}</p><p className="muted">{t("Завершено")} {number.format(summary.closedCount)} {t("из")} {number.format(summary.total)}{t(". Включены реализованные, отклонённые и закрытые.")}</p></section>
         <section className="metric-card" aria-labelledby="summary-response"><h2 id="summary-response">{t("Среднее время первого ответа")}</h2><p className="metric-value">{summary.averageFirstResponseHours === null ? t("Нет ответов") : `${number.format(summary.averageFirstResponseHours)} ч`}</p><p className="muted">{summary.respondedCount > 0 ? `По ${number.format(summary.respondedCount)} обращениям с первым ответом` : t("Показатель появится после первого ответа руководителя")}</p></section>
@@ -149,11 +150,11 @@ export default function SummaryPage() {
       </div>
       {summary.total === 0 && <p className="summary-empty" role="status">{t("Обращений пока нет — диаграммы появятся после первой подачи.")}</p>}
       <div className="summary-sections">
-        <section className="summary-table-panel"><h2>{t("Обращения по типам")}</h2>
+        <section ref={revealPanel} className="summary-table-panel reveal-panel"><h2>{t("Обращения по типам")}</h2>
           {summary.total > 0 && <figure className="summary-chart"><BarChart title={t("Обращения по типам")} bars={typeBars} /></figure>}
           <table aria-label={t("Обращения по типам")}><thead><tr><th scope="col">{t("Тип")}</th><th scope="col">{t("Количество")}</th></tr></thead><tbody>{summary.byType.map(item => <tr key={item.type}><th scope="row">{t(typeLabels[item.type])}</th><td>{number.format(item.count)}</td></tr>)}</tbody></table>
         </section>
-        <section className="summary-table-panel"><h2>{t("Повторяющиеся темы")}</h2><p className="muted">{t("Категории, в которых есть минимум два обращения.")}</p>
+        <section ref={revealPanel} className="summary-table-panel reveal-panel"><h2>{t("Повторяющиеся темы")}</h2><p className="muted">{t("Категории, в которых есть минимум два обращения.")}</p>
           {summary.recurringTopics.length === 0 ? <p>{t("Повторяющихся тем пока нет.")}</p> : <>
             <figure className="summary-chart"><BarChart title={t("Повторяющиеся темы по категориям")} bars={topicBars} /></figure>
             <ul className="topic-list" aria-label={t("Повторяющиеся темы")}>{summary.recurringTopics.map(topic => <li key={topic.categoryId}>
@@ -163,10 +164,10 @@ export default function SummaryPage() {
             <table aria-label={t("Повторяющиеся темы")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Количество")}</th></tr></thead><tbody>{summary.recurringTopics.map(topic => <tr key={topic.categoryId}><th scope="row">{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</th><td>{number.format(topic.count)}</td></tr>)}</tbody></table>
           </>}
         </section>
-        {summary.byDepartment && <section className="summary-table-panel"><h2>{t("Обращения по подразделениям")}</h2>
+        {summary.byDepartment && <section ref={revealPanel} className="summary-table-panel reveal-panel"><h2>{t("Обращения по подразделениям")}</h2>
           <table aria-label={t("Обращения по подразделениям")}><thead><tr><th scope="col">{t("Подразделение")}</th><th scope="col">{t("Обращений")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Доля закрытых")}</th></tr></thead><tbody>{summary.byDepartment.map(item => <tr key={item.departmentId}><th scope="row">{referenceLabel(locale, 'department', item.departmentId, item.departmentName)}</th><td>{number.format(item.count)}</td><td>{number.format(item.closedCount)}</td><td>{percent.format(item.closedShare)}</td></tr>)}</tbody></table>
         </section>}
-        {summary.avgResolutionHoursByCategory && <section className="summary-table-panel"><h2>{t("Время решения по категориям")}</h2>
+        {summary.avgResolutionHoursByCategory && <section ref={revealPanel} className="summary-table-panel reveal-panel"><h2>{t("Время решения по категориям")}</h2>
           <table aria-label={t("Время решения по категориям")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Среднее время")}</th></tr></thead><tbody>{summary.avgResolutionHoursByCategory.map(item => <tr key={item.categoryId}><th scope="row">{referenceLabel(locale, 'category', item.categoryId, item.categoryName)}</th><td>{number.format(item.closedCount)}</td><td>{hours(item.averageResolutionHours, locale)}</td></tr>)}</tbody></table>
         </section>}
       </div>

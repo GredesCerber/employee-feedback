@@ -1,6 +1,7 @@
 import { useI18n } from '../i18n';
 import { useState } from 'react';
 import { Link, matchPath, useLocation } from 'react-router-dom';
+import { useRevealOnView } from './designMotion';
 
 /**
  * Честная демонстрация (R12, задача #116, идея #82).
@@ -101,10 +102,11 @@ export const ABOUT_ROWS: AboutRow[] = [
 ];
 
 export function AboutPage() {
+  const reveal = useRevealOnView<HTMLDivElement>();
   const { t } = useI18n();
   return <section className="section"><p className="eyebrow">{t("Честная демонстрация")}</p><h1>{t("О прототипе")}</h1>
     <p className="muted">{t("Что в этом прототипе работает по-настоящему, что показано имитацией и что остаётся в плане развития. Данные только синтетические.")}</p>
-    <div className="about-table-wrap"><table className="about-table" aria-label={t("Реализовано, имитация, план")}>
+    <div ref={reveal} className="about-table-wrap reveal-panel"><table className="about-table" aria-label={t("Реализовано, имитация, план")}>
       <thead><tr><th scope="col">{t("Требование")}</th><th scope="col">{t("Функция")}</th><th scope="col">{t("Реализовано")}</th><th scope="col">{t("Имитация")}</th><th scope="col">{t("План")}</th></tr></thead>
       <tbody>{ABOUT_ROWS.map(row => <tr key={`${row.req}-${t(row.feature)}`}>
         <td>{row.req}</td>

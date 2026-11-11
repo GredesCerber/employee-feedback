@@ -7,9 +7,12 @@ import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
 import { AnonymousBadge } from '../features/complaintMeta';
 import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../features/complaint';
+import { PageCompletionSignal } from '../features/CompletionSignal';
+import { useRevealOnView } from '../features/designMotion';
 import '../styles/feedback-layout.css';
 
 export default function MyComplaintsPage() {
+  const reveal = useRevealOnView<HTMLLIElement>();
   const { t, locale } = useI18n();
   const { api, role } = useSession();
   const lastId = useLastComplaint(role);
@@ -27,7 +30,8 @@ export default function MyComplaintsPage() {
     {result.data && <>
       {result.data.total === 0 ? <div className="empty-state"><p>{t("У вас пока нет обращений.")}</p><div className="actions"><Link className="primary-link" to="/submit">{t("Подать первое обращение")}</Link></div></div> : <>
         <p className="muted">{t("Всего обращений:")} {new Intl.NumberFormat(localeNames[locale]).format(result.data.total)}</p>
-        <ul className="complaint-list">{result.data.items.map(item => <li key={item.id} className="complaint-item">
+        <PageCompletionSignal items={result.data.items} />
+        <ul className="complaint-list">{result.data.items.map(item => <li key={item.id} ref={reveal} className="complaint-item reveal-panel">
           <div className="item-header"><Link className="complaint-number" to={`/my/${item.id}`}>{item.number}</Link>{item.anonymous && <AnonymousBadge />}<StatusBadge status={item.status} /></div>
           <p className="item-description">{item.description}</p>
           <p className="muted">{t(typeLabels[item.type])} · {dateLabel(item.createdAt, locale)}</p>

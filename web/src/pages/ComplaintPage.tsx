@@ -12,6 +12,7 @@ import { ImitationBadge } from '../features/demo';
 import { MapPicker } from '../features/MapPicker';
 import { TranslatableText } from '../features/TranslatableText';
 import { useRememberComplaint } from '../features/lastComplaintStore';
+import { useRevealOnView } from '../features/designMotion';
 import { AnonymousBadge, authorLabel, CommentKindBadge, fallbackQueueHint, priorityLabels, referenceName, routingReasonLabels } from '../features/complaintMeta';
 import './complaint.css';
 
@@ -37,6 +38,7 @@ export default function ComplaintPage() {
   const reference = useResource(loadReference);
   const [notice, setNotice] = useState('');
   const heading = useRef<HTMLHeadingElement>(null);
+  const revealHistory = useRevealOnView<HTMLLIElement>();
   const focusPending = useRef(false);
   const { reload } = result;
   // Подсказка демо: карточка автора — шаг 2 (нового обращения без итога) или шаг 4 (есть решение).
@@ -101,12 +103,12 @@ export default function ComplaintPage() {
           </div>
           <div className="detail-history">
             <h2>{t("Комментарии")}</h2>
-            {item.comments.length === 0 ? <p className="muted">{t("Комментариев пока нет.")}</p> : <ul className="timeline">{item.comments.map(comment => <li key={comment.id} className={`comment comment-${comment.kind}`}>
+            {item.comments.length === 0 ? <p className="muted">{t("Комментариев пока нет.")}</p> : <ul className="timeline">{item.comments.map(comment => <li key={comment.id} ref={revealHistory} data-reveal-panel className={`comment comment-${comment.kind}`}>
               <CommentKindBadge kind={comment.kind} /> <strong>{'id' in comment.author ? comment.author.name : t(comment.author.name)}</strong>
               <TranslatableText complaintId={item.id} field="comment" commentId={comment.id} text={comment.text} /><time dateTime={comment.createdAt}>{dateLabel(comment.createdAt, locale)}</time>
             </li>)}</ul>}
             <h2>{t("История обращения")}</h2>
-            <ol className="timeline">{item.history.map(event => <li key={event.id}>
+            <ol className="timeline">{item.history.map(event => <li key={event.id} ref={revealHistory} data-reveal-panel>
               <p className="preserve-lines">{systemText(locale, event.text)}{event.simulated && <> <ImitationBadge hint={t("создано демо-симулятором")} /></>}</p>
               <p className="muted">{event.actor ? ('id' in event.actor ? event.actor.name : t(event.actor.name)) : t('Система')} · <time dateTime={event.createdAt}>{dateLabel(event.createdAt, locale)}</time></p>
             </li>)}</ol>

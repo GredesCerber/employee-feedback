@@ -30,12 +30,12 @@
 .bar-fill { transform-box: fill-box; transform-origin: left center; }
 
 @media (prefers-reduced-motion: no-preference) {
-  :root:not([data-design-motion="off"]) .chart-motion.is-revealed .bar-fill { animation: fill-chart-bar 720ms cubic-bezier(.2, .72, .2, 1) both; }
-  .chart-motion.is-revealed [data-bar]:nth-of-type(2) .bar-fill { animation-delay: 45ms; }
-  .chart-motion.is-revealed [data-bar]:nth-of-type(3) .bar-fill { animation-delay: 90ms; }
-  .chart-motion.is-revealed [data-bar]:nth-of-type(4) .bar-fill { animation-delay: 135ms; }
-  .chart-motion.is-revealed [data-bar]:nth-of-type(5) .bar-fill { animation-delay: 180ms; }
-  .chart-motion.is-revealed [data-bar]:nth-of-type(n+6) .bar-fill { animation-delay: 225ms; }
+  :root:not([data-design-motion="off"]) [data-bar].is-revealed .bar-fill { animation: fill-chart-bar 720ms cubic-bezier(.2, .72, .2, 1) both; }
+  [data-bar].is-revealed:nth-of-type(2) .bar-fill { animation-delay: 45ms; }
+  [data-bar].is-revealed:nth-of-type(3) .bar-fill { animation-delay: 90ms; }
+  [data-bar].is-revealed:nth-of-type(4) .bar-fill { animation-delay: 135ms; }
+  [data-bar].is-revealed:nth-of-type(5) .bar-fill { animation-delay: 180ms; }
+  [data-bar].is-revealed:nth-of-type(n+6) .bar-fill { animation-delay: 225ms; }
   @keyframes fill-chart-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 }
 

@@ -93,6 +93,15 @@ body, .section, .app-header { transition: background-color .2s ease, color .2s e
   button:active:not(:disabled) { transform: none; }
 }
 
+:root[data-design-motion='off'] *,
+:root[data-design-motion='off'] *::before,
+:root[data-design-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+:root[data-design-motion='off'] button:active:not(:disabled) { transform: none; }
+
 .completion-signal { padding: 28px 8px 8px; display: grid; justify-items: center; gap: 8px; color: var(--color-text-muted); font-size: var(--font-size-xs); text-align: center; }
 .completion-caption { text-transform: uppercase; letter-spacing: .06em; font-family: var(--font-mono); }
 .completion-dial { position: relative; display: grid; place-items: center; width: min(100%, 150px); color: var(--color-text-strong); }
@@ -109,9 +118,13 @@ body, .section, .app-header { transition: background-color .2s ease, color .2s e
 .completion-pixels .is-filled { background: var(--color-text-strong); border-color: var(--color-text-strong); }
 
 @media (prefers-reduced-motion: no-preference) {
+  :root:not([data-design-motion='off']) :is(.reveal-panel, [data-reveal-panel]).is-revealed:not(:focus-within) {
+    animation: reveal-panel 420ms cubic-bezier(.2, .72, .2, 1) both;
+  }
   :root:not([data-design-motion='off']) .completion-orbit { animation: completion-orbit 72s linear infinite paused; }
   :root:not([data-design-motion='off']) .completion-signal.is-visible .completion-orbit { animation-play-state: running; }
   :root:not([data-design-motion='off']) .completion-signal.is-revealed .completion-progress { animation: completion-fill .8s ease-out both; }
   @keyframes completion-orbit { to { transform: rotate(1turn); } }
   @keyframes completion-fill { from { stroke-dasharray: 0 100; } }
+  @keyframes reveal-panel { from { opacity: .82; transform: translateY(9px); } }
 }
