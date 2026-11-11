@@ -60,6 +60,7 @@ describe('queue search', () => {
     expect(document.getElementById('queue-filters')!.contains(reset)).toBe(false);
     await user.click(reset);
     expect(await screen.findByRole('link', { name: 'A-001' })).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Очередь обращений', exact: true }));
     expect(urlParams().toString()).toBe('');
     expect((screen.getByLabelText('Поиск по номеру или тексту') as HTMLInputElement).value).toBe('');
     expect((screen.getByLabelText('Статус') as HTMLSelectElement).value).toBe('');

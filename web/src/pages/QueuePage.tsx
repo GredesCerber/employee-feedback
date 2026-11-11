@@ -78,6 +78,7 @@ function exportFileName(now = new Date()) {
 
 export default function QueuePage() {
   const { api, role } = useSession();
+  const heading = useRef<HTMLHeadingElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const loadReference = useCallback(async () => requireData((await api.GET('/reference-data')).data), [api]);
   const reference = useResource(loadReference);
@@ -176,7 +177,7 @@ export default function QueuePage() {
     setSearchParams(new URLSearchParams());
   }
 
-  return <section className="section"><p className="eyebrow">Рабочая область руководителя</p><h1>Очередь обращений</h1>
+  return <section className="section"><p className="eyebrow">Рабочая область руководителя</p><h1 ref={heading} tabIndex={-1}>Очередь обращений</h1>
     {reference.loading && <Loading label="Загрузка фильтров…" />}
     {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
     <div className="queue-toolbar" role="search">
@@ -200,7 +201,7 @@ export default function QueuePage() {
     {(result.loading || stale) && <Loading label="Загрузка очереди…" />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {shown && !stale && <><p className="muted queue-counter" aria-live="polite"><span>Найдено: {shown.total}</span>{overall.data !== undefined && <> <span>из {overall.data}</span></>}</p>
-      {shown.items.length === 0 ? <div className="empty-state"><p>{applied.q ? `По запросу «${applied.q}» обращений нет.` : 'По выбранным фильтрам обращений нет.'}</p><p className="muted">Измените условия или нажмите «Сбросить», чтобы увидеть всю очередь.</p>{applied.q && <button type="button" onClick={clearSearch}>Сбросить поиск</button>}</div> : <ul className="complaint-list">{shown.items.map(item => <li className="complaint-item" key={item.id}>
+      {shown.items.length === 0 ? <div className="empty-state"><p>{applied.q ? `По запросу «${applied.q}» обращений нет.` : 'По выбранным фильтрам обращений нет.'}</p><p className="muted">Измените условия или нажмите «Сбросить фильтры», чтобы увидеть всю очередь.</p><div className="actions"><button type="button" onClick={() => { reset(); heading.current?.focus(); }}>Сбросить фильтры</button>{applied.q && <button type="button" onClick={clearSearch}>Сбросить поиск</button>}</div></div> : <ul className="complaint-list">{shown.items.map(item => <li className="complaint-item" key={item.id}>
         <div className="item-header"><Link className="complaint-number" to={`/queue/${item.id}`}>{item.number}</Link>{item.simulated && <ImitationBadge hint="создано демо-симулятором" />}<StatusBadge status={item.status} /></div>
         <p className="item-description">{item.description}</p><p className="muted">{item.assignee?.name ?? 'Без ответственного'}</p>
         <p className={item.overdue ? 'overdue' : 'muted'}>{item.overdue ? 'Просрочено · срок ' : 'Срок: '}{dateLabel(item.dueAt)}</p>
