@@ -88,7 +88,7 @@ export function NotificationBell({ role }: { role: string }) {
       {items.length === 0
         ? <p className="muted notification-empty">Новых уведомлений нет</p>
         : <ul className="notification-list">{items.map(entry => <li key={entry.id}>
-          <Link to={entry.href} onClick={() => close()}>{entry.message}</Link>
+          <Link to={entry.href} onClick={() => close()}>{entry.message}</Link>{entry.simulated && <> <ImitationBadge hint="создано демо-симулятором" /></>}
           <small className="muted">{entry.complaintNumber} · {formatTime(entry.createdAt)}</small>
         </li>)}</ul>}
       <p className="notification-note">{IMITATION_NOTE}</p>
