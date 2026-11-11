@@ -6,10 +6,11 @@ import type { paths } from '../api/client';
 import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, StatusBadge, statusLabels } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
+import { ImitationBadge } from '../features/demo';
 
 type Query = NonNullable<paths['/complaints']['get']['parameters']['query']>;
-type Filters = { departmentId: string; categoryId: string; status: Complaint['status'] | ''; dueAfter: string; dueBefore: string; overdue: boolean; queue: 'assigned' | 'unassigned' | ''; q: string };
-const emptyFilters: Filters = { departmentId: '', categoryId: '', status: '', dueAfter: '', dueBefore: '', overdue: false, queue: '', q: '' };
+type Filters = { departmentId: string; categoryId: string; status: Complaint['status'] | ''; dueAfter: string; dueBefore: string; overdue: boolean; queue: 'assigned' | 'unassigned' | ''; q: string; hideSimulated: boolean };
+const emptyFilters: Filters = { departmentId: '', categoryId: '', status: '', dueAfter: '', dueBefore: '', overdue: false, queue: '', q: '', hideSimulated: false };
 type Reference = { departments: { id: string }[]; categories: { id: string }[] };
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const isDate = (value: string) => datePattern.test(value) && !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
@@ -26,6 +27,7 @@ function filtersFromUrl(params: URLSearchParams, reference?: Reference): Filters
     queue: queue === 'assigned' || queue === 'unassigned' ? queue : '',
     overdue: params.get('overdue') === '1' || params.get('overdue') === 'true',
     q: text('q').slice(0, 200),
+    hideSimulated: params.get('hideSimulated') === '1',
     dueAfter: isDate(dueAfter) ? dueAfter : '',
     dueBefore: isDate(dueBefore) ? dueBefore : '',
   };
@@ -41,13 +43,14 @@ function filtersToUrl(filters: Filters) {
   if (filters.queue) params.set('queue', filters.queue);
   if (filters.overdue) params.set('overdue', '1');
   if (filters.q.trim()) params.set('q', filters.q.trim());
+  if (filters.hideSimulated) params.set('hideSimulated', '1');
   if (filters.dueAfter) params.set('dueAfter', filters.dueAfter);
   if (filters.dueBefore) params.set('dueBefore', filters.dueBefore);
   return params;
 }
 
 function filtersToQuery(filters: Filters, offset: number): Query {
-  return { limit: 20, offset, ...filterParams(filters) };
+  return { limit: 20, offset, ...filterParams(filters) } as Query;
 }
 
 function filterParams(filters: Filters) {
@@ -58,12 +61,15 @@ function filterParams(filters: Filters) {
     ...(filters.queue ? { queue: filters.queue } : {}),
     ...(filters.overdue ? { overdue: true } : {}),
     ...(filters.q.trim() ? { q: filters.q.trim() } : {}),
+    // simulated есть в контракте, но не в списке parameters: в сгенерированном типе его нет.
+    ...(filters.hideSimulated ? { simulated: false } : {}),
     ...(filters.dueAfter ? { dueAfter: new Date(`${filters.dueAfter}T00:00:00`).toISOString() } : {}),
     ...(filters.dueBefore ? { dueBefore: new Date(`${filters.dueBefore}T23:59:59.999`).toISOString() } : {}),
   };
 }
 
 const searchDelayMs = 300;
+export const QUEUE_POLL_INTERVAL_MS = 10_000;
 const pad = (value: number) => String(value).padStart(2, '0');
 /** Имя файла выгрузки: obrasheniya-ГГГГ-ММ-ДД.csv (локальная дата). */
 function exportFileName(now = new Date()) {
@@ -112,6 +118,17 @@ export default function QueuePage() {
   const page = result.data && result.data.query === query ? result.data.page : undefined;
   // Смена адреса идёт в переходе React Router: до его завершения на экране ещё старый список. pendingKey прячет его сразу.
   const [pendingKey, setPendingKey] = useState<string | null>(null);
+  // Опрос: тихо перечитываем текущую страницу раз в 10 с, без индикатора загрузки; ввод и фокус не затрагиваются.
+  const [polled, setPolled] = useState<{ query: Query; page: NonNullable<typeof page> } | undefined>();
+  useEffect(() => {
+    if (!ready) return;
+    let active = true;
+    const timer = setInterval(() => {
+      api.GET('/complaints', { params: { query } }).then(({ data }) => { if (active && data) setPolled({ query, page: data }); }).catch(() => { /* сеть недоступна: оставляем прежний список */ });
+    }, QUEUE_POLL_INTERVAL_MS);
+    return () => { active = false; clearInterval(timer); };
+  }, [api, query, ready]);
+  const shown = polled && polled.query === query ? polled.page : page;
   const stale = (result.data !== undefined && page === undefined) || (pendingKey !== null && pendingKey !== urlKey);
   // M в «Найдено: N из M» — всего обращений в очереди без фильтров (один лёгкий запрос).
   const loadTotal = useCallback(async () => requireData((await api.GET('/complaints', { params: { query: { limit: 1, offset: 0 } } })).data).total, [api]);
@@ -176,18 +193,19 @@ export default function QueuePage() {
       <label>Срок от<input id="due-after" type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueAfter} onChange={event => setFilters({ ...filters, dueAfter: event.target.value })} /></label>
       <label>Срок до<input type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueBefore} onChange={event => setFilters({ ...filters, dueBefore: event.target.value })} /></label>
       <label className="checkbox-label"><input type="checkbox" checked={filters.overdue} onChange={event => setFilters({ ...filters, overdue: event.target.checked })} />Только просроченные</label>
+      <label className="checkbox-label"><input type="checkbox" checked={filters.hideSimulated} onChange={event => setFilters({ ...filters, hideSimulated: event.target.checked })} />Скрыть имитацию</label>
       {filterError && <p id="filter-error" role="alert" className="field-error">{filterError}</p>}
       <div className="actions"><button className="primary-button" type="submit">Применить фильтры</button><button type="button" onClick={reset}>Сбросить</button></div>
     </form>}
     {(result.loading || stale) && <Loading label="Загрузка очереди…" />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
-    {page && !stale && <><p className="muted queue-counter" aria-live="polite"><span>Найдено: {page.total}</span>{overall.data !== undefined && <> <span>из {overall.data}</span></>}</p>
-      {page.items.length === 0 ? <div className="empty-state"><p>{applied.q ? `По запросу «${applied.q}» обращений нет.` : 'По выбранным фильтрам обращений нет.'}</p><p className="muted">Измените условия или нажмите «Сбросить», чтобы увидеть всю очередь.</p>{applied.q && <button type="button" onClick={clearSearch}>Сбросить поиск</button>}</div> : <ul className="complaint-list">{page.items.map(item => <li className="complaint-item" key={item.id}>
-        <div className="item-header"><Link className="complaint-number" to={`/queue/${item.id}`}>{item.number}</Link><StatusBadge status={item.status} /></div>
+    {shown && !stale && <><p className="muted queue-counter" aria-live="polite"><span>Найдено: {shown.total}</span>{overall.data !== undefined && <> <span>из {overall.data}</span></>}</p>
+      {shown.items.length === 0 ? <div className="empty-state"><p>{applied.q ? `По запросу «${applied.q}» обращений нет.` : 'По выбранным фильтрам обращений нет.'}</p><p className="muted">Измените условия или нажмите «Сбросить», чтобы увидеть всю очередь.</p>{applied.q && <button type="button" onClick={clearSearch}>Сбросить поиск</button>}</div> : <ul className="complaint-list">{shown.items.map(item => <li className="complaint-item" key={item.id}>
+        <div className="item-header"><Link className="complaint-number" to={`/queue/${item.id}`}>{item.number}</Link>{item.simulated && <ImitationBadge hint="создано демо-симулятором" />}<StatusBadge status={item.status} /></div>
         <p className="item-description">{item.description}</p><p className="muted">{item.assignee?.name ?? 'Без ответственного'}</p>
         <p className={item.overdue ? 'overdue' : 'muted'}>{item.overdue ? 'Просрочено · срок ' : 'Срок: '}{dateLabel(item.dueAt)}</p>
       </li>)}</ul>}
-      {page.total > 20 && <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 20))}>Назад</button><span>Страница {Math.floor(offset / 20) + 1} из {Math.max(1, Math.ceil(page.total / 20))}</span><button disabled={offset + page.items.length >= page.total} onClick={() => setOffset(offset + 20)}>Далее</button></div>}
+      {shown.total > 20 && <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 20))}>Назад</button><span>Страница {Math.floor(offset / 20) + 1} из {Math.max(1, Math.ceil(shown.total / 20))}</span><button disabled={offset + shown.items.length >= shown.total} onClick={() => setOffset(offset + 20)}>Далее</button></div>}
     </>}
   </section>;
 }

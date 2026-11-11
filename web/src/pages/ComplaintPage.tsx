@@ -43,7 +43,7 @@ export default function ComplaintPage() {
     {result.loading && <><h1>Обращение</h1><Loading label="Загрузка обращения…" /></>}
     {result.error && <><h1>Обращение недоступно</h1><LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} /></>}
     {item && <>
-      <div className="detail-header"><h1 ref={heading} tabIndex={-1}>Обращение {item.number}</h1><StatusBadge status={item.status} /></div>
+      <div className="detail-header"><h1 ref={heading} tabIndex={-1}>Обращение {item.number}</h1>{item.simulated && <ImitationBadge hint="создано демо-симулятором" />}<StatusBadge status={item.status} /></div>
       <div className="next-action"><h2>Следующий шаг</h2><p>{item.nextAction}</p></div>
       <UndoAction item={item} onUpdated={onUpdated} />
       {role === 'employee' && <AuthorReply item={item} onUpdated={onUpdated} />}
@@ -60,7 +60,7 @@ export default function ComplaintPage() {
       {item.attachments.length > 0 && <><h2>Тестовые вложения <ImitationBadge hint="не настоящий файл: содержимое не загружается" /></h2><p className="muted">Сохранены только сведения о файлах-заглушках, содержимое недоступно.</p><ul>{item.attachments.map((file, index) => <li key={`${file.name}-${index}`}>{file.name} · {file.sizeBytes} байт</li>)}</ul></>}
       {item.decision && <div className="decision"><h2>Итог рассмотрения</h2><StatusBadge status={item.decision.outcome} /><p className="preserve-lines">{item.decision.explanation}</p>{item.decision.actions && <><h3>Дальнейшие действия</h3><p className="preserve-lines">{item.decision.actions}</p></>}<p className="muted">{item.decision.author.name} · {dateLabel(item.decision.createdAt)}</p></div>}
       <h2>Комментарии</h2>{item.comments.length === 0 ? <p className="muted">Комментариев пока нет.</p> : <ul className="timeline">{item.comments.map(comment => <li key={comment.id} className={`comment comment-${comment.kind}`}><CommentKindBadge kind={comment.kind} /> <strong>{comment.author.name}</strong><p className="preserve-lines">{comment.text}</p><time dateTime={comment.createdAt}>{dateLabel(comment.createdAt)}</time></li>)}</ul>}
-      <h2>История обращения</h2><ol className="timeline">{item.history.map(event => <li key={event.id}><p className="preserve-lines">{event.text}</p><p className="muted">{event.actor?.name ?? 'Система'} · <time dateTime={event.createdAt}>{dateLabel(event.createdAt)}</time></p></li>)}</ol>
+      <h2>История обращения</h2><ol className="timeline">{item.history.map(event => <li key={event.id}><p className="preserve-lines">{event.text}{event.simulated && <> <ImitationBadge hint="создано демо-симулятором" /></>}</p><p className="muted">{event.actor?.name ?? 'Система'} · <time dateTime={event.createdAt}>{dateLabel(event.createdAt)}</time></p></li>)}</ol>
       {role === 'manager' && <ManagerActions key={`${item.id}-${item.status}`} item={item} onUpdated={onUpdated} />}
     </>}
   </section>;
