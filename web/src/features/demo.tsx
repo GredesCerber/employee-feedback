@@ -49,7 +49,10 @@ export function useDemoHints() {
 /** Плашка «Шаг N из 6» для текущего экрана. */
 export function DemoHint() {
   const { pathname } = useLocation();
-  const step = stepFor(pathname);
+  const { state } = useLocation();
+  const found = stepFor(pathname);
+  const override = (state as { demoStep?: unknown } | null)?.demoStep;
+  const step = found && found.path === '/my/:complaintId' && typeof override === 'number' ? DEMO_STEPS.find(item => item.n === override) ?? found : found;
   if (!step) return null;
   const next = NEXT[step.n]!;
   return <aside role="note" aria-label="Подсказка демо" className="demo-hint">

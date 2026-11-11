@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
-import type { Attachment, Complaint, ComplaintType, Priority } from './model.js';
+import type { Attachment, Complaint, ComplaintType, Priority, User } from './model.js';
 import { terminalStatuses } from './model.js';
-import { ApiError, identity, invalid, listQuery, present, queryParameters, validateBody, visibleComplaint } from './http.js';
+import { ApiError, identity, invalid, listQuery, type ListQuery, present, queryParameters, validateBody, visibleComplaint } from './http.js';
 import { summarize, trends } from './analytics.js';
 import { matchesComplaintText, searchWords } from './search.js';
 
@@ -9,6 +9,37 @@ interface CreateInput {
   type: ComplaintType; categoryId: string; description: string; proposedSolution?: string;
   priority?: Priority; attachments?: Attachment[];
 }
+
+const typeLabels: Record<string, string> = { problem: 'Проблема', suggestion: 'Предложение', praise: 'Похвала' };
+const statusLabels: Record<string, string> = { new: 'Новое', in_review: 'На рассмотрении', in_progress: 'В работе',
+  awaiting_clarification: 'Ожидает уточнения', implemented: 'Реализовано', rejected: 'Отклонено', closed: 'Закрыто' };
+const csvHeader = ['номер', 'тип', 'категория', 'подразделение', 'статус', 'ответственный', 'создано', 'срок',
+  'просрочено', 'первый ответ', 'итог'];
+
+function filteredComplaints(app: FastifyInstance, user: User, query: ListQuery): Complaint[] {
+  const words = searchWords(query.q);
+  const now = Date.now();
+  return app.store.list().filter(item => user.role !== 'employee' || item.author.id === user.id)
+    .map(item => present(item, now)).filter(item =>
+      (query.departmentId === undefined || item.departmentId === query.departmentId)
+      && (query.categoryId === undefined || item.categoryId === query.categoryId)
+      && (query.status === undefined || item.status === query.status)
+      && (query.type === undefined || item.type === query.type)
+      && (query.queue === undefined || item.routing.queue === query.queue)
+      && (query.overdue === undefined || item.overdue === query.overdue)
+      && (query.dueAfter === undefined || Date.parse(item.dueAt) >= Date.parse(query.dueAfter))
+      && (query.dueBefore === undefined || Date.parse(item.dueAt) <= Date.parse(query.dueBefore))
+      && matchesComplaintText(item, words))
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+/** RFC 4180 quoting plus spreadsheet formula protection (apostrophe prefix). */
+export function csvCell(value: string): string {
+  let text = value;
+  if (/^[\s\u0000-\u001f]*[=+\-@]/u.test(text)) text = `'${text}`;
+  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+const isoDate = (value: string | null) => value ? new Date(value).toISOString() : '';
 
 export function registerComplaints(app: FastifyInstance) {
   app.get('/session', async (request) => {
@@ -55,21 +86,23 @@ export function registerComplaints(app: FastifyInstance) {
     const user = identity(app, request);
     const query = listQuery(request);
     const limit = query.limit ?? 20, offset = query.offset ?? 0;
-    const words = searchWords(query.q);
-    const now = Date.now();
-    const items = app.store.list().filter(item => user.role !== 'employee' || item.author.id === user.id)
-      .map(item => present(item, now)).filter(item =>
-        (query.departmentId === undefined || item.departmentId === query.departmentId)
-        && (query.categoryId === undefined || item.categoryId === query.categoryId)
-        && (query.status === undefined || item.status === query.status)
-        && (query.type === undefined || item.type === query.type)
-        && (query.queue === undefined || item.routing.queue === query.queue)
-        && (query.overdue === undefined || item.overdue === query.overdue)
-        && (query.dueAfter === undefined || Date.parse(item.dueAt) >= Date.parse(query.dueAfter))
-        && (query.dueBefore === undefined || Date.parse(item.dueAt) <= Date.parse(query.dueBefore))
-        && matchesComplaintText(item, words))
-      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    const items = filteredComplaints(app, user, query);
     return { items: items.slice(offset, offset + limit), total: items.length, limit, offset };
+  });
+
+  app.get('/complaints/export', async (request, reply) => {
+    const user = identity(app, request, ['manager', 'admin']);
+    const items = filteredComplaints(app, user, listQuery(request, false));
+    const { categories, departments } = app.store.referenceData;
+    const rows = items.map(item => [item.number, typeLabels[item.type] ?? item.type,
+      categories.find(category => category.id === item.categoryId)?.name ?? item.categoryId,
+      departments.find(department => department.id === item.departmentId)?.name ?? item.departmentId,
+      statusLabels[item.status] ?? item.status, item.assignee?.name ?? '', isoDate(item.createdAt), isoDate(item.dueAt),
+      item.overdue ? 'да' : 'нет', isoDate(item.firstResponseAt), item.decision?.explanation ?? '']);
+    const csv = '﻿' + [csvHeader, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
+    return reply.header('content-type', 'text/csv; charset=utf-8')
+      .header('content-disposition', `attachment; filename="obrasheniya-${new Date().toISOString().slice(0, 10)}.csv"`)
+      .send(csv);
   });
 
   app.get('/summary', async (request) => {

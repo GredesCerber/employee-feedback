@@ -127,7 +127,7 @@ describe('manager queue acceptance', () => {
   it.each([['implemented', 'Реализовано'], ['rejected', 'Отклонено']] as const)('records %s with a reason visible in the author card', async (outcome, label) => {
     const user = await openManager(); await openCard(user);
     await user.selectOptions(screen.getByLabelText('Итог рассмотрения'), outcome);
-    await user.type(screen.getByLabelText('Обоснование решения'), 'Результат рассмотрения с понятным объяснением.');
+    await user.type(screen.getByLabelText(/Обоснование решения|Мотивированный отказ/), 'Результат рассмотрения с понятным объяснением.');
     await user.click(screen.getByRole('button', { name: 'Зафиксировать итог' }));
     await screen.findByRole('heading', { name: 'Итог рассмотрения' });
     await asAuthor(user);
@@ -139,10 +139,10 @@ describe('manager queue acceptance', () => {
   it('keeps the text and reports a failed mutation without showing a false decision', async () => {
     failMutation = true;
     const user = await openManager(); await openCard(user);
-    await user.type(screen.getByLabelText('Обоснование решения'), 'Сохранить это объяснение.');
+    await user.type(screen.getByLabelText(/Обоснование решения|Мотивированный отказ/), 'Сохранить это объяснение.');
     await user.click(screen.getByRole('button', { name: 'Зафиксировать итог' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
-    expect((screen.getByLabelText('Обоснование решения') as HTMLTextAreaElement).value).toBe('Сохранить это объяснение.');
+    expect((screen.getByLabelText(/Обоснование решения|Мотивированный отказ/) as HTMLTextAreaElement).value).toBe('Сохранить это объяснение.');
     expect(current.decision).toBeNull();
   });
 

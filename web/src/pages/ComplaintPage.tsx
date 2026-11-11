@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../features/complaint';
@@ -11,6 +11,8 @@ import './complaint.css';
 export default function ComplaintPage() {
   const { complaintId = '' } = useParams();
   const { api, role } = useSession();
+  const location = useLocation();
+  const navigate = useNavigate();
   const load = useCallback(async () => requireData((await api.GET('/complaints/{complaintId}', { params: { path: { complaintId } } })).data), [api, complaintId]);
   const result = useResource(load);
   const item = result.data;
@@ -21,6 +23,13 @@ export default function ComplaintPage() {
   const heading = useRef<HTMLHeadingElement>(null);
   const focusPending = useRef(false);
   const { reload } = result;
+  // Подсказка демо: карточка автора — шаг 2 (нового обращения без итога) или шаг 4 (есть решение).
+  const demoStep = item ? (item.decision ? 4 : 2) : undefined;
+  const currentStep = (location.state as { demoStep?: number } | null)?.demoStep;
+  useEffect(() => {
+    if (role !== 'employee' || demoStep === undefined || currentStep === demoStep) return;
+    navigate(location, { replace: true, state: { ...(location.state as object | null), demoStep } });
+  }, [role, demoStep, currentStep, location, navigate]);
   const onUpdated = useCallback((message?: string) => {
     if (message) { setNotice(message); focusPending.current = true; }
     reload();
