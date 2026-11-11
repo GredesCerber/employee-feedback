@@ -4,13 +4,16 @@ import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
 import { AnonymousBadge } from '../features/complaintMeta';
 import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../features/complaint';
+import { lastComplaintPath, readLastComplaint } from '../features/lastComplaint';
 
 export default function MyComplaintsPage() {
-  const { api } = useSession();
+  const { api, role } = useSession();
   const [offset, setOffset] = useState(0);
+  const [lastId] = useState(() => readLastComplaint(role));
   const load = useCallback(async () => requireData((await api.GET('/complaints', { params: { query: { limit: 20, offset } } })).data), [api, offset]);
   const result = useResource(load);
   return <section className="section"><p className="eyebrow">Личный кабинет</p><h1>Мои обращения</h1>
+    {lastId && <p><Link to={lastComplaintPath(role, lastId)}>Вернуться к последнему обращению</Link></p>}
     {result.loading && <Loading label="Загрузка обращений…" />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {result.data && <>

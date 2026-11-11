@@ -7,6 +7,7 @@ import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, StatusBadge, statusLabels } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
 import { ImitationBadge } from '../features/demo';
+import { lastComplaintPath, readLastComplaint } from '../features/lastComplaint';
 
 type Query = NonNullable<paths['/complaints']['get']['parameters']['query']>;
 type Filters = { departmentId: string; categoryId: string; status: Complaint['status'] | ''; dueAfter: string; dueBefore: string; overdue: boolean; queue: 'assigned' | 'unassigned' | ''; q: string; hideSimulated: boolean };
@@ -79,6 +80,7 @@ function exportFileName(now = new Date()) {
 export default function QueuePage() {
   const { api, role } = useSession();
   const heading = useRef<HTMLHeadingElement>(null);
+  const [lastId] = useState(() => readLastComplaint(role));
   const [searchParams, setSearchParams] = useSearchParams();
   const loadReference = useCallback(async () => requireData((await api.GET('/reference-data')).data), [api]);
   const reference = useResource(loadReference);
@@ -178,6 +180,7 @@ export default function QueuePage() {
   }
 
   return <section className="section"><p className="eyebrow">Рабочая область руководителя</p><h1 ref={heading} tabIndex={-1}>Очередь обращений</h1>
+    {lastId && <p><Link to={lastComplaintPath(role, lastId)}>Вернуться к последнему обращению</Link></p>}
     {reference.loading && <Loading label="Загрузка фильтров…" />}
     {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
     <div className="queue-toolbar" role="search">
