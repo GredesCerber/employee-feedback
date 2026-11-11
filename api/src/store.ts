@@ -12,6 +12,7 @@ export class ComplaintStore {
   /** Complaints not yet confirmed by the database; the newest snapshot per id wins. */
   private readonly dirty = new Map<string, Complaint>();
   private draining: Promise<void> | null = null;
+  private resetting = false;
   private retryTimer: NodeJS.Timeout | null = null;
   /** Last database write error, null after a fully successful drain. */
   writeError: unknown = null;
@@ -35,6 +36,7 @@ export class ComplaintStore {
   /** Writes every pending complaint; failures stay pending and are retried (next write, flush or timer). */
   flush(): Promise<void> {
     if (!this.database) return Promise.resolve();
+    if (this.resetting) return this.draining ?? Promise.resolve();
     this.draining ??= this.drain().finally(() => { this.draining = null; });
     return this.draining;
   }
@@ -42,6 +44,7 @@ export class ComplaintStore {
   private async drain(): Promise<void> {
     const database = this.database!;
     for (const [id, item] of [...this.dirty]) {
+      if (this.resetting) return;
       try {
         await database.save(item);
         if (this.dirty.get(id) === item) this.dirty.delete(id);
@@ -53,7 +56,7 @@ export class ComplaintStore {
       }
     }
     // Writes queued while draining.
-    if (this.dirty.size > 0 && !this.writeError) await this.drain();
+    if (!this.resetting && this.dirty.size > 0 && !this.writeError) await this.drain();
   }
 
   private scheduleRetry(): void {
@@ -88,6 +91,7 @@ export class ComplaintStore {
     return Math.max(0, ...this.list().map(item => Number(item.number.slice(2)))) + 1;
   }
   save(item: Complaint): void {
+    if (this.resetting) throw new Error('Demo reset is in progress. Retry the write after reset.');
     const copy = structuredClone(item);
     const snapshot = new Map(this.records);
     snapshot.set(copy.id, copy);
@@ -101,13 +105,27 @@ export class ComplaintStore {
    * memory is published only afterwards, so a failure leaves the store untouched.
    */
   async reset(): Promise<number> {
-    const seed = seedComplaints();
-    this.persistence?.save(seed);
-    await this.database?.replaceAll(seed);
-    this.dirty.clear();
-    this.records.clear();
-    for (const item of seed) this.records.set(item.id, structuredClone(item));
-    return seed.length;
+    if (this.resetting) throw new Error('Demo reset is already in progress.');
+    this.resetting = true;
+    try {
+      // Finish the current write before replacing the database, and prevent any
+      // queued snapshot or retry from restoring pre-reset data afterwards.
+      await this.draining;
+      const seed = seedComplaints();
+      this.persistence?.save(seed);
+      await this.database?.replaceAll(seed);
+      this.dirty.clear();
+      if (this.retryTimer) clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+      this.writeError = null;
+      this.records.clear();
+      for (const item of seed) this.records.set(item.id, structuredClone(item));
+      return seed.length;
+    } finally {
+      this.resetting = false;
+      // A failed replacement keeps the existing memory and pending writes.
+      if (this.dirty.size > 0) void this.flush();
+    }
   }
   get(id: string): Complaint | undefined {
     const record = this.records.get(id);
