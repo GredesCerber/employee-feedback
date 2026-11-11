@@ -55,12 +55,12 @@ describe('queue search', () => {
     '/queue?status=rejected&q=нетТакого&departmentId=procurement&categoryId=cross_department&queue=unassigned&overdue=1&hideSimulated=1&dueAfter=2026-11-01&dueBefore=2026-11-20',
   ])('#264 resets every condition from the empty queue without opening filters: %s', async entry => {
     const user = await openQueue(entry);
-    const reset = await screen.findByRole('button', { name: 'Сбросить фильтры', exact: true });
-    expect(screen.getByRole('button', { name: 'Фильтры', exact: true }).getAttribute('aria-expanded')).toBe('false');
+    const reset = await screen.findByRole('button', { name: 'Сбросить фильтры' });
+    expect(screen.getByRole('button', { name: 'Фильтры' }).getAttribute('aria-expanded')).toBe('false');
     expect(document.getElementById('queue-filters')!.contains(reset)).toBe(false);
     await user.click(reset);
     expect(await screen.findByRole('link', { name: 'A-001' })).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Очередь обращений', exact: true }));
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Очередь обращений' }));
     expect(urlParams().toString()).toBe('');
     expect((screen.getByLabelText('Поиск по номеру или тексту') as HTMLInputElement).value).toBe('');
     expect((screen.getByLabelText('Статус') as HTMLSelectElement).value).toBe('');
