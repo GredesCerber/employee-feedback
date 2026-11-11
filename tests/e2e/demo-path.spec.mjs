@@ -154,7 +154,9 @@ test('демо-путь: подача → назначение → уточне�
     await expect(page.getByRole('heading', { name: 'Очередь обращений' })).toBeVisible();
     const filters = page.locator('form.filter-form');
     const filterToggle = page.getByRole('button', { name: 'Фильтры', exact: true });
-    if (await filterToggle.count()) await filterToggle.click();
+    await expect(filterToggle).toBeVisible();
+    if (await filterToggle.getAttribute('aria-expanded') === 'false') await filterToggle.click();
+    await expect(filters).toBeVisible();
     await filterSelect(page, 'Подразделение').selectOption('procurement');
     await filterSelect(page, 'Категория').selectOption('cross_department');
     await filterSelect(page, 'Статус').selectOption('implemented');

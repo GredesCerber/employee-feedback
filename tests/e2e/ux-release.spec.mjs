@@ -46,7 +46,7 @@ test('UX: interface languages preserve form values, role changes and reload; the
   await expect(page.locator('html')).toHaveAttribute('lang', 'kk');
   await expect(page.locator('#description')).toHaveValue('Текст не должен исчезнуть при смене языка.');
   await selector.selectOption('en');
-  await page.locator('.role-selector select').selectOption('manager');
+  await page.locator('.role-selector select').first().selectOption('manager');
   await expect(page.getByRole('heading', { name: 'Request queue', exact: true })).toBeVisible();
   await page.reload();
   await expect(selector).toHaveValue('en');
@@ -55,6 +55,6 @@ test('UX: interface languages preserve form values, role changes and reload; the
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  const duration = await page.locator('.role-selector select').evaluate(element => getComputedStyle(element).transitionDuration);
+  const duration = await page.locator('.role-selector select').first().evaluate(element => getComputedStyle(element).transitionDuration);
   expect(duration.split(',').every(value => Number.parseFloat(value) <= 0.00001)).toBe(true);
 });
