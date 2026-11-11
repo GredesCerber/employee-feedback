@@ -11,3 +11,6 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
+      # Даты демо-данных считаются от дня первого наполнения, а не от 1 ноября (#215).
+      - key: SEED_RELATIVE_DATES
+        value: "1"
