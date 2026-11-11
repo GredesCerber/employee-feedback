@@ -78,9 +78,14 @@ export default function QueuePage() {
   const ready = !needsReference || reference.data !== undefined || reference.error !== undefined;
   const load = useCallback(async () => {
     if (!ready) return new Promise<never>(() => {});
-    return requireData((await api.GET('/complaints', { params: { query } })).data);
+    return { query, page: requireData((await api.GET('/complaints', { params: { query } })).data) };
   }, [api, query, ready]);
   const result = useResource(load);
+  // Список показываем только для текущего запроса: после «Применить» старые строки не должны выдавать себя за новый результат.
+  const page = result.data && result.data.query === query ? result.data.page : undefined;
+  // Смена адреса идёт в переходе React Router: до его завершения на экране ещё старый список. pendingKey прячет его сразу.
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const stale = (result.data !== undefined && page === undefined) || (pendingKey !== null && pendingKey !== urlKey);
   // M в «Найдено: N из M» — всего обращений в очереди без фильтров (один лёгкий запрос).
   const loadTotal = useCallback(async () => requireData((await api.GET('/complaints', { params: { query: { limit: 1, offset: 0 } } })).data).total, [api]);
   const overall = useResource(loadTotal);
@@ -92,12 +97,15 @@ export default function QueuePage() {
       document.getElementById('due-after')?.focus(); return;
     }
     setFilterError('');
-    setSearchParams(filtersToUrl(filters));
+    const next = filtersToUrl(filters);
+    setPendingKey(next.toString());
+    setSearchParams(next);
   }
 
   function reset() {
     setFilterError('');
     setFilters(emptyFilters);
+    setPendingKey('');
     setSearchParams(new URLSearchParams());
   }
 
@@ -117,15 +125,15 @@ export default function QueuePage() {
       {filterError && <p id="filter-error" role="alert" className="field-error">{filterError}</p>}
       <div className="actions"><button className="primary-button" type="submit">Применить фильтры</button><button type="button" onClick={reset}>Сбросить</button></div>
     </form>}
-    {result.loading && <Loading label="Загрузка очереди…" />}
+    {(result.loading || stale) && <Loading label="Загрузка очереди…" />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
-    {result.data && <><p className="muted queue-counter" aria-live="polite"><span>Найдено: {result.data.total}</span>{overall.data !== undefined && <> <span>из {overall.data}</span></>}</p>
-      {result.data.items.length === 0 ? <div className="empty-state"><p>По выбранным фильтрам обращений нет.</p><p className="muted">Измените условия или нажмите «Сбросить», чтобы увидеть всю очередь.</p></div> : <ul className="complaint-list">{result.data.items.map(item => <li className="complaint-item" key={item.id}>
+    {page && !stale && <><p className="muted queue-counter" aria-live="polite"><span>Найдено: {page.total}</span>{overall.data !== undefined && <> <span>из {overall.data}</span></>}</p>
+      {page.items.length === 0 ? <div className="empty-state"><p>По выбранным фильтрам обращений нет.</p><p className="muted">Измените условия или нажмите «Сбросить», чтобы увидеть всю очередь.</p></div> : <ul className="complaint-list">{page.items.map(item => <li className="complaint-item" key={item.id}>
         <div className="item-header"><Link className="complaint-number" to={`/queue/${item.id}`}>{item.number}</Link><StatusBadge status={item.status} /></div>
         <p className="item-description">{item.description}</p><p className="muted">{item.assignee?.name ?? 'Без ответственного'}</p>
         <p className={item.overdue ? 'overdue' : 'muted'}>{item.overdue ? 'Просрочено · срок ' : 'Срок: '}{dateLabel(item.dueAt)}</p>
       </li>)}</ul>}
-      {result.data.total > 20 && <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 20))}>Назад</button><span>Страница {Math.floor(offset / 20) + 1} из {Math.max(1, Math.ceil(result.data.total / 20))}</span><button disabled={offset + result.data.items.length >= result.data.total} onClick={() => setOffset(offset + 20)}>Далее</button></div>}
+      {page.total > 20 && <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 20))}>Назад</button><span>Страница {Math.floor(offset / 20) + 1} из {Math.max(1, Math.ceil(page.total / 20))}</span><button disabled={offset + page.items.length >= page.total} onClick={() => setOffset(offset + 20)}>Далее</button></div>}
     </>}
   </section>;
 }
