@@ -6,6 +6,7 @@ import type { DatabasePersistence } from './pg-persistence.js';
 import { configureErrors } from './http.js';
 import { registerComplaints } from './complaints.js';
 import { registerLifecycle } from './lifecycle.js';
+import { registerUndo } from './undo.js';
 import { registerRateLimit } from './rate-limit.js';
 import { registerSecurity } from './security.js';
 
@@ -51,6 +52,7 @@ function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = f
   app.get('/health', async () => ({ status: 'ok', version }));
   registerComplaints(app);
   registerLifecycle(app);
+  registerUndo(app);
   return app;
 }
 

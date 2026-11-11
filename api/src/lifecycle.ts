@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import type { Comment, Complaint, Decision, HistoryEvent, Status, User } from './model.js';
 import { terminalStatuses } from './model.js';
-import { ApiError, contract, identity, present, queryParameters, validateBody, visibleComplaint } from './http.js';
+import { ApiError, contract, identity, queryParameters, validateBody, visibleComplaint } from './http.js';
+import { presentFor, recordAction, snapshot } from './undo.js';
 
 const transitions = contract['x-status-transitions'] as Record<Status, Status[]>;
 function conflict(message: string): never { throw new ApiError(409, 'INVALID_TRANSITION', message); }
@@ -37,11 +38,13 @@ export function registerLifecycle(app: FastifyInstance) {
     const item = visibleComplaint(app, request.params.complaintId, user);
     assertTransition(item, body.status);
     const now = timestamp(item), previous = item.status;
+    const before = snapshot(item), lengthBefore = item.history.length;
     item.status = body.status;
     appendHistory(item, user, now, 'status_changed', 'Руководитель изменил статус.', previous, item.status);
     update(item, user, now);
     app.store.save(item);
-    return present(item);
+    recordAction(app, item, user, before, lengthBefore);
+    return presentFor(app, item, user);
   });
 
   app.post<{ Params: { complaintId: string } }>('/complaints/:complaintId/comments', async (request, reply) => {
@@ -74,7 +77,7 @@ export function registerLifecycle(app: FastifyInstance) {
     }
     update(item, user, now);
     app.store.save(item);
-    return reply.code(201).send(present(item));
+    return reply.code(201).send(presentFor(app, item, user));
   });
 
   app.post<{ Params: { complaintId: string } }>('/complaints/:complaintId/decision', async (request, reply) => {
@@ -91,6 +94,6 @@ export function registerLifecycle(app: FastifyInstance) {
     appendHistory(item, user, now, 'decided', item.decision.explanation, previous, item.status);
     update(item, user, now);
     app.store.save(item);
-    return reply.code(201).send(present(item));
+    return reply.code(201).send(presentFor(app, item, user));
   });
 }
