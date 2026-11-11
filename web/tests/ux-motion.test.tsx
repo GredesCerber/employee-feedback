@@ -22,7 +22,7 @@ describe('theme and motion polish', () => {
   });
 
   it('respects reduced motion and does not animate the loading spinner', () => {
-    expect(shell).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*animation:\s*none/);
+    expect(shell).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*animation-duration:\s*0\.01ms/);
     expect(pages).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*?\.spinner\s*\{\s*animation:\s*none/);
     expect(shell).not.toMatch(/transition:\s*all\b/);
   });

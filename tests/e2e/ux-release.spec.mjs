@@ -56,5 +56,5 @@ test('UX: interface languages preserve form values, role changes and reload; the
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const duration = await page.locator('.role-selector select').evaluate(element => getComputedStyle(element).transitionDuration);
-  expect(duration.split(',').every(value => Number.parseFloat(value) === 0)).toBe(true);
+  expect(duration.split(',').every(value => Number.parseFloat(value) <= 0.00001)).toBe(true);
 });

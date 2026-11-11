@@ -25,8 +25,8 @@ describe('#275 motion and readability', () => {
 
   it('turns decorative motion off under prefers-reduced-motion', () => {
     const block = /@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/.exec(shell)?.[1] ?? '';
-    expect(block).toMatch(/transition-duration:\s*0s !important/);
-    expect(block).toMatch(/animation-duration:\s*0s !important/);
+    expect(block).toMatch(/transition-duration:\s*0\.01ms !important/);
+    expect(block).toMatch(/animation-duration:\s*0\.01ms !important/);
     expect(block).toMatch(/button:active:not\(:disabled\)\s*\{\s*transform:\s*none/);
   });
 

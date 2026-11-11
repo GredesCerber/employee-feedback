@@ -10,10 +10,17 @@ import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, StatusBadge, statusLabels } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
 import { ImitationBadge } from '../features/demo';
+import '../styles/feedback-layout.css';
 
 type Query = NonNullable<paths['/complaints']['get']['parameters']['query']>;
 type Filters = { departmentId: string; categoryId: string; status: Complaint['status'] | ''; dueAfter: string; dueBefore: string; overdue: boolean; queue: 'assigned' | 'unassigned' | ''; q: string; hideSimulated: boolean };
 const emptyFilters: Filters = { departmentId: '', categoryId: '', status: '', dueAfter: '', dueBefore: '', overdue: false, queue: '', q: '', hideSimulated: false };
+const quickFilters: { label: string; filters: Pick<Filters, 'status' | 'overdue' | 'queue'> }[] = [
+  { label: 'Все', filters: { status: '', overdue: false, queue: '' } },
+  { label: 'Новые', filters: { status: 'new', overdue: false, queue: '' } },
+  { label: 'Просроченные', filters: { status: '', overdue: true, queue: '' } },
+  { label: 'Без ответственного', filters: { status: '', overdue: false, queue: 'unassigned' } },
+];
 type Reference = { departments: { id: string }[]; categories: { id: string }[] };
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const isDate = (value: string) => datePattern.test(value) && !Number.isNaN(new Date(`${value}T00:00:00`).getTime());
@@ -114,7 +121,7 @@ export default function QueuePage() {
   const [exportError, setExportError] = useState('');
   const query = useMemo(() => filtersToQuery(applied, offset), [applied, offset]);
   const [filterError, setFilterError] = useState('');
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(() => window.matchMedia?.('(min-width: 721px)').matches ?? false);
   const ready = !needsReference || reference.data !== undefined || reference.error !== undefined;
   const load = useCallback(async () => {
     if (!ready) return new Promise<never>(() => {});
@@ -153,6 +160,13 @@ export default function QueuePage() {
     setSearchParams(next);
   }
 
+  function applyQuick(preset: Pick<Filters, 'status' | 'overdue' | 'queue'>) {
+    setFilterError('');
+    const next = filtersToUrl({ ...applied, ...preset, q: search.trim().slice(0, 200) });
+    setPendingKey(next.toString());
+    setSearchParams(next);
+  }
+
   async function download() {
     setExporting(true); setExportError('');
     try {
@@ -183,16 +197,22 @@ export default function QueuePage() {
     setSearchParams(new URLSearchParams());
   }
 
-  return <section className="section"><p className="eyebrow">{t("Рабочая область руководителя")}</p><h1 ref={heading} tabIndex={-1}>{t("Очередь обращений")}</h1>
-    {lastId && <p><Link to={lastComplaintPath(role, lastId)}>{t('Вернуться к последнему обращению')}</Link></p>}
-    {reference.loading && <Loading label={t("Загрузка фильтров…")} />}
-    {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
-    <div className="queue-toolbar" role="search">
-      <label className="search-field">{t("Поиск по номеру или тексту")}<input type="search" value={search} maxLength={200} onChange={event => setSearch(event.target.value)} /></label>
+  return <section className="section queue-page">
+    <div className="feedback-heading">
+      <div><p className="eyebrow">{t("Рабочая область руководителя")}</p><h1 ref={heading} tabIndex={-1}>{t("Очередь обращений")}</h1></div>
       {role !== 'employee' && <button type="button" className="export-button" onClick={download} disabled={exporting}>{exporting ? t("Готовим файл…") : t("Скачать CSV")}</button>}
     </div>
-    {exportError && <p role="alert" className="field-error">{localizeError(locale, exportError)}</p>}
-    {reference.data && <button type="button" className="filter-toggle" aria-expanded={filtersOpen} aria-controls="queue-filters" onClick={() => setFiltersOpen(open => !open)}>{t("Фильтры")}</button>}
+    {lastId && <p className="feedback-return"><Link to={lastComplaintPath(role, lastId)}>{t("Вернуться к последнему обращению")}</Link></p>}
+    {reference.loading && <Loading label={t("Загрузка фильтров…")} />}
+    {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
+    <div className="queue-quick" role="group" aria-label={t("Быстрые фильтры")}>
+      {quickFilters.map(({ label, filters: preset }) => <button key={label} type="button" aria-pressed={applied.status === preset.status && applied.overdue === preset.overdue && applied.queue === preset.queue} onClick={() => applyQuick(preset)}>{t(label)}</button>)}
+    </div>
+    <div className="queue-toolbar">
+      <div className="queue-search" role="search"><label className="search-field"><span className="visually-hidden">{t("Поиск по номеру или тексту")}</span><input type="search" placeholder={t("Поиск по номеру или тексту")} value={search} maxLength={200} onChange={event => setSearch(event.target.value)} /></label></div>
+      {reference.data && <button type="button" className="filter-toggle" aria-expanded={filtersOpen} aria-controls="queue-filters" onClick={() => setFiltersOpen(open => !open)}>{t("Фильтры")}</button>}
+    </div>
+    {exportError && <p role="alert" className="field-error">{t(exportError)}</p>}
     {reference.data && <form id="queue-filters" className={filtersOpen ? 'filter-form is-open' : 'filter-form'} onSubmit={apply}>
       <label>{t("Подразделение")}<select value={filters.departmentId} onChange={event => setFilters({ ...filters, departmentId: event.target.value })}><option value="">{t("Все подразделения")}</option>{reference.data.departments.map(item => <option key={item.id} value={item.id}>{referenceLabel(locale, 'department', item.id, item.name)}</option>)}</select></label>
       <label>{t("Категория")}<select value={filters.categoryId} onChange={event => setFilters({ ...filters, categoryId: event.target.value })}><option value="">{t("Все категории")}</option>{reference.data.categories.map(item => <option key={item.id} value={item.id}>{referenceLabel(locale, 'category', item.id, item.name)}</option>)}</select></label>
@@ -207,12 +227,20 @@ export default function QueuePage() {
     </form>}
     {(result.loading || stale) && <Loading label={t("Загрузка очереди…")} />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
-    {shown && !stale && <><p className="muted queue-counter" aria-live="polite"><span>{t("Найдено:")} {number.format(shown.total)}</span>{overall.data !== undefined && <> <span>{t("из")} {number.format(overall.data)}</span></>}</p>
-      {shown.items.length === 0 ? <div className="empty-state"><p>{applied.q ? t('По запросу «{query}» обращений нет.', { query: applied.q }) : t("По выбранным фильтрам обращений нет.")}</p><p className="muted">{t("Измените условия или нажмите «Сбросить фильтры», чтобы увидеть всю очередь.")}</p><div className="actions"><button type="button" onClick={() => { reset(); heading.current?.focus(); }}>{t("Сбросить фильтры")}</button>{applied.q && <button type="button" onClick={clearSearch}>{t("Сбросить поиск")}</button>}</div></div> : <ul className="complaint-list">{shown.items.map(item => <li className="complaint-item" key={item.id}>
-        <div className="item-header"><Link className="complaint-number" to={`/queue/${item.id}`}>{item.number}</Link>{item.simulated && <ImitationBadge hint={t("создано демо-симулятором")} />}<StatusBadge status={item.status} /></div>
-        <p className="item-description">{item.description}</p><p className="muted">{item.assignee?.name ?? t("Без ответственного")}</p>
-        <p className={item.overdue ? 'overdue' : 'muted'}>{item.overdue ? t("Просрочено · срок ") : t("Срок: ")}{dateLabel(item.dueAt, locale)}</p>
-      </li>)}</ul>}
+    {shown && !stale && <><p className="muted queue-counter" aria-live="polite"><span>{t("Найдено:")} {new Intl.NumberFormat(localeNames[locale]).format(shown.total)}</span>{overall.data !== undefined && <> <span>{t("из")} {new Intl.NumberFormat(localeNames[locale]).format(overall.data)}</span></>}</p>
+      {shown.items.length === 0 ? <div className="empty-state"><p>{applied.q ? t('По запросу «{query}» обращений нет.', { query: applied.q }) : t("По выбранным фильтрам обращений нет.")}</p><p className="muted">{t("Измените условия или нажмите «Сбросить фильтры», чтобы увидеть всю очередь.")}</p><div className="actions"><button type="button" onClick={() => { reset(); heading.current?.focus(); }}>{t("Сбросить фильтры")}</button>{applied.q && <button type="button" onClick={clearSearch}>{t("Сбросить поиск")}</button>}</div></div> : <>
+        <div className="queue-list-header" aria-hidden="true"><span>{t("Обращение")}</span><span>{t("Статус")}</span><span>{t("Ответственный")}</span><span>{t("Срок")}</span></div>
+        <ul className="complaint-list queue-list">{shown.items.map(item => <li className="complaint-item" key={item.id}>
+          <div className="queue-record">
+            <Link className="complaint-number" to={`/queue/${item.id}`} state={{ queueSearch: urlKey }}>{item.number}</Link>
+            {item.simulated && <ImitationBadge hint={t("создано демо-симулятором")} />}
+            <p className="item-description">{item.description}</p>
+          </div>
+          <div className="queue-status"><StatusBadge status={item.status} /></div>
+          <p className="queue-owner muted"><span className="visually-hidden">{t("Ответственный:")} </span>{item.assignee?.name ?? t("Без ответственного")}</p>
+          <p className={`queue-due ${item.overdue ? 'overdue' : 'muted'}`}>{item.overdue ? t("Просрочено · срок ") : <span className="visually-hidden">{t("Срок:")} </span>}{dateLabel(item.dueAt, locale)}</p>
+        </li>)}</ul>
+      </>}
       {shown.total > 20 && <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 20))}>{t("Назад")}</button><span>{t("Страница")} {Math.floor(offset / 20) + 1} {t("из")} {Math.max(1, Math.ceil(shown.total / 20))}</span><button disabled={offset + shown.items.length >= shown.total} onClick={() => setOffset(offset + 20)}>{t("Далее")}</button></div>}
     </>}
   </section>;

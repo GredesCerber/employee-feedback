@@ -5,3 +5,34 @@
 .comment-clarification_request { border-left: 3px solid var(--color-warning-border); padding-left: 12px; }
 .comment-clarification_response { border-left: 3px solid var(--color-primary); padding-left: 12px; }
 .fallback-queue-hint { margin: -12px 0 24px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--color-warning-bg); color: var(--color-warning-text); font-size: var(--font-size-sm); }
+
+.complaint-detail .next-action { margin-top: 16px; padding: 14px 18px; border: 1px solid var(--color-border); }
+.complaint-detail .next-action h2 { margin-bottom: 4px; font-size: 16px; }
+.complaint-detail .detail-layout { margin-top: 20px; }
+.detail-layout.has-management { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, .75fr); align-items: start; gap: 18px; }
+.detail-record, .detail-copy, .detail-history { min-width: 0; }
+.detail-copy, .detail-history, .detail-layout .management-panel {
+  padding: clamp(12px, 2vw, 22px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+.detail-record { display: grid; gap: 18px; }
+.detail-history > h2:first-child, .detail-layout .management-panel > h2:first-child { margin-top: 0; }
+.complaint-detail .metadata { margin: 0 0 20px; gap: 12px; }
+.complaint-detail .metadata dd { overflow-wrap: anywhere; }
+.complaint-detail .detail-copy > h2 { margin-top: 20px; }
+.detail-layout .management-panel { min-width: 0; margin: 0; }
+.detail-layout .management-panel :is(fieldset, .action-panel) { margin: 12px 0; }
+.detail-layout .management-panel fieldset { padding: 10px 12px; }
+.detail-layout .management-panel .actions { margin-top: 0; gap: 8px; }
+.detail-layout .management-panel :is(select, textarea) { min-width: 0; }
+.detail-layout .management-panel button { padding-inline: 10px; }
+
+@media (max-width: 900px) {
+  .detail-layout.has-management { grid-template-columns: minmax(0, 1fr); }
+  .detail-layout.has-management .detail-record { display: contents; }
+  .detail-layout.has-management .detail-history { grid-row: 3; }
+  .detail-layout.has-management .management-panel { grid-row: 2; }
+}

@@ -153,6 +153,8 @@ test('демо-путь: подача → назначение → уточне�
     await page.getByRole('navigation', { name: 'Основное меню' }).getByRole('link', { name: 'Очередь обращений' }).click();
     await expect(page.getByRole('heading', { name: 'Очередь обращений' })).toBeVisible();
     const filters = page.locator('form.filter-form');
+    const filterToggle = page.getByRole('button', { name: 'Фильтры', exact: true });
+    if (await filterToggle.count()) await filterToggle.click();
     await filterSelect(page, 'Подразделение').selectOption('procurement');
     await filterSelect(page, 'Категория').selectOption('cross_department');
     await filterSelect(page, 'Статус').selectOption('implemented');

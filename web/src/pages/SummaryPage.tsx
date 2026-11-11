@@ -5,6 +5,8 @@ import { ApiError } from '../api/client';
 import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, typeLabels } from '../features/complaint';
+import { CompletionSignal } from '../features/CompletionSignal';
+import { useRevealOnView } from '../features/designMotion';
 import './summary.css';
 
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
@@ -21,12 +23,12 @@ function timesLabel(count: number, locale: Locale) {
   return `повторяется ${number.format(count)} ${word}`;
 }
 
-const DEFAULT_WIDTH = 640, VALUE_WIDTH = 56, ROW = 40, BAR = 22, STACKED_ROW = 52, STACKED_BAR = 18;
+const DEFAULT_WIDTH = 640, VALUE_WIDTH = 48, ROW = 34, BAR = 5, LABEL_LINE = 18;
 /** Оценка ширины подписи при 14 px (кириллица в Inter/system-ui ≈ 7.5 px на символ) и отступ до столбца. */
 const labelWidth = (label: string) => Math.ceil(label.length * 7.5) + 16;
 
 /** Ширина контейнера в пикселях; без ResizeObserver (тесты, старые браузеры) — ширина по умолчанию. */
-function useContainerWidth() {
+export function useContainerWidth() {
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const ref = useCallback((node: HTMLDivElement | null) => {
     if (!node || typeof ResizeObserver === 'undefined') return;
@@ -40,6 +42,22 @@ function useContainerWidth() {
   return { ref, width };
 }
 
+function labelLines(label: string, width: number) {
+  const capacity = Math.max(8, Math.floor(width / 7.5));
+  const words = label.split(/\s+/).flatMap(word => {
+    const pieces: string[] = [];
+    for (let index = 0; index < word.length; index += capacity) pieces.push(word.slice(index, index + capacity));
+    return pieces;
+  });
+  const lines: string[] = [];
+  for (const word of words) {
+    const current = lines.at(-1);
+    if (current && current.length + word.length + 1 <= capacity) lines[lines.length - 1] += ` ${word}`;
+    else lines.push(word);
+  }
+  return lines.length ? lines : [''];
+}
+
 /**
  * Горизонтальная столбчатая диаграмма на чистом SVG (#197). 1 единица viewBox = 1 px экрана,
  * поэтому текст всегда 14 px. Если подписи не помещаются слева от столбцов, они переносятся над столбцами.
@@ -50,32 +68,37 @@ export function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
   const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const titleId = useId();
   const { ref, width } = useContainerWidth();
+  const reveal = useRevealOnView<HTMLDivElement>();
   const max = Math.max(0, ...bars.map(bar => bar.value));
   const labelColumn = Math.max(80, ...bars.map(bar => labelWidth(bar.label)));
-  const stacked = labelColumn > width * 0.45;
+  const stacked = width < 560 || labelColumn > width * 0.45;
   const left = stacked ? 0 : labelColumn;
-  const track = Math.max(40, width - left - VALUE_WIDTH);
-  const row = stacked ? STACKED_ROW : ROW;
-  const barHeight = stacked ? STACKED_BAR : BAR;
-  const height = bars.length * row;
-  return <div ref={ref} className="bar-chart-frame">
+  const track = Math.max(0, width - left - (stacked ? 0 : VALUE_WIDTH));
+  let height = 0;
+  const rows = bars.map(bar => {
+    const lines = stacked ? labelLines(bar.label, width - VALUE_WIDTH) : [bar.label];
+    const y = height;
+    height += stacked ? 38 + (lines.length - 1) * LABEL_LINE : ROW;
+    return { ...bar, lines, y };
+  });
+  return <div ref={reveal} className="chart-motion"><div ref={ref} className="bar-chart-frame">
     <svg className="bar-chart" role="img" aria-labelledby={titleId} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
       <title id={titleId}>{`${title}: ${bars.map(bar => `${bar.label} ${number.format(bar.value)}`).join(', ')}`}</title>
-      {bars.map((bar, index) => {
+      {rows.map(bar => {
         const filled = max > 0 ? Math.round((bar.value / max) * track) : 0;
-        const y = index * row;
-        const barY = stacked ? y + 24 : y + (ROW - BAR) / 2;
+        const barY = stacked ? bar.y + 21 + (bar.lines.length - 1) * LABEL_LINE : bar.y + (ROW - BAR) / 2;
         return <g key={bar.label} data-bar={bar.label}>
           {stacked
-            ? <text className="bar-label" x={0} y={y + 12} textAnchor="start" dominantBaseline="middle">{bar.label}</text>
-            : <text className="bar-label" x={labelColumn - 12} y={y + ROW / 2} textAnchor="end" dominantBaseline="middle">{bar.label}</text>}
-          <rect className="bar-track" x={left} y={barY} width={track} height={barHeight} rx={4} />
-          <rect className="bar-fill" x={left} y={barY} width={filled} height={barHeight} rx={4} />
-          <text className="bar-value" x={left + filled + 8} y={barY + barHeight / 2} dominantBaseline="middle">{number.format(bar.value)}</text>
+            ? <text className="bar-label" x={0} y={bar.y + 9} textAnchor="start" dominantBaseline="middle">{bar.lines.map((line, index) =>
+              <tspan key={index} x={0} dy={index === 0 ? 0 : LABEL_LINE}>{index ? ` ${line}` : line}</tspan>)}</text>
+            : <text className="bar-label" x={labelColumn - 12} y={bar.y + ROW / 2} textAnchor="end" dominantBaseline="middle">{bar.label}</text>}
+          <rect className="bar-track" x={left} y={barY} width={track} height={BAR} rx={BAR / 2} />
+          <rect className="bar-fill" x={left} y={barY} width={filled} height={BAR} rx={BAR / 2} />
+          <text className="bar-value" x={width} y={stacked ? bar.y + 9 : barY + BAR / 2} textAnchor="end" dominantBaseline="middle">{number.format(bar.value)}</text>
         </g>;
       })}
     </svg>
-  </div>;
+  </div></div>;
 }
 
 export default function SummaryPage() {
@@ -101,11 +124,12 @@ export default function SummaryPage() {
   };
   const typeBars = summary?.byType.map(item => ({ label: t(typeLabels[item.type]), value: item.count })) ?? [];
   const topicBars = summary?.recurringTopics.map(topic => ({ label: referenceLabel(locale, 'category', topic.categoryId, topic.categoryName), value: topic.count })) ?? [];
-  return <section className="section"><p className="eyebrow">{t("Обзор обратной связи")}</p><h1>{t("Сводка")}</h1>
+  return <section className="section summary-page"><p className="eyebrow">{t("Обзор обратной связи")}</p><h1>{t("Сводка")}</h1>
     <p className="muted">{t("Результаты рассмотрения и темы, к которым сотрудники возвращаются чаще.")}</p>
     {result.loading && <Loading label={t("Загрузка сводки…")} />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {summary && <>
+      <CompletionSignal total={summary.total} closed={summary.closedCount} />
       <div className="summary-toolbar"><p className="muted">{t("Сводка на")} <time dateTime={summary.generatedAt}>{dateLabel(summary.generatedAt, locale)}</time></p><button onClick={result.reload}>{t("Обновить сводку")}</button></div>
       <div className="summary-reset">
         {resetStep === 'unavailable' ? <p className="muted">{t("Недоступно в этой среде")}</p>
@@ -120,9 +144,9 @@ export default function SummaryPage() {
       <div className="summary-metrics">
         <section className="metric-card" aria-labelledby="summary-total"><h2 id="summary-total">{t("Всего обращений")}</h2><p className="metric-value">{number.format(summary.total)}</p><p className="muted">{t("За всё время")}</p></section>
         <section className="metric-card" aria-labelledby="summary-closed"><h2 id="summary-closed">{t("Доля закрытых")}</h2><p className="metric-value">{percent.format(summary.closedShare)}</p><p className="muted">{t("Завершено")} {number.format(summary.closedCount)} {t("из")} {number.format(summary.total)}{t(". Включены реализованные, отклонённые и закрытые.")}</p></section>
-        <section className="metric-card" aria-labelledby="summary-response"><h2 id="summary-response">{t("Среднее время первого ответа")}</h2><p className="metric-value">{summary.averageFirstResponseHours === null ? t("Нет ответов") : hours(summary.averageFirstResponseHours, locale)}</p><p className="muted">{summary.respondedCount > 0 ? t('По {count} обращениям с первым ответом', { count: number.format(summary.respondedCount) }) : t("Показатель появится после первого ответа руководителя")}</p></section>
+        <section className="metric-card" aria-labelledby="summary-response"><h2 id="summary-response">{t("Среднее время первого ответа")}</h2><p className="metric-value">{summary.averageFirstResponseHours === null ? t("Нет ответов") : `${number.format(summary.averageFirstResponseHours)} ч`}</p><p className="muted">{summary.respondedCount > 0 ? `По ${number.format(summary.respondedCount)} обращениям с первым ответом` : t("Показатель появится после первого ответа руководителя")}</p></section>
+        {summary.overdueCount !== undefined && <section className="metric-card summary-overdue" aria-labelledby="summary-overdue"><h2 id="summary-overdue">{t("Просрочено")}<span className="visually-hidden">: {number.format(summary.overdueCount)}</span></h2><p className="metric-value" aria-hidden="true">{number.format(summary.overdueCount)}</p><p className="muted">{t("Срок прошёл, решения нет.")}</p><Link to="/queue?overdue=1">{t("Открыть просроченные в очереди")}</Link></section>}
       </div>
-      {summary.overdueCount !== undefined && <section className="metric-card summary-overdue" aria-labelledby="summary-overdue"><h2 id="summary-overdue">{`${t("Просрочено")}: ${number.format(summary.overdueCount)}`}</h2><p className="muted">{t("Незавершённые обращения со сроком в прошлом.")}</p><Link to="/queue?overdue=1">{t("Открыть просроченные в очереди")}</Link></section>}
       {summary.total === 0 && <p className="summary-empty" role="status">{t("Обращений пока нет — диаграммы появятся после первой подачи.")}</p>}
       <div className="summary-sections">
         <section className="summary-table-panel"><h2>{t("Обращения по типам")}</h2>

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { ApiError } from '../api/client';
 import { errorMessage, requireData, retryAfterOf, useCooldown, useResource } from '../features/data';
-import { Loading, LoadError } from '../features/complaint';
+import { dateLabel, Loading, LoadError } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
 import { ImitationBadge } from '../features/demo';
 import { AnonymousBadge } from '../features/complaintMeta';
@@ -17,6 +17,8 @@ const mapCopy = {
   en: { title: 'Add a location on the map — optional', invalid: 'Check the latitude and longitude or clear the coordinates.', privacy: 'An exact location may indirectly identify the author of an anonymous complaint.', selected: 'Location selected' },
   kk: { title: 'Картада орынды белгілеу — міндетті емес', invalid: 'Ендік пен бойлықты тексеріңіз немесе координаттарды тазалаңыз.', privacy: 'Нақты орын анонимді өтініш авторын жанама түрде танытуы мүмкін.', selected: 'Орын белгіленді' },
 };
+
+import '../styles/feedback-layout.css';
 
 const fieldIds: Record<string, string> = { categoryId: 'category', description: 'description', proposedSolution: 'solution', type: 'complaint-type' };
 function focusFirstInvalid(errors: Record<string, string>) {
@@ -96,18 +98,23 @@ export default function SubmitPage() {
 
   if (created) return <><section className="section">
     <p className="eyebrow">{t("Отправлено")}</p><h1 ref={resultHeading} tabIndex={-1}>{t("Обращение зарегистрировано")}</h1>
-    <p className="registration-number">{created.number}</p>{(created.anonymous ?? anonymous) && <p><AnonymousBadge /></p>}<p>{systemText(locale, created.nextAction)}</p>
+    <p className="registration-number">{created.number}</p>{(created.anonymous ?? anonymous) && <p><AnonymousBadge /></p>}
+    <dl className="metadata registration-meta">
+      <div><dt>{t("Ответственный")}</dt><dd>{created.assignee?.name ?? t("Ожидает назначения")}</dd></div>
+      <div><dt>{t("Срок")}</dt><dd>{Number.isFinite(Date.parse(created.dueAt)) ? dateLabel(created.dueAt, locale) : t("Срок не указан")}</dd></div>
+    </dl>
+    <div className="next-action"><h2>{t("Следующий шаг")}</h2><p>{systemText(locale, created.nextAction)}</p></div>
     <div className="actions"><Link className="primary-link" to={`/my/${created.id}`}>{t("Открыть обращение")}</Link><Link to="/my">{t("К моим обращениям")}</Link></div>
   </section>{announcement}</>;
 
-  return <><section className="section"><p className="eyebrow">{t("Обратная связь")}</p><h1>{t("Новое обращение")}</h1>
+  return <><section className="section submit-page"><p className="eyebrow">{t("Обратная связь")}</p><h1>{t("Новое обращение")}</h1>
     <p className="muted">{t("Сообщите о проблеме или предложите улучшение. Обращение видят вы, руководители и администраторы.")}</p>
     {reference.loading && <Loading label={t("Загрузка категорий…")} />}
     {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
-    {reference.data && <form onSubmit={submit} noValidate className="complaint-form">
+    {reference.data && <div className="submit-layout"><form onSubmit={submit} noValidate className="complaint-form">
       <label htmlFor="complaint-type">{t("Тип обращения")}</label><select id="complaint-type" value={type} onChange={event => setType(event.target.value as Complaint['type'])}><option value="problem">{t("Проблема")}</option><option value="suggestion">{t("Предложение")}</option><option value="praise">{t("Благодарность")}</option></select>
-      <label htmlFor="category">{t("Категория")}</label><select id="category" value={categoryId} onChange={event => chooseCategory(event.target.value)} required aria-invalid={Boolean(errors.categoryId)} aria-describedby={errors.categoryId ? 'category-error' : undefined}><option value="">{t("Выберите категорию")}</option>{reference.data.categories.map(category => <option key={category.id} value={category.id}>{referenceLabel(locale, 'category', category.id, category.name)}</option>)}</select>
-      {errors.categoryId && <p id="category-error" role="alert" className="field-error">{t(errors.categoryId)}</p>}
+      <label htmlFor="category">{t("Категория")}</label><select id="category" value={categoryId} onChange={event => chooseCategory(event.target.value)} required aria-invalid={Boolean(errors.categoryId)} aria-describedby={errors.categoryId ? 'category-error' : undefined}><option value="">{t("Выберите категорию")}</option>{reference.data.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
+      {errors.categoryId && <p id="category-error" role="alert" className="field-error">{errors.categoryId}</p>}
       <button type="button" className="suggest-button" disabled={!assist.canSuggest} onClick={assist.suggest}>{t("Подсказать категорию")}</button>
       <SuggestionNote assist={assist} categoryId={categoryId} categoryName={reference.data.categories.find(item => item.id === categoryId)?.name} apply={chooseCategory} />
       <label htmlFor="description">{t("Описание")}</label><textarea id="description" value={description} onChange={event => {
@@ -130,8 +137,15 @@ export default function SubmitPage() {
       <p id="anonymous-hint" className="field-hint">{t("Ответственный не видит автора, но по тексту и вложениям автора могут узнать. Не указывайте лишних подробностей, по которым вас можно опознать.")}</p>
       <label className="checkbox-label"><input type="checkbox" checked={attachment} onChange={event => setAttachment(event.target.checked)} />{t("Добавить тестовое вложение")} <ImitationBadge hint={t("не настоящий файл: сохраняются только название, тип и размер заглушки")} /></label>
       <p className="field-hint">{t("Файл-заглушка sample-request.txt: сохраняются только название, тип и размер, содержимое не загружается.")}</p>
-      {(cooldown.active || failure) && <p role="alert" className="field-error">{cooldown.active ? cooldown.message : t(failure)}</p>}
+      {(cooldown.active || failure) && <p role="alert" className="field-error">{cooldown.active ? cooldown.message : failure}</p>}
       <button className="primary-button" disabled={busy || cooldown.active} type="submit">{busy ? t("Отправка…") : t("Отправить обращение")}</button>
-    </form>}
+    </form><aside className="submit-guide" aria-labelledby="submit-guide-heading">
+      <h2 id="submit-guide-heading">{t("Что будет дальше")}</h2>
+      <ol>
+        <li><strong>{t("Регистрация.")}</strong> {t("Вы получите номер обращения.")}</li>
+        <li><strong>{t("Рассмотрение.")}</strong> {t("Ответственный изучит обращение и при необходимости задаст вопрос.")}</li>
+        <li><strong>{t("Решение.")}</strong> {t("Итог и пояснение появятся в «Моих обращениях».")}</li>
+      </ol>
+    </aside></div>}
   </section>{announcement}</>;
 }
