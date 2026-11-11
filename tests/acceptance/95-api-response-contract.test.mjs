@@ -87,6 +87,7 @@ function prepareFixtureEnvironment(operationId, t) {
 }
 
 const scenarios = {
+  translateComplaintText: async app => request(app, 'POST', '/complaints/complaint-1/translations', { field: 'description', targetLocale: 'en' }),
   getHealth: async app => app.inject({ url: '/health' }),
   getSession: async app => request(app, 'GET', '/session', undefined, 'employee-1'),
   getReferenceData: async app => request(app, 'GET', '/reference-data'),
@@ -184,7 +185,7 @@ test('#95 pending contract operations are explicit and separate from live respon
 for (const operation of activeOperations) {
   test(`#95 successful ${operation.method.toUpperCase()} ${operation.path} matches its response schema`, async t => {
     prepareFixtureEnvironment(operation.operationId, t);
-    const app = buildApp(); t.after(() => app.close());
+    const app = buildApp({}, { translator: { enabled: true, translate: async () => 'translated fixture' } }); t.after(() => app.close());
     assert.ok(scenarios[operation.operationId], `Missing success scenario for ${operation.operationId} (${operation.method} ${operation.path})`);
     const response = await scenarios[operation.operationId](app);
     assert.ok(response.statusCode >= 200 && response.statusCode < 300,

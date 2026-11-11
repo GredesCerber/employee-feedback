@@ -17,12 +17,13 @@ const fixtures = {
   assignComplaint: { payload: { assigneeId: 'manager-2' } },
   changeComplaintStatus: { payload: { status: 'in_review' } },
   addComment: { payload: { kind: 'comment', text: 'Синтетическое дополнение.' } },
+  translateComplaintText: { payload: { field: 'description', targetLocale: 'en' } },
   recordDecision: { payload: { outcome: 'rejected', explanation: 'Синтетическое обоснование.' } },
 };
 
 for (const operation of operations) for (const [role, user] of Object.entries(identities)) {
   test(`#96 ${role} / ${operation.method.toUpperCase()} ${operation.path} follows x-roles`, async t => {
-    const app = buildApp(); t.after(() => app.close());
+    const app = buildApp({}, { translator: { enabled: true, translate: async () => 'translated fixture' } }); t.after(() => app.close());
     assert.ok(Object.hasOwn(fixtures, operation.operationId), `Missing role-matrix fixture: ${role}/${operation.operationId}`);
     const publicHealth = operation.operationId === 'getHealth';
     const allowed = publicHealth || operation['x-roles'].includes(role);

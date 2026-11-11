@@ -81,7 +81,7 @@ const probes = {
   getAnalyticsTrends: () => ['/analytics/trends'],
 };
 /** Operations that change state; exercised in the mutation scenario (as manager) or by the author. */
-const mutations = ['createComplaint', 'assignComplaint', 'changeComplaintStatus', 'addComment', 'recordDecision', 'undoLastAction', 'resetDemo'];
+const mutations = ['createComplaint', 'assignComplaint', 'changeComplaintStatus', 'addComment', 'recordDecision', 'undoLastAction', 'resetDemo', 'translateComplaintText'];
 
 test('#132 every contract operation has an anonymity probe (new routes cannot dodge the sweep)', () => {
   assert.ok(operations.length >= 19, `contract lists ${operations.length} operations`);
@@ -104,6 +104,19 @@ test('#132 inherited synthetic API key cannot enable network access', async (t) 
     const response = await req('GET', url);
     assert.equal(response.statusCode, 200, response.body);
   }
+});
+
+test('#132 explicit translation respects complaint visibility and offline errors reveal no anonymous author', async t => {
+  const { req } = newApp(t);
+  const item = await create(req, { anonymous: true });
+  for (const user of READERS) {
+    const response = await req('POST', `/complaints/${item.id}/translations`, { field: 'description', targetLocale: 'en' }, user);
+    assert.equal(response.statusCode, 503, response.body);
+    noLeak(response, `${user} offline translation`);
+  }
+  const forbidden = await req('POST', `/complaints/${item.id}/translations`, { field: 'description', targetLocale: 'kk' }, 'employee-2');
+  assert.equal(forbidden.statusCode, 404);
+  noLeak(forbidden, 'foreign employee translation');
 });
 
 test('#132 baseline: without the anonymous complaint the author does not appear anywhere (the detector is meaningful)', async (t) => {
