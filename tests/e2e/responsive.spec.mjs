@@ -54,7 +54,9 @@ for (const width of widths) {
     await page.locator('.complaint-list .complaint-number').first().click();
     await checkScreen(page, width, 'карточка автора', /^Обращение /);
 
+    // После #203 смена роли на карточке ведёт на парную карточку /queue/:id, поэтому в очередь идём через меню.
     await switchRole(page, 'manager');
+    await menuLink(page, 'Очередь обращений').click();
     await checkScreen(page, width, 'очередь', 'Очередь обращений');
     if (width === narrow) {
       const toggle = page.getByRole('button', { name: 'Фильтры', exact: true });
