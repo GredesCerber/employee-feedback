@@ -113,7 +113,7 @@ test('демо-путь: подача → назначение → уточне�
     await expect(page.getByRole('heading', { name: 'Ответить на уточнение' })).toBeVisible();
     await expect(page.locator('blockquote')).toHaveText(question);
     await page.getByLabel('Ваш ответ на уточнение').fill(answer);
-    await page.getByRole('button', { name: 'Отправить уточнение' }).click();
+    await page.getByRole('button', { name: 'Отправить ответ' }).click();
     await expectStatus(page, 'На рассмотрении');
 
     await switchRole(page, 'manager');

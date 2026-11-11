@@ -14,10 +14,11 @@ const reference = contract.components.schemas.ReferenceData.examples[0];
 let current: Complaint;
 let requests: Request[];
 let failMutation: boolean;
+let replyGate: Promise<void> | undefined;
 
 beforeEach(() => {
   current = { ...structuredClone(example), status: 'in_review', overdue: true };
-  requests = []; failMutation = false;
+  requests = []; failMutation = false; replyGate = undefined;
   vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:3000');
   vi.stubGlobal('fetch', vi.fn(async (request: Request) => {
     requests.push(request.clone());
@@ -30,6 +31,7 @@ beforeEach(() => {
       current.history.push({ ...current.history[0]!, id: 'assignment-new', kind: 'assigned', text: 'Назначен руководитель.' });
     } else if (url.pathname.endsWith('/comments')) {
       const body = await request.json();
+      if (body.kind === 'clarification_response' && replyGate) await replyGate;
       current.comments.push({ id: `comment-${current.comments.length}`, text: body.text, kind: body.kind, createdAt: current.updatedAt, author: body.kind === 'clarification_response' ? current.author : reference.assignees[0] });
       current.status = body.kind === 'clarification_request' ? 'awaiting_clarification' : body.kind === 'clarification_response' ? 'in_review' : current.status;
       current.nextAction = current.status === 'awaiting_clarification' ? 'Автору нужно ответить на запрос уточнения.' : 'Ответственный рассматривает обращение.';
@@ -114,10 +116,15 @@ describe('manager queue acceptance', () => {
     await screen.findByText('Ожидает уточнения');
     await asAuthor(user);
     expect(screen.getAllByText('Уточните номер заявки.').length).toBeGreaterThan(0);
+    let finishReply!: () => void;
+    replyGate = new Promise<void>(resolve => { finishReply = resolve; });
     await user.type(screen.getByLabelText('Ваш ответ на уточнение'), 'Номер заявки 123.');
-    await user.click(screen.getByRole('button', { name: 'Отправить уточнение' }));
-    expect(await screen.findByText('Номер заявки 123.')).toBeTruthy();
-    expect(screen.getByText('На рассмотрении')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Отправить ответ' }));
+    expect((screen.getByRole('button', { name: 'Отправка…' }) as HTMLButtonElement).disabled).toBe(true);
+    finishReply();
+    expect(await screen.findByText('На рассмотрении')).toBeTruthy();
+    expect(screen.getByText('Номер заявки 123.')).toBeTruthy();
+    expect(screen.getByText('Ответ на уточнение отправлен.')).toBeTruthy();
     expect(screen.queryByLabelText('Ваш ответ на уточнение')).toBeNull();
     const responseRequest = requests.filter(request => request.method === 'POST').at(-1)!;
     expect(responseRequest.headers.get('X-Demo-User')).toBe('employee-1');
