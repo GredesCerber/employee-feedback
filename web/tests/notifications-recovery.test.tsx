@@ -19,7 +19,7 @@ const entry = (id: string, hour: string): Item => ({
 });
 
 beforeEach(() => {
-  vi.useFakeTimers();
+  vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] });
   vi.setSystemTime(new Date('2026-11-11T10:00:00Z'));
   localStorage.clear();
   mode = 'ok'; items = []; calls = 0; gate = undefined;
