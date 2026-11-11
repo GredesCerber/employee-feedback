@@ -3,6 +3,7 @@ import type { ReferenceData } from '../model.js';
 import { MIN_SUGGESTION_LENGTH, suggestDemoCategory } from '../discovery.js';
 import { createAnthropicClassifier, describeFailure, type CategoryClassifier } from './anthropic.js';
 import { suggestByRules } from './rules.js';
+import { hasDigestFacts, templateDigest, type DigestContent, type DigestFacts } from './digest.js';
 
 export const DEFAULT_AI_MODEL = 'claude-haiku-5-5';
 export const DEFAULT_AI_TIMEOUT_MS = 3000;
@@ -27,6 +28,7 @@ export interface AiProvider {
   readonly model: string;
   readonly timeoutMs: number;
   suggestCategory(text: string, references: ReferenceData, log?: FastifyBaseLogger): Promise<CategorySuggestion>;
+  summarize(facts: DigestFacts, log?: FastifyBaseLogger): Promise<DigestContent>;
 }
 
 /** ANTHROPIC_API_KEY turns the live model on; AI_MODEL overrides the default model. */
@@ -60,6 +62,19 @@ export function createAiProvider(options: AiProviderOptions = {}): AiProvider {
     llmEnabled: classifier !== undefined,
     model,
     timeoutMs,
+    async summarize(facts, log) {
+      const fallback = templateDigest(facts);
+      if (classifier && facts.total > 0) {
+        try {
+          const text = await classifier.summarize(facts);
+          if ((apiKey && text.includes(apiKey)) || !hasDigestFacts(text, facts)) throw new Error('invalid digest content');
+          return { ...fallback, text, source: 'llm' };
+        } catch (error) {
+          log?.warn({ reason: describeFailure(error), model }, 'ИИ-сводка недоступна, используется запасной шаблон');
+        }
+      }
+      return fallback;
+    },
     async suggestCategory(text, references, log) {
       if (text.trim().length < MIN_SUGGESTION_LENGTH) return { category: null, source: 'none' };
       if (classifier) {
