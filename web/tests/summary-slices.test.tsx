@@ -33,9 +33,11 @@ beforeEach(() => {
     requests.push(request.clone());
     const path = new URL(request.url).pathname;
     if (path === '/summary') return Response.json(data);
-    if (path === '/demo/reset') return resetStatus === 200 ? Response.json({ loadedCount: 20 })
-      : resetStatus === 404 ? Response.json({ code: 'NOT_FOUND', message: 'Сброс демо недоступен в этой среде.' }, { status: 404 })
-        : Response.json({ code: 'INTERNAL_ERROR', message: 'x' }, { status: 500 });
+    if (path === '/demo/reset') {
+      if (resetStatus === 200) return Response.json({ loadedCount: 20 });
+      if (resetStatus === 404) return Response.json({ code: 'NOT_FOUND', message: 'Сброс демо недоступен в этой среде.' }, { status: 404 });
+      return Response.json({ code: 'INTERNAL_ERROR', message: 'x' }, { status: 500 });
+    }
     return Response.json({ items: [], total: 0, limit: 20, offset: 0 });
   }));
 });
@@ -49,31 +51,28 @@ async function openSummary() {
   return user;
 }
 const summaryCalls = () => requests.filter(request => new URL(request.url).pathname === '/summary').length;
+const resetCalls = () => requests.filter(request => request.method === 'POST' && new URL(request.url).pathname === '/demo/reset').length;
+const cells = (row: HTMLElement) => within(row).getAllByRole('cell').map(cell => (cell.textContent ?? '').replace(/\s/g, ''));
 
 describe('#130 summary slices', () => {
   it('shows a table by department with count, closed and share, including zero rows', async () => {
     await openSummary();
     const table = await screen.findByRole('table', { name: 'Обращения по подразделениям' });
-    const design = within(table).getByRole('row', { name: /Проектирование/ });
-    expect(within(design).getAllByRole('cell').map(cell => cell.textContent?.replace(/\s/g, ''))).toEqual(['12', '3', '25%']);
-    const procurement = within(table).getByRole('row', { name: /Закупки/ });
-    expect(within(procurement).getAllByRole('cell').map(cell => cell.textContent?.replace(/\s/g, ''))).toEqual(['0', '0', '0%']);
+    expect(cells(within(table).getByRole('row', { name: /Проектирование/ }))).toEqual(['12', '3', '25%']);
+    expect(cells(within(table).getByRole('row', { name: /Закупки/ }))).toEqual(['0', '0', '0%']);
   });
 
   it('shows resolution time by category with a dash when the value is null', async () => {
     await openSummary();
     const table = await screen.findByRole('table', { name: 'Время решения по категориям' });
-    const safety = within(table).getByRole('row', { name: /Охрана труда/ });
-    expect(within(safety).getAllByRole('cell').map(cell => cell.textContent?.replace(/\s/g, ''))).toEqual(['2', '30,5ч']);
-    const training = within(table).getByRole('row', { name: /Обучение/ });
-    expect(within(training).getAllByRole('cell').map(cell => cell.textContent)).toEqual(['0', '—']);
+    expect(cells(within(table).getByRole('row', { name: /Охрана труда/ }))).toEqual(['2', '30,5ч']);
+    expect(cells(within(table).getByRole('row', { name: /Обучение/ }))).toEqual(['0', '—']);
   });
 
   it('shows an overdue card with the count and a link to the overdue queue', async () => {
     await openSummary();
     const card = await screen.findByRole('region', { name: 'Просрочено: 3' });
-    const link = within(card).getByRole('link');
-    expect(link.getAttribute('href')).toBe('/queue?overdue=1');
+    expect(within(card).getByRole('link').getAttribute('href')).toBe('/queue?overdue=1');
   });
 
   it('omits the new blocks when the API does not return the optional fields', async () => {
@@ -92,9 +91,9 @@ describe('#130 demo reset', () => {
     await screen.findByRole('region', { name: 'Всего обращений' });
     const before = summaryCalls();
     await user.click(screen.getByRole('button', { name: 'Сбросить демо' }));
-    expect(requests.some(request => request.url.endsWith('/demo/reset'))).toBe(false);
+    expect(resetCalls()).toBe(0);
     await user.click(await screen.findByRole('button', { name: 'Подтвердить сброс' }));
-    await waitFor(() => expect(requests.filter(request => request.method === 'POST' && request.url.endsWith('/demo/reset'))).toHaveLength(1));
+    await waitFor(() => expect(resetCalls()).toBe(1));
     await waitFor(() => expect(summaryCalls()).toBeGreaterThan(before));
     expect(await screen.findByText(/загружено 20/)).toBeTruthy();
   });
@@ -103,7 +102,7 @@ describe('#130 demo reset', () => {
     const user = await openSummary();
     await user.click(await screen.findByRole('button', { name: 'Сбросить демо' }));
     await user.click(screen.getByRole('button', { name: 'Отмена' }));
-    expect(requests.some(request => request.url.endsWith('/demo/reset'))).toBe(false);
+    expect(resetCalls()).toBe(0);
     expect(screen.getByRole('button', { name: 'Сбросить демо' })).toBeTruthy();
   });
 
@@ -113,4 +112,15 @@ describe('#130 demo reset', () => {
     await user.click(await screen.findByRole('button', { name: 'Сбросить демо' }));
     await user.click(screen.getByRole('button', { name: 'Подтвердить сброс' }));
     expect(await screen.findByText('Недоступно в этой среде')).toBeTruthy();
-    await waitFor(() => expect(screen.queryByRole(
+    expect(screen.queryByRole('button', { name: 'Сбросить демо' })).toBeNull();
+  });
+
+  it('shows an error and keeps the button on other failures', async () => {
+    resetStatus = 500;
+    const user = await openSummary();
+    await user.click(await screen.findByRole('button', { name: 'Сбросить демо' }));
+    await user.click(screen.getByRole('button', { name: 'Подтвердить сброс' }));
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Сервер временно недоступен/);
+    expect(screen.getByRole('button', { name: 'Сбросить демо' })).toBeTruthy();
+  });
+});
