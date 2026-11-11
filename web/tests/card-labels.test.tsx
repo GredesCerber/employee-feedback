@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import App from '../src/App';
@@ -30,7 +30,7 @@ async function openCard(role: 'employee' | 'manager', hints = false) {
   const user = userEvent.setup();
   render(<MemoryRouter><App /></MemoryRouter>);
   await user.selectOptions(screen.getByLabelText('Демонстрационная роль'), role);
-  if (hints) await user.click(screen.getByRole('checkbox', { name: 'Подсказки демо' }));
+  if (hints && !(screen.getByRole('checkbox', { name: 'Подсказки демо' }) as HTMLInputElement).checked) await user.click(screen.getByRole('checkbox', { name: 'Подсказки демо' }));
   await user.click(await screen.findByRole('link', { name: current.number }));
   await screen.findByRole('heading', { name: `Обращение ${current.number}` });
   return user;
@@ -70,7 +70,7 @@ describe('#204 подписи карточки', () => {
     current = { ...structuredClone(example), status: 'new' };
     stub();
     await openCard('employee', true);
-    expect((await screen.findByRole('note', { name: 'Подсказка демо' })).textContent).toMatch(/Шаг 2 из 6/);
+    await waitFor(() => expect(screen.getByRole('note', { name: 'Подсказка демо' }).textContent).toMatch(/Шаг 2 из 6/));
     cleanup();
     current = { ...structuredClone(example), status: 'rejected', decision: { outcome: 'rejected', explanation: 'Причина', author: { id: 'u', name: 'Руководитель' }, createdAt: '2026-11-10T10:00:00Z' } } as Complaint;
     await openCard('employee', true);
