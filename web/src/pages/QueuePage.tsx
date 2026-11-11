@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSession } from '../app/session';
@@ -47,7 +47,11 @@ function filtersToUrl(filters: Filters) {
 }
 
 function filtersToQuery(filters: Filters, offset: number): Query {
-  return { limit: 20, offset,
+  return { limit: 20, offset, ...filterParams(filters) };
+}
+
+function filterParams(filters: Filters) {
+  return {
     ...(filters.departmentId ? { departmentId: filters.departmentId } : {}),
     ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
     ...(filters.status ? { status: filters.status } : {}),
@@ -59,8 +63,15 @@ function filtersToQuery(filters: Filters, offset: number): Query {
   };
 }
 
+const searchDelayMs = 300;
+const pad = (value: number) => String(value).padStart(2, '0');
+/** Имя файла выгрузки: obrasheniya-ГГГГ-ММ-ДД.csv (локальная дата). */
+function exportFileName(now = new Date()) {
+  return `obrasheniya-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.csv`;
+}
+
 export default function QueuePage() {
-  const { api } = useSession();
+  const { api, role } = useSession();
   const [searchParams, setSearchParams] = useSearchParams();
   const loadReference = useCallback(async () => requireData((await api.GET('/reference-data')).data), [api]);
   const reference = useResource(loadReference);
@@ -72,6 +83,22 @@ export default function QueuePage() {
   useEffect(() => { setFilters(applied); }, [applied]);
   const [offset, setOffset] = useState(0);
   useEffect(() => { setOffset(0); }, [urlKey]);
+  // Поиск: поле живёт отдельно от формы фильтров и попадает в адрес через 300 мс после последнего символа.
+  const [search, setSearch] = useState(applied.q);
+  useEffect(() => { setSearch(current => (current.trim() === applied.q ? current : applied.q)); }, [applied.q]);
+  const appliedRef = useRef(applied);
+  appliedRef.current = applied;
+  useEffect(() => {
+    if (search.trim().slice(0, 200) === applied.q) return;
+    const timer = setTimeout(() => {
+      const next = filtersToUrl({ ...appliedRef.current, q: search.trim().slice(0, 200) });
+      setPendingKey(next.toString());
+      setSearchParams(next);
+    }, searchDelayMs);
+    return () => clearTimeout(timer);
+  }, [search, applied.q, setSearchParams]);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
   const query = useMemo(() => filtersToQuery(applied, offset), [applied, offset]);
   const [filterError, setFilterError] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -97,13 +124,36 @@ export default function QueuePage() {
       document.getElementById('due-after')?.focus(); return;
     }
     setFilterError('');
-    const next = filtersToUrl(filters);
+    const next = filtersToUrl({ ...filters, q: search.trim().slice(0, 200) });
+    setPendingKey(next.toString());
+    setSearchParams(next);
+  }
+
+  async function download() {
+    setExporting(true); setExportError('');
+    try {
+      const { data } = await api.GET('/complaints/export', { params: { query: filterParams(applied) }, parseAs: 'blob' });
+      if (!(data instanceof Blob)) throw new Error('empty');
+      const link = document.createElement('a');
+      const href = URL.createObjectURL(data);
+      link.href = href; link.download = exportFileName();
+      document.body.appendChild(link); link.click(); link.remove();
+      URL.revokeObjectURL(href);
+    } catch (error) {
+      setExportError(error instanceof Error && error.message !== 'empty' ? error.message : 'Не удалось скачать файл. Повторите попытку.');
+    } finally { setExporting(false); }
+  }
+
+  function clearSearch() {
+    setSearch('');
+    const next = filtersToUrl({ ...applied, q: '' });
     setPendingKey(next.toString());
     setSearchParams(next);
   }
 
   function reset() {
     setFilterError('');
+    setSearch('');
     setFilters(emptyFilters);
     setPendingKey('');
     setSearchParams(new URLSearchParams());
@@ -112,6 +162,11 @@ export default function QueuePage() {
   return <section className="section"><p className="eyebrow">Рабочая область руководителя</p><h1>Очередь обращений</h1>
     {reference.loading && <Loading label="Загрузка фильтров…" />}
     {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
+    <div className="queue-toolbar" role="search">
+      <label className="search-field">Поиск по номеру или тексту<input type="search" value={search} maxLength={200} onChange={event => setSearch(event.target.value)} /></label>
+      {role !== 'employee' && <button type="button" className="export-button" onClick={download} disabled={exporting}>{exporting ? 'Готовим файл…' : 'Скачать CSV'}</button>}
+    </div>
+    {exportError && <p role="alert" className="field-error">{exportError}</p>}
     {reference.data && <button type="button" className="filter-toggle" aria-expanded={filtersOpen} aria-controls="queue-filters" onClick={() => setFiltersOpen(open => !open)}>Фильтры</button>}
     {reference.data && <form id="queue-filters" className={filtersOpen ? 'filter-form is-open' : 'filter-form'} onSubmit={apply}>
       <label>Подразделение<select value={filters.departmentId} onChange={event => setFilters({ ...filters, departmentId: event.target.value })}><option value="">Все подразделения</option>{reference.data.departments.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
@@ -120,7 +175,6 @@ export default function QueuePage() {
       <label>Очередь<select value={filters.queue} onChange={event => setFilters({ ...filters, queue: event.target.value as Filters['queue'] })}><option value="">Все обращения</option><option value="unassigned">Без ответственного</option><option value="assigned">С ответственным</option></select></label>
       <label>Срок от<input id="due-after" type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueAfter} onChange={event => setFilters({ ...filters, dueAfter: event.target.value })} /></label>
       <label>Срок до<input type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueBefore} onChange={event => setFilters({ ...filters, dueBefore: event.target.value })} /></label>
-      <label className="search-field">Поиск по номеру или тексту<input value={filters.q} maxLength={200} onChange={event => setFilters({ ...filters, q: event.target.value })} /></label>
       <label className="checkbox-label"><input type="checkbox" checked={filters.overdue} onChange={event => setFilters({ ...filters, overdue: event.target.checked })} />Только просроченные</label>
       {filterError && <p id="filter-error" role="alert" className="field-error">{filterError}</p>}
       <div className="actions"><button className="primary-button" type="submit">Применить фильтры</button><button type="button" onClick={reset}>Сбросить</button></div>
@@ -128,7 +182,7 @@ export default function QueuePage() {
     {(result.loading || stale) && <Loading label="Загрузка очереди…" />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {page && !stale && <><p className="muted queue-counter" aria-live="polite"><span>Найдено: {page.total}</span>{overall.data !== undefined && <> <span>из {overall.data}</span></>}</p>
-      {page.items.length === 0 ? <div className="empty-state"><p>По выбранным фильтрам обращений нет.</p><p className="muted">Измените условия или нажмите «Сбросить», чтобы увидеть всю очередь.</p></div> : <ul className="complaint-list">{page.items.map(item => <li className="complaint-item" key={item.id}>
+      {page.items.length === 0 ? <div className="empty-state"><p>{applied.q ? `По запросу «${applied.q}» обращений нет.` : 'По выбранным фильтрам обращений нет.'}</p><p className="muted">Измените условия или нажмите «Сбросить», чтобы увидеть всю очередь.</p>{applied.q && <button type="button" onClick={clearSearch}>Сбросить поиск</button>}</div> : <ul className="complaint-list">{page.items.map(item => <li className="complaint-item" key={item.id}>
         <div className="item-header"><Link className="complaint-number" to={`/queue/${item.id}`}>{item.number}</Link><StatusBadge status={item.status} /></div>
         <p className="item-description">{item.description}</p><p className="muted">{item.assignee?.name ?? 'Без ответственного'}</p>
         <p className={item.overdue ? 'overdue' : 'muted'}>{item.overdue ? 'Просрочено · срок ' : 'Срок: '}{dateLabel(item.dueAt)}</p>

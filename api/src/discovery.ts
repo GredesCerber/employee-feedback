@@ -10,7 +10,9 @@ export const stopWords: ReadonlySet<string> = new Set([
   'я', 'его', 'ее', 'их', 'наш', 'ваш', 'быть', 'был', 'была', 'были', 'было', 'есть', 'можно', 'нужно', 'очень',
   'также', 'еще', 'уже', 'всех', 'все', 'всё', 'чтобы', 'если', 'когда', 'который', 'которые', 'этот', 'эти', 'такой',
 ]);
-const MIN_LENGTH = 10;
+/** Trimmed text shorter than this gets no suggestion and is never sent to a model. */
+export const MIN_SUGGESTION_LENGTH = 10;
+const MIN_LENGTH = MIN_SUGGESTION_LENGTH;
 const MAX_LENGTH = 5000;
 const FIXTURE_THRESHOLD = 0.3;
 
@@ -75,6 +77,6 @@ export function registerDiscovery(app: FastifyInstance) {
 
   app.get('/complaints/suggest-category', async (request) => {
     const { text } = textParameter(app, request);
-    return suggestDemoCategory(text, app.store.referenceData);
+    return app.ai.suggestCategory(text, app.store.referenceData, request.log);
   });
 }

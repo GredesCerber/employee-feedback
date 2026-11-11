@@ -85,3 +85,7 @@ legend { font-weight: 600; padding: 0 8px; }
 .complaint-form button.suggest-button { margin-top: 0; }
 .suggestion-note { font-size: 14px; }
 .complaint-form .suggestion-note button { margin: 6px 0 0; }
+
+.queue-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 24px 0 0; }
+.queue-toolbar .search-field { display: grid; gap: 6px; flex: 1 1 260px; font-size: 14px; }
+.queue-toolbar input { width: 100%; border: 1px solid var(--color-border-strong); border-radius: 6px; padding: 10px 12px; background: var(--color-surface); color: inherit; }
