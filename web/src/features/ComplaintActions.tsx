@@ -54,7 +54,7 @@ export function AuthorReply({ item, onUpdated }: { item: Complaint; onUpdated: O
     void mutation.run(async () => requireData((await api.POST('/complaints/{complaintId}/comments', { params: { path: { complaintId: item.id } }, body: { kind: 'clarification_response', text: text.trim() } })).data), 'Ответ на уточнение отправлен.');
   }}><h2>Ответить на уточнение</h2>{question && <blockquote className="preserve-lines">{question.text}</blockquote>}<label htmlFor="author-reply">Ваш ответ на уточнение</label><textarea id="author-reply" aria-required="true" {...mutation.invalid('author-reply', 'author-reply-error')} rows={3} maxLength={5000} value={text} onChange={event => setText(event.target.value)} />
     {mutation.error && <p id="author-reply-error" role="alert" className="field-error">{mutation.error}</p>}
-    <button className="primary-button" disabled={mutation.busy} type="submit">{mutation.busy ? 'Отправка…' : 'Отправить уточнение'}</button>
+    <button className="primary-button" disabled={mutation.busy} type="submit">{mutation.busy ? 'Отправка…' : 'Отправить ответ'}</button>
   </form>;
 }
 
