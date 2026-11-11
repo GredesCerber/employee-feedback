@@ -212,7 +212,7 @@ export default function QueuePage() {
       <div className="queue-search" role="search"><label className="search-field"><span className="visually-hidden">{t("Поиск по номеру или тексту")}</span><input type="search" placeholder={t("Поиск по номеру или тексту")} value={search} maxLength={200} onChange={event => setSearch(event.target.value)} /></label></div>
       {reference.data && <button type="button" className="filter-toggle" aria-expanded={filtersOpen} aria-controls="queue-filters" onClick={() => setFiltersOpen(open => !open)}>{t("Фильтры")}</button>}
     </div>
-    {exportError && <p role="alert" className="field-error">{t(exportError)}</p>}
+    {exportError && <p role="alert" className="field-error">{localizeError(locale, exportError)}</p>}
     {reference.data && <form id="queue-filters" className={filtersOpen ? 'filter-form is-open' : 'filter-form'} onSubmit={apply}>
       <label>{t("Подразделение")}<select value={filters.departmentId} onChange={event => setFilters({ ...filters, departmentId: event.target.value })}><option value="">{t("Все подразделения")}</option>{reference.data.departments.map(item => <option key={item.id} value={item.id}>{referenceLabel(locale, 'department', item.id, item.name)}</option>)}</select></label>
       <label>{t("Категория")}<select value={filters.categoryId} onChange={event => setFilters({ ...filters, categoryId: event.target.value })}><option value="">{t("Все категории")}</option>{reference.data.categories.map(item => <option key={item.id} value={item.id}>{referenceLabel(locale, 'category', item.id, item.name)}</option>)}</select></label>
@@ -227,7 +227,7 @@ export default function QueuePage() {
     </form>}
     {(result.loading || stale) && <Loading label={t("Загрузка очереди…")} />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
-    {shown && !stale && <><p className="muted queue-counter" aria-live="polite"><span>{t("Найдено:")} {new Intl.NumberFormat(localeNames[locale]).format(shown.total)}</span>{overall.data !== undefined && <> <span>{t("из")} {new Intl.NumberFormat(localeNames[locale]).format(overall.data)}</span></>}</p>
+    {shown && !stale && <><p className="muted queue-counter" aria-live="polite"><span>{t("Найдено:")} {number.format(shown.total)}</span>{overall.data !== undefined && <> <span>{t("из")} {number.format(overall.data)}</span></>}</p>
       {shown.items.length === 0 ? <div className="empty-state"><p>{applied.q ? t('По запросу «{query}» обращений нет.', { query: applied.q }) : t("По выбранным фильтрам обращений нет.")}</p><p className="muted">{t("Измените условия или нажмите «Сбросить фильтры», чтобы увидеть всю очередь.")}</p><div className="actions"><button type="button" onClick={() => { reset(); heading.current?.focus(); }}>{t("Сбросить фильтры")}</button>{applied.q && <button type="button" onClick={clearSearch}>{t("Сбросить поиск")}</button>}</div></div> : <>
         <div className="queue-list-header" aria-hidden="true"><span>{t("Обращение")}</span><span>{t("Статус")}</span><span>{t("Ответственный")}</span><span>{t("Срок")}</span></div>
         <ul className="complaint-list queue-list">{shown.items.map(item => <li className="complaint-item" key={item.id}>

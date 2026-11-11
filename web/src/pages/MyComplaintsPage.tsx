@@ -26,7 +26,7 @@ export default function MyComplaintsPage() {
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {result.data && <>
       {result.data.total === 0 ? <div className="empty-state"><p>{t("У вас пока нет обращений.")}</p><div className="actions"><Link className="primary-link" to="/submit">{t("Подать первое обращение")}</Link></div></div> : <>
-        <p className="muted">{t("Всего обращений:")} {result.data.total}</p>
+        <p className="muted">{t("Всего обращений:")} {new Intl.NumberFormat(localeNames[locale]).format(result.data.total)}</p>
         <ul className="complaint-list">{result.data.items.map(item => <li key={item.id} className="complaint-item">
           <div className="item-header"><Link className="complaint-number" to={`/my/${item.id}`}>{item.number}</Link>{item.anonymous && <AnonymousBadge />}<StatusBadge status={item.status} /></div>
           <p className="item-description">{item.description}</p>
