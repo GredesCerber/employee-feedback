@@ -17,10 +17,11 @@ const KEY = 'fake-test-key-150-no-real-secret';
 const response = text => Response.json({ ...fixture, content: [{ type: 'text', text }] });
 
 function setup(t, clock = true) {
-  for (const key of ['PERSIST_FILE', 'ANTHROPIC_API_KEY']) {
+  for (const key of ['PERSIST_FILE', 'ANTHROPIC_API_KEY', 'SEED_RELATIVE_DATES']) {
     const before = process.env[key]; delete process.env[key];
     t.after(() => { if (before === undefined) delete process.env[key]; else process.env[key] = before; });
   }
+  process.env.SEED_RELATIVE_DATES = '1';
   if (clock) t.mock.timers.enable({ apis: ['Date'], now: NOW });
   let log = '';
   const stream = new Writable({ write(chunk, _enc, done) { log += chunk; done(); } });
