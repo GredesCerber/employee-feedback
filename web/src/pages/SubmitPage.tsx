@@ -7,6 +7,7 @@ import { errorMessage, requireData, retryAfterOf, useCooldown, useResource } fro
 import { Loading, LoadError } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
 import { ImitationBadge } from '../features/demo';
+import { SimilarList, SuggestionNote, useSubmitAssist } from '../features/submitAssist';
 
 const fieldIds: Record<string, string> = { categoryId: 'category', description: 'description', proposedSolution: 'solution', type: 'complaint-type' };
 function focusFirstInvalid(errors: Record<string, string>) {
@@ -28,6 +29,7 @@ export default function SubmitPage() {
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const cooldown = useCooldown();
+  const assist = useSubmitAssist({ api, description, categories: reference.data?.categories ?? [], categoryId, setCategory });
   const [created, setCreated] = useState<Complaint>();
   const resultHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { if (created) resultHeading.current?.focus(); }, [created]);
@@ -75,8 +77,11 @@ export default function SubmitPage() {
       <label htmlFor="complaint-type">Тип обращения</label><select id="complaint-type" value={type} onChange={event => setType(event.target.value as Complaint['type'])}><option value="problem">Проблема</option><option value="suggestion">Предложение</option><option value="praise">Благодарность</option></select>
       <label htmlFor="category">Категория</label><select id="category" value={categoryId} onChange={event => setCategory(event.target.value)} required aria-invalid={Boolean(errors.categoryId)} aria-describedby={errors.categoryId ? 'category-error' : undefined}><option value="">Выберите категорию</option>{reference.data.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
       {errors.categoryId && <p id="category-error" role="alert" className="field-error">{errors.categoryId}</p>}
+      <button type="button" className="suggest-button" disabled={!assist.canSuggest} onClick={assist.suggest}>Подсказать категорию</button>
+      <SuggestionNote assist={assist} categoryId={categoryId} categoryName={reference.data.categories.find(item => item.id === categoryId)?.name} apply={setCategory} />
       <label htmlFor="description">Описание</label><textarea id="description" value={description} onChange={event => setDescription(event.target.value)} rows={5} maxLength={5000} required aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? 'description-error' : undefined} />
       {errors.description && <p id="description-error" role="alert" className="field-error">{errors.description}</p>}
+      <SimilarList items={assist.similar} />
       <label htmlFor="solution">Предлагаемое решение <span className="optional">(необязательно)</span></label><textarea id="solution" value={solution} onChange={event => setSolution(event.target.value)} rows={3} maxLength={5000} />
       <label className="checkbox-label"><input type="checkbox" checked={attachment} onChange={event => setAttachment(event.target.checked)} />Добавить тестовое вложение <ImitationBadge hint="не настоящий файл: сохраняются только название, тип и размер заглушки" /></label>
       <p className="field-hint">Файл-заглушка sample-request.txt: сохраняются только название, тип и размер, содержимое не загружается.</p>

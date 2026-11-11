@@ -7,8 +7,10 @@ import { configureErrors } from './http.js';
 import { registerComplaints } from './complaints.js';
 import { registerLifecycle } from './lifecycle.js';
 import { registerDemo } from './demo.js';
+import { registerUndo } from './undo.js';
 import { registerDiscovery } from './discovery.js';
 import { registerNotifications } from './notifications.js';
+import { registerDigest } from './digest.js';
 import { registerRateLimit } from './rate-limit.js';
 import { registerSecurity } from './security.js';
 import { aiConfigFromEnv, createAiProvider, type AiProvider } from './ai/provider.js';
@@ -59,7 +61,9 @@ function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = f
   registerDiscovery(app);
   registerLifecycle(app);
   registerDemo(app);
+  registerUndo(app);
   registerNotifications(app);
+  registerDigest(app);
   return app;
 }
 

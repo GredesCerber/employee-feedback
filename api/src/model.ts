@@ -15,7 +15,7 @@ export interface Comment {
   text: string; createdAt: string;
 }
 export interface HistoryEvent {
-  id: string; kind: 'created' | 'assigned' | 'status_changed' | 'commented' | 'decided';
+  id: string; kind: 'created' | 'assigned' | 'status_changed' | 'commented' | 'decided' | 'undone';
   actor: User | null; createdAt: string; fromStatus: Status | null; toStatus: Status | null; text: string;
 }
 export interface Decision {
@@ -30,6 +30,7 @@ export interface Complaint {
   createdAt: string; updatedAt: string; dueAt: string; firstResponseAt: string | null;
   closedAt: string | null; overdue: boolean; comments: Comment[]; history: HistoryEvent[];
   decision: Decision | null; nextAction: string;
+  canUndo?: boolean; undoExpiresAt?: string | null;
 }
 
 export const terminalStatuses: Status[] = ['implemented', 'rejected', 'closed'];
