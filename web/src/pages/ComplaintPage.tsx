@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useSession } from '../app/session';
+import { ApiError } from '../api/client';
 import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../features/complaint';
 import { AuthorReply, ManagerActions } from '../features/ComplaintActions';
 import { UndoAction } from '../features/UndoAction';
 import { ImitationBadge } from '../features/demo';
+import { forgetLastComplaint, rememberLastComplaint } from '../features/lastComplaint';
 import { AnonymousBadge, authorLabel, CommentKindBadge, fallbackQueueHint, priorityLabels, referenceName, routingReasonLabels } from '../features/complaintMeta';
 import './complaint.css';
 
@@ -14,9 +16,19 @@ export default function ComplaintPage() {
   const { api, role } = useSession();
   const location = useLocation();
   const navigate = useNavigate();
-  const load = useCallback(async () => requireData((await api.GET('/complaints/{complaintId}', { params: { path: { complaintId } } })).data), [api, complaintId]);
+  const load = useCallback(async () => {
+    try {
+      return requireData((await api.GET('/complaints/{complaintId}', { params: { path: { complaintId } } })).data);
+    } catch (error) {
+      // 403/404: обращения нет или оно недоступно, указатель сбрасываем. Сетевой сбой и 5xx его не трогают.
+      if (error instanceof ApiError && (error.status === 403 || error.status === 404)) forgetLastComplaint(role, complaintId);
+      throw error;
+    }
+  }, [api, complaintId, role]);
   const result = useResource(load);
   const item = result.data;
+  // Указатель обновляем только после успешной загрузки карточки.
+  useEffect(() => { if (item) rememberLastComplaint(role, item.id); }, [item, role]);
   // Справочник нужен, чтобы показать названия категории и подразделения вместо id.
   const loadReference = useCallback(async () => requireData((await api.GET('/reference-data')).data), [api]);
   const reference = useResource(loadReference);
