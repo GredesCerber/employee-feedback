@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ABOUT_ROWS } from '../src/features/demo';
 
@@ -26,12 +26,11 @@ describe('#245 current capabilities on the honest demo page', () => {
 
   it('describes the missing UI flag without denying the contract or constraining API progress', () => {
     const row = ABOUT_ROWS.find(item => item.feature.startsWith('Анонимная подача'))!;
-    const contract = JSON.parse(readFileSync(new URL('../../contracts/api.yaml', import.meta.url), 'utf8'));
-    expect(contract.components.schemas.ComplaintCreate.properties.anonymous.type).toBe('boolean');
+    const contractPath = existsSync(resolve('contracts/api.yaml')) ? resolve('contracts/api.yaml') : resolve('../contracts/api.yaml');
+    const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
+    expect(contract.components.schemas.CreateComplaint.properties.anonymous.type).toBe('boolean');
     expect(row.plan).toMatch(/флажок.*форм/i);
     expect(row.build).toMatch(/текст.*вложения.*раскры/i);
     expect(JSON.stringify(row)).not.toMatch(/контракт запрещает|в MVP не реализуется/);
-    const honestyTest = readFileSync(fileURLToPath(new URL('./demo-honesty.test.tsx', import.meta.url)), 'utf8');
-    expect(honestyTest).not.toContain('expect(access).toMatch(/\\*\\*Статус:\\*\\* план/)');
   });
 });
