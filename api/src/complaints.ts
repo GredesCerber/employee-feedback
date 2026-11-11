@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type { Attachment, Complaint, ComplaintType, ComplaintView, Priority, User } from './model.js';
+import type { Attachment, Complaint, ComplaintType, ComplaintView, GeoPoint, Priority, User } from './model.js';
 import { terminalStatuses } from './model.js';
 import { ApiError, identity, invalid, listQuery, type ListQuery, queryParameters, validateBody, isSimulated, visibleComplaint } from './http.js';
 import { presentFor, recordAction, snapshot } from './undo.js';
@@ -8,7 +8,7 @@ import { matchesComplaintText, searchWords } from './search.js';
 
 interface CreateInput {
   type: ComplaintType; categoryId: string; description: string; proposedSolution?: string;
-  priority?: Priority; attachments?: Attachment[]; anonymous?: boolean;
+  priority?: Priority; attachments?: Attachment[]; anonymous?: boolean; location?: GeoPoint;
 }
 
 const typeLabels: Record<string, string> = { problem: 'Проблема', suggestion: 'Предложение', praise: 'Похвала' };
@@ -71,6 +71,7 @@ export function registerComplaints(app: FastifyInstance) {
       id: `complaint-${index}`, number: `A-${String(index).padStart(3, '0')}`, type: body.type,
       categoryId: category.id, departmentId: user.departmentId, author: user,
       ...(body.anonymous !== undefined ? { anonymous: body.anonymous } : {}),
+      ...(body.location ? { location: { latitude: body.location.latitude, longitude: body.location.longitude } } : {}),
       description: body.description.trim(), proposedSolution: body.proposedSolution?.trim() ?? null,
       priority: body.priority ?? 'medium', attachments: body.attachments ?? [], status: 'new', assignee,
       routing: assignee ? { queue: 'assigned', reason: 'category_rule' } : { queue: 'unassigned', reason: 'no_rule' },

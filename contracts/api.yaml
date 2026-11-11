@@ -2140,9 +2140,35 @@
             "type": "boolean",
             "default": false,
             "description": "Optional author redaction from managers and admins, including comments/history. Ownership is still stored internally. Omitted or false preserves existing identified behavior; no real authentication or protection against clues in text is promised."
+          },
+          "location": {
+            "$ref": "#/components/schemas/GeoPoint"
           }
         },
         "description": "Author and department come from the server-resolved session, never from this body. Unknown fields are rejected. Category must exist; a category without an assignee is valid."
+      },
+      "GeoPoint": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "description": "Finite latitude in degrees."
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "description": "Finite longitude in degrees."
+          }
+        },
+        "description": "Optional point chosen by the author. Stored only as coordinates; never embedded in description or proposedSolution, and never sent to AI classification or summaries."
       },
       "Routing": {
         "type": "object",
@@ -2602,6 +2628,10 @@
             "type": "boolean",
             "default": false,
             "description": "Whether author identity is redacted from other readers. Optional for compatibility; absence means false. The author can still read their own complaint and reply."
+          },
+          "location": {
+            "$ref": "#/components/schemas/GeoPoint",
+            "description": "Optional chosen point on the map. Absent when the author did not choose one; null is never used."
           },
           "canUndo": {
             "type": "boolean",
