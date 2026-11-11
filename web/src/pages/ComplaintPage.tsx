@@ -4,6 +4,7 @@ import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../features/complaint';
 import { AuthorReply, ManagerActions } from '../features/ComplaintActions';
+import { UndoAction } from '../features/UndoAction';
 import { ImitationBadge } from '../features/demo';
 import { authorLabel, CommentKindBadge, fallbackQueueHint, priorityLabels, referenceName, routingReasonLabels } from '../features/complaintMeta';
 import './complaint.css';
@@ -38,12 +39,13 @@ export default function ComplaintPage() {
     if (item && focusPending.current) { focusPending.current = false; heading.current?.focus(); }
   }, [item]);
   return <section className="section"><Link to={role === 'manager' ? '/queue' : '/my'}>{role === 'manager' ? 'К очереди' : 'К моим обращениям'}</Link>
-    <p className="visually-hidden" aria-live="polite">{notice}</p>
+    <p className={notice ? 'muted' : 'visually-hidden'} aria-live="polite">{notice}</p>
     {result.loading && <><h1>Обращение</h1><Loading label="Загрузка обращения…" /></>}
     {result.error && <><h1>Обращение недоступно</h1><LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} /></>}
     {item && <>
       <div className="detail-header"><h1 ref={heading} tabIndex={-1}>Обращение {item.number}</h1><StatusBadge status={item.status} /></div>
       <div className="next-action"><h2>Следующий шаг</h2><p>{item.nextAction}</p></div>
+      <UndoAction item={item} onUpdated={onUpdated} />
       {role === 'employee' && <AuthorReply item={item} onUpdated={onUpdated} />}
       <dl className="metadata"><div><dt>Тип</dt><dd>{typeLabels[item.type]}</dd></div>
         <div><dt>Категория</dt><dd>{referenceName(reference.data?.categories, item.categoryId, reference.loading)}</dd></div>
