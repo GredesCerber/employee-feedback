@@ -1,0 +1,7 @@
+.weekly-digest { margin-block: 24px; min-width: 0; overflow-wrap: anywhere; }
+.digest-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.digest-heading h2 { margin: 0; }
+.digest-heading button { flex: 0 0 auto; }
+.digest-text { white-space: pre-wrap; }
+.digest-skeleton span { display: block; height: 12px; margin-block: 10px; border-radius: 4px; background: var(--color-border); }
+.digest-skeleton span:last-child { width: 65%; }

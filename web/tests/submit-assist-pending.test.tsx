@@ -64,6 +64,7 @@ for (const [source, hint] of [['rules', /локальные правила/], ['
     await respond(source);
     const note = screen.getByRole('status', { name: 'Подсказка категории' });
     expect(note.textContent).toMatch(hint);
+    expect(note.textContent).toMatch(source === 'rules' ? /Правила \(без ИИ\)/ : /ИИ/);
     expect(note.textContent).not.toMatch(/записанный ответ/);
   });
 }
