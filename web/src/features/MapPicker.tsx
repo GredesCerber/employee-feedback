@@ -71,8 +71,8 @@ export function MapPicker({ value, onChange, onValidityChange, readOnly = false 
   useEffect(() => {
     for (const [index, selector] of ['.leaflet-control-zoom-in', '.leaflet-control-zoom-out'].entries()) {
       const button = container.current?.querySelector(selector);
-      button?.setAttribute('title', zoomTitles[index]);
-      button?.setAttribute('aria-label', zoomTitles[index]);
+      button?.setAttribute('title', zoomTitles[index]!);
+      button?.setAttribute('aria-label', zoomTitles[index]!);
     }
   }, [locale]);
   useEffect(() => {

@@ -502,6 +502,14 @@ export interface components {
              * @default false
              */
             anonymous?: boolean;
+            location?: components["schemas"]["GeoPoint"];
+        };
+        /** @description Optional point chosen by the author. Stored only as coordinates; never embedded in description or proposedSolution, and never sent to AI classification or summaries. */
+        GeoPoint: {
+            /** @description Finite latitude in degrees. */
+            latitude: number;
+            /** @description Finite longitude in degrees. */
+            longitude: number;
         };
         /** @description At creation, a valid configured manager yields assigned/category_rule; missing or unavailable assignee yields unassigned/no_rule and assignee=null. Never discard the complaint. Manual assignment sets assigned/manual_assignment. */
         Routing: {
@@ -610,6 +618,8 @@ export interface components {
              * @default false
              */
             anonymous?: boolean;
+            /** @description Optional chosen point on the map. Absent when the author did not choose one; null is never used. */
+            location?: components["schemas"]["GeoPoint"];
             /** @description Optional manager-view capability: true only if the latest eligible outstanding status/assignment action belongs to the current manager, is inside the undo window and the complaint is not terminal. Other roles omit this property. */
             canUndo?: boolean;
             /**

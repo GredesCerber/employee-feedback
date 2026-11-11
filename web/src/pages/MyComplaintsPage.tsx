@@ -1,3 +1,5 @@
+import { lastComplaintPath } from '../features/lastComplaint';
+import { useLastComplaint } from '../features/lastComplaintStore';
 import { useI18n, systemText, localeNames } from '../i18n';
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -8,11 +10,13 @@ import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../featu
 
 export default function MyComplaintsPage() {
   const { t, locale } = useI18n();
-  const { api } = useSession();
+  const { api, role } = useSession();
+  const lastId = useLastComplaint(role);
   const [offset, setOffset] = useState(0);
   const load = useCallback(async () => requireData((await api.GET('/complaints', { params: { query: { limit: 20, offset } } })).data), [api, offset]);
   const result = useResource(load);
   return <section className="section"><p className="eyebrow">{t("Личный кабинет")}</p><h1>{t("Мои обращения")}</h1>
+    {lastId && <p><Link to={lastComplaintPath(role, lastId)}>{t('Вернуться к последнему обращению')}</Link></p>}
     {result.loading && <Loading label={t("Загрузка обращений…")} />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {result.data && <>

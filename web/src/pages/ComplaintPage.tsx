@@ -1,6 +1,8 @@
 import { referenceLabel, systemText, useI18n } from '../i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { ApiError } from '../api/client';
+import { forgetLastComplaint } from '../features/lastComplaint';
 import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../features/complaint';
@@ -19,7 +21,13 @@ export default function ComplaintPage() {
   const { api, role } = useSession();
   const location = useLocation();
   const navigate = useNavigate();
-  const load = useCallback(async () => requireData((await api.GET('/complaints/{complaintId}', { params: { path: { complaintId } } })).data), [api, complaintId]);
+  const load = useCallback(async () => {
+    try { return requireData((await api.GET('/complaints/{complaintId}', { params: { path: { complaintId } } })).data); }
+    catch (error) {
+      if (error instanceof ApiError && (error.status === 403 || error.status === 404)) forgetLastComplaint(role, complaintId);
+      throw error;
+    }
+  }, [api, complaintId, role]);
   const result = useResource(load);
   const item = result.data;
   useRememberComplaint(item?.id === complaintId ? item.id : undefined);

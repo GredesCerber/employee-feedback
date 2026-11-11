@@ -1,3 +1,5 @@
+import { lastComplaintPath } from '../features/lastComplaint';
+import { useLastComplaint } from '../features/lastComplaintStore';
 import { referenceLabel, localeNames, useI18n, localizeError } from '../i18n';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -81,6 +83,7 @@ export default function QueuePage() {
   const { t, locale } = useI18n();
   const number = new Intl.NumberFormat(localeNames[locale]);
   const { api, role } = useSession();
+  const lastId = useLastComplaint(role);
   const heading = useRef<HTMLHeadingElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const loadReference = useCallback(async () => requireData((await api.GET('/reference-data')).data), [api]);
@@ -181,6 +184,7 @@ export default function QueuePage() {
   }
 
   return <section className="section"><p className="eyebrow">{t("Рабочая область руководителя")}</p><h1 ref={heading} tabIndex={-1}>{t("Очередь обращений")}</h1>
+    {lastId && <p><Link to={lastComplaintPath(role, lastId)}>{t('Вернуться к последнему обращению')}</Link></p>}
     {reference.loading && <Loading label={t("Загрузка фильтров…")} />}
     {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
     <div className="queue-toolbar" role="search">

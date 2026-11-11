@@ -98,3 +98,17 @@ button, .primary-link, input, select, textarea, .status-badge, .demo-hint, .empt
   *, *::before, *::after { animation: none !important; transition-duration: 0s !important; scroll-behavior: auto !important; }
   button:not(:disabled):active, .primary-link:active { transform: none; }
 }
+
+/* #275: единые поля ввода, короткие переходы и уважение к reduced-motion (UX-05/06/07) */
+input:not([type="checkbox"]):not([type="radio"]), textarea, select { min-height: 40px; padding: 8px 12px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); transition: border-color .15s ease, box-shadow .15s ease; }
+input:not([type="checkbox"]):not([type="radio"]):focus-visible, textarea:focus-visible, select:focus-visible { border-color: var(--color-focus); }
+[aria-invalid="true"] { border-color: var(--color-danger) !important; }
+:disabled { background: var(--color-surface-muted); color: var(--color-text-muted); cursor: not-allowed; }
+[readonly] { background: var(--color-surface-muted); color: var(--color-text-muted); }
+button, a, .checkbox-label { transition: background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease; }
+button:active:not(:disabled) { transform: translateY(1px); }
+body, .section, .app-header { transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+  button:active:not(:disabled) { transform: none; }
+}
