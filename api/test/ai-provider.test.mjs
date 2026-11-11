@@ -112,7 +112,8 @@ test('149 ключ есть и вызов успешен: source=llm, модел
   assert.deepEqual(body, { category: { id: 'it', name: 'Интеграции и IT' }, source: 'llm' });
   assert.equal(calls.length, 1);
   assert.match(calls[0].url, /\/v1\/messages$/);
-  assert.equal(calls[0].headers.get('x-api-key'), FAKE_KEY);
+  // SDK 1.x передаёт ключ в заголовке Authorization: ключ уходит только провайдеру.
+  assert.equal(calls[0].headers.get('authorization'), `Bearer ${FAKE_KEY}`);
   assert.equal(calls[0].body.model, 'claude-haiku-5-5');
   assert.equal(calls[0].body.output_config.format.type, 'json_schema');
   assert.ok(JSON.stringify(calls[0].body.messages).includes(TRAINING_TEXT));
