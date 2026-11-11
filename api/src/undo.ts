@@ -19,6 +19,7 @@ interface Entry { actorId: string; at: number; before: Before }
 interface State { entries: Entry[]; expectedLength: number }
 
 const states = new WeakMap<ComplaintStore, Map<string, State>>();
+export function clearUndoHistory(store: ComplaintStore): void { states.delete(store); }
 function stateOf(app: FastifyInstance, id: string): State | undefined { return states.get(app.store)?.get(id); }
 
 export function snapshot(item: Complaint): Before {
