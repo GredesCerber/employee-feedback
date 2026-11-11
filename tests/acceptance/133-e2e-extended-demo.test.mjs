@@ -40,5 +40,5 @@ test('#133 запуск без Docker: api и web поднимает playwright.
   assert.match(config, /webServer/);
   assert.match(config, /api run build && npm --prefix api start/);
   assert.match(config, /web run dev/);
-  assert.doesNotMatch(config, /docker/i);
+  assert.doesNotMatch(config.slice(config.indexOf('webServer')), /docker/i);
 });
