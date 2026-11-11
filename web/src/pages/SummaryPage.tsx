@@ -1,11 +1,13 @@
 import { useCallback, useId, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ApiError } from '../api/client';
 import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, typeLabels } from '../features/complaint';
 import './summary.css';
 
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
+const hours = (value: number | null) => value === null ? '—' : `${number.format(value)} ч`;
 const percent = new Intl.NumberFormat('ru-RU', { style: 'percent', maximumFractionDigits: 1 });
 
 export type Bar = { label: string; value: number };
@@ -77,6 +79,19 @@ export default function SummaryPage() {
   const load = useCallback(async () => requireData((await api.GET('/summary')).data), [api]);
   const result = useResource(load);
   const summary = result.data;
+  const [resetStep, setResetStep] = useState<'idle' | 'confirm' | 'busy' | 'unavailable'>('idle');
+  const [resetMessage, setResetMessage] = useState<{ text: string; error: boolean } | null>(null);
+  const resetDemo = async () => {
+    setResetStep('busy'); setResetMessage(null);
+    try {
+      const done = requireData((await api.POST('/demo/reset')).data);
+      setResetStep('idle'); setResetMessage({ text: `Демо сброшено: загружено ${number.format(done.loadedCount)} обращений.`, error: false });
+      result.reload();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) { setResetStep('unavailable'); return; }
+      setResetStep('idle'); setResetMessage({ text: error instanceof ApiError ? error.message : 'Не удалось сбросить демо. Повторите попытку.', error: true });
+    }
+  };
   const typeBars = summary?.byType.map(item => ({ label: typeLabels[item.type], value: item.count })) ?? [];
   const topicBars = summary?.recurringTopics.map(topic => ({ label: topic.categoryName, value: topic.count })) ?? [];
   return <section className="section"><p className="eyebrow">Обзор обратной связи</p><h1>Сводка</h1>
@@ -85,11 +100,22 @@ export default function SummaryPage() {
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {summary && <>
       <div className="summary-toolbar"><p className="muted">Сводка на <time dateTime={summary.generatedAt}>{dateLabel(summary.generatedAt)}</time></p><button onClick={result.reload}>Обновить сводку</button></div>
+      <div className="summary-reset">
+        {resetStep === 'unavailable' ? <p className="muted">Недоступно в этой среде</p>
+          : resetStep === 'idle' ? <button type="button" onClick={() => setResetStep('confirm')}>Сбросить демо</button>
+          : <div role="group" aria-label="Подтверждение сброса демо" className="summary-reset-confirm">
+            <p>Все изменения будут потеряны, данные вернутся к исходным. Продолжить?</p>
+            <button type="button" onClick={resetDemo} disabled={resetStep === 'busy'}>Подтвердить сброс</button>{' '}
+            <button type="button" onClick={() => setResetStep('idle')} disabled={resetStep === 'busy'}>Отмена</button>
+          </div>}
+        {resetMessage && (resetMessage.error ? <p role="alert">{resetMessage.text}</p> : <p role="status" className="muted">{resetMessage.text}</p>)}
+      </div>
       <div className="summary-metrics">
         <section className="metric-card" aria-labelledby="summary-total"><h2 id="summary-total">Всего обращений</h2><p className="metric-value">{number.format(summary.total)}</p><p className="muted">За всё время</p></section>
         <section className="metric-card" aria-labelledby="summary-closed"><h2 id="summary-closed">Доля закрытых</h2><p className="metric-value">{percent.format(summary.closedShare)}</p><p className="muted">Завершено {number.format(summary.closedCount)} из {number.format(summary.total)}. Включены реализованные, отклонённые и закрытые.</p></section>
         <section className="metric-card" aria-labelledby="summary-response"><h2 id="summary-response">Среднее время первого ответа</h2><p className="metric-value">{summary.averageFirstResponseHours === null ? 'Нет ответов' : `${number.format(summary.averageFirstResponseHours)} ч`}</p><p className="muted">{summary.respondedCount > 0 ? `По ${number.format(summary.respondedCount)} обращениям с первым ответом` : 'Показатель появится после первого ответа руководителя'}</p></section>
       </div>
+      {summary.overdueCount !== undefined && <section className="metric-card summary-overdue" aria-labelledby="summary-overdue"><h2 id="summary-overdue">{`Просрочено: ${number.format(summary.overdueCount)}`}</h2><p className="muted">Незавершённые обращения со сроком в прошлом.</p><Link to="/queue?overdue=1">Открыть просроченные в очереди</Link></section>}
       {summary.total === 0 && <p className="summary-empty" role="status">Обращений пока нет — диаграммы появятся после первой подачи.</p>}
       <div className="summary-sections">
         <section className="summary-table-panel"><h2>Обращения по типам</h2>
@@ -106,6 +132,12 @@ export default function SummaryPage() {
             <table aria-label="Повторяющиеся темы"><thead><tr><th scope="col">Категория</th><th scope="col">Количество</th></tr></thead><tbody>{summary.recurringTopics.map(topic => <tr key={topic.categoryId}><th scope="row">{topic.categoryName}</th><td>{number.format(topic.count)}</td></tr>)}</tbody></table>
           </>}
         </section>
+        {summary.byDepartment && <section className="summary-table-panel"><h2>Обращения по подразделениям</h2>
+          <table aria-label="Обращения по подразделениям"><thead><tr><th scope="col">Подразделение</th><th scope="col">Обращений</th><th scope="col">Закрыто</th><th scope="col">Доля закрытых</th></tr></thead><tbody>{summary.byDepartment.map(item => <tr key={item.departmentId}><th scope="row">{item.departmentName}</th><td>{number.format(item.count)}</td><td>{number.format(item.closedCount)}</td><td>{percent.format(item.closedShare)}</td></tr>)}</tbody></table>
+        </section>}
+        {summary.avgResolutionHoursByCategory && <section className="summary-table-panel"><h2>Время решения по категориям</h2>
+          <table aria-label="Время решения по категориям"><thead><tr><th scope="col">Категория</th><th scope="col">Закрыто</th><th scope="col">Среднее время</th></tr></thead><tbody>{summary.avgResolutionHoursByCategory.map(item => <tr key={item.categoryId}><th scope="row">{item.categoryName}</th><td>{number.format(item.closedCount)}</td><td>{hours(item.averageResolutionHours)}</td></tr>)}</tbody></table>
+        </section>}
       </div>
     </>}
   </section>;
