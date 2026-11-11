@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useLocale } from './locale';
+export { LocaleProvider as I18nProvider } from './locale';
 
-export type Locale = 'ru' | 'en' | 'kk';
-const STORAGE_KEY = 'employee-feedback-locale';
+import type { Locale } from './locale';
+export type { Locale } from './locale';
 export const localeNames: Record<Locale, string> = { ru: 'ru-RU', en: 'en-US', kk: 'kk-KZ' };
 import translations from './translations.json';
 export const catalog: Record<Locale, Record<string, string>> = { ru: Object.fromEntries(Object.keys(translations.en).map(key => [key, key])), ...translations };
@@ -9,17 +10,11 @@ export function translate(locale: Locale, key: string, values?: Record<string, s
   const template = catalog[locale][key] ?? key;
   return template.replace(/\{(\w+)\}/g, (match, name: string) => String(values?.[name] ?? match));
 }
-type Context = { locale: Locale; setLocale: (locale: Locale) => void; t: (key: string, values?: Record<string, string | number>) => string };
-const fallback: Context = { locale: 'ru', setLocale: () => {}, t: key => key };
-const I18nContext = createContext<Context>(fallback);
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocale] = useState<Locale>(() => {
-    try { const stored = localStorage.getItem(STORAGE_KEY); return stored === 'en' || stored === 'kk' ? stored : 'ru'; } catch { return 'ru'; }
-  });
-  useEffect(() => { document.documentElement.lang = locale; try { localStorage.setItem(STORAGE_KEY, locale); } catch { /* storage may be unavailable */ } }, [locale]);
-  return <I18nContext.Provider value={{ locale, setLocale, t: (key, values) => translate(locale, key, values) }}>{children}</I18nContext.Provider>;
+/** The complete UI catalog shares the reviewed locale foundation and storage. */
+export function useI18n() {
+  const { locale, setLocale } = useLocale();
+  return { locale, setLocale, t: (key: string, values?: Record<string, string | number>) => translate(locale, key, values) };
 }
-export function useI18n() { return useContext(I18nContext); }
 
 /** Known UI errors are translated; unrecognized server text gets a safe localized fallback. */
 export function localizeError(locale: Locale, message: string): string {

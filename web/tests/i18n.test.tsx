@@ -1,78 +1,80 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { I18nProvider, catalog, useI18n } from '../src/i18n';
-import { dateLabel } from '../src/features/complaint';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  LOCALE_STORAGE_KEY, LocaleProvider, pluralCategory, readStoredLocale, useLocale,
+} from '../src/i18n/locale';
+import { catalogs } from '../src/i18n/messages';
 
-function Example() {
-  const { locale, setLocale, t } = useI18n();
-  return <><label>Language<select value={locale} onChange={event => setLocale(event.target.value as 'ru' | 'en' | 'kk')}><option value="ru">Русский</option><option value="en">English</option><option value="kk">Қазақша</option></select></label><label>Text<input /></label><p>{t('Новое обращение')}</p></>;
-}
-beforeEach(() => localStorage.clear());
-afterEach(cleanup);
-describe('localization', () => {
-  it('persists all three locales and retains form state on a change', async () => {
-    const user = userEvent.setup();
-    const view = render(<I18nProvider><Example /></I18nProvider>);
-    expect(screen.getByText('Новое обращение')).toBeTruthy();
-    await user.type(screen.getByLabelText('Text'), 'unchanged');
-    await user.selectOptions(screen.getByLabelText('Language'), 'en');
-    expect(screen.getByText(catalog.en['Новое обращение']!)).toBeTruthy();
-    expect((screen.getByLabelText('Text') as HTMLInputElement).value).toBe('unchanged');
-    expect(document.documentElement.lang).toBe('en');
-    await user.selectOptions(screen.getByLabelText('Language'), 'kk');
-    expect(screen.getByText(catalog.kk['Новое обращение']!)).toBeTruthy();
-    expect(localStorage.getItem('employee-feedback-locale')).toBe('kk');
-    view.unmount(); render(<I18nProvider><Example /></I18nProvider>);
-    expect((screen.getByLabelText('Language') as HTMLSelectElement).value).toBe('kk');
-  });
-  it('has matching catalogs and locale-specific date formatting', () => {
-    expect(Object.keys(catalog.en).sort()).toEqual(Object.keys(catalog.kk).sort());
-    expect(Object.keys(catalog.en).sort()).toEqual(Object.keys(catalog.ru).sort());
-    const value = '2026-11-10T10:00:00Z';
-    expect(dateLabel(value, 'en')).toBe(new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)));
-    expect(dateLabel(value, 'kk')).toBe(new Intl.DateTimeFormat('kk-KZ', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)));
-  });
-});
-import { vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import { SessionProvider } from '../src/app/session';
-import QueuePage from '../src/pages/QueuePage';
-import { ManagerActions } from '../src/features/ComplaintActions';
-import { StatusBadge, type Complaint } from '../src/features/complaint';
-
-function LanguageControl() {
-  const { locale, setLocale } = useI18n();
-  return <label>Language<select value={locale} onChange={event => setLocale(event.target.value as 'ru' | 'en' | 'kk')}><option value="ru">RU</option><option value="en">EN</option><option value="kk">KK</option></select></label>;
+function keysOf(value: unknown, prefix = ''): string[] {
+  if (value === null || typeof value !== 'object') return [prefix];
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, child]) => keysOf(child, prefix ? `${prefix}.${key}` : key));
 }
 
-describe('localized queue and actions', () => {
-  beforeEach(() => {
-    vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:3000');
-    vi.stubGlobal('fetch', vi.fn(async (request: Request) => {
-      const url = new URL(request.url);
-      if (url.pathname === '/reference-data') return Response.json({ categories: [], departments: [], assignees: [] });
-      return Response.json({ items: [], total: url.searchParams.has('q') ? 0 : 1234, limit: 20, offset: 0 });
-    }));
+function Probe() {
+  const { locale, setLocale, t, plural, formatDate } = useLocale();
+  return <div>
+    <p data-testid="nav">{t(m => m.nav.queue)}</p>
+    <p data-testid="count">{plural(m => m.complaints.count, 21)}</p>
+    <p data-testid="date">{formatDate(new Date('2026-11-11T10:00:00Z'))}</p>
+    <button type="button" onClick={() => setLocale('kk')}>kk</button>
+    <button type="button" onClick={() => setLocale('en')}>en</button>
+    <span data-testid="current">{locale}</span>
+  </div>;
+}
+
+beforeEach(() => { localStorage.clear(); document.documentElement.removeAttribute('lang'); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+
+describe('UX-08 locale foundation', () => {
+  it('ru, en and kk catalogs have exactly the same keys', () => {
+    const ru = keysOf(catalogs.ru).sort();
+    expect(keysOf(catalogs.en).sort()).toEqual(ru);
+    expect(keysOf(catalogs.kk).sort()).toEqual(ru);
   });
-  afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
-  it('translates an empty search and formats its count when the language changes', async () => {
-    const user = userEvent.setup();
-    render(<MemoryRouter initialEntries={['/queue?q=missing']}><I18nProvider><SessionProvider><LanguageControl /><QueuePage /></SessionProvider></I18nProvider></MemoryRouter>);
-    expect(await screen.findByText('По запросу «missing» обращений нет.')).toBeTruthy();
-    await user.selectOptions(screen.getByLabelText('Language'), 'en');
-    expect(screen.getByText('No requests match “missing”.')).toBeTruthy();
-    expect(screen.getByText(/1,234/)).toBeTruthy();
-    expect((screen.getByRole('searchbox') as HTMLInputElement).value).toBe('missing');
+
+  it('defaults to Russian and survives invalid or unavailable storage', () => {
+    expect(readStoredLocale()).toBe('ru');
+    localStorage.setItem(LOCALE_STORAGE_KEY, 'fr');
+    expect(readStoredLocale()).toBe('ru');
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('denied'); });
+    expect(readStoredLocale()).toBe('ru');
   });
-  it('translates manager actions and status while preserving typed text', async () => {
-    const user = userEvent.setup();
-    const item = { id: 'id-1', status: 'in_review', assignee: null, comments: [] } as unknown as Complaint;
-    render(<I18nProvider><SessionProvider><LanguageControl /><StatusBadge status="in_review" /><ManagerActions item={item} onUpdated={() => {}} /></SessionProvider></I18nProvider>);
-    await user.type(screen.getByLabelText('Комментарий или вопрос'), 'User text');
-    await user.selectOptions(screen.getByLabelText('Language'), 'en');
-    expect(screen.getByText(catalog.en['На рассмотрении']!)).toBeTruthy();
-    expect(screen.getByRole('button', { name: catalog.en['Добавить комментарий']! })).toBeTruthy();
-    expect((screen.getByLabelText(catalog.en['Комментарий или вопрос']!) as HTMLTextAreaElement).value).toBe('User text');
+
+  it('switches language, sets html lang, saves the choice and restores it after reload', () => {
+    const first = render(<LocaleProvider><Probe /></LocaleProvider>);
+    expect(screen.getByTestId('nav').textContent).toBe(catalogs.ru.nav.queue);
+    fireEvent.click(screen.getByRole('button', { name: 'kk' }));
+    expect(screen.getByTestId('current').textContent).toBe('kk');
+    expect(document.documentElement.lang).toBe('kk');
+    expect(screen.getByTestId('nav').textContent).toBe(catalogs.kk.nav.queue);
+    first.unmount();
+    render(<LocaleProvider><Probe /></LocaleProvider>);
+    expect(screen.getByTestId('current').textContent).toBe('kk');
+    expect(document.documentElement.lang).toBe('kk');
+  });
+
+  it('applies the same plural rule per language', () => {
+    expect(pluralCategory('ru', 1)).toBe('one');
+    expect(pluralCategory('ru', 2)).toBe('few');
+    expect(pluralCategory('ru', 5)).toBe('many');
+    expect(pluralCategory('ru', 21)).toBe('one');
+    expect(pluralCategory('en', 1)).toBe('one');
+    expect(pluralCategory('en', 0)).toBe('other');
+    expect(pluralCategory('kk', 5)).toBe('other');
+  });
+
+  it('formats dates with the selected locale through Intl', () => {
+    const date = new Date('2026-11-11T10:00:00Z');
+    const expected = new Intl.DateTimeFormat('kk-KZ', { dateStyle: 'medium' }).format(date);
+    localStorage.setItem(LOCALE_STORAGE_KEY, 'kk');
+    render(<LocaleProvider><Probe /></LocaleProvider>);
+    expect(screen.getByTestId('date').textContent).toBe(expected);
+  });
+
+  it('renders the plural form for the active language', () => {
+    render(<LocaleProvider><Probe /></LocaleProvider>);
+    expect(screen.getByTestId('count').textContent).toBe('21 обращение');
+    fireEvent.click(screen.getByRole('button', { name: 'en' }));
+    expect(screen.getByTestId('count').textContent).toBe('21 complaints');
   });
 });

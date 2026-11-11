@@ -162,9 +162,14 @@ test('демо-путь: подача → назначение → уточне�
     for (const text of await badges.allTextContents()) expect(text).toBe('Реализовано');
 
     await page.getByRole('button', { name: 'Сбросить' }).click();
-    // Синтетические обращения из набора имеют срок 08.11.2026 и к моменту демо просрочены.
-    await filters.getByLabel('Срок от').fill('2026-11-08');
-    await filters.getByLabel('Срок до').fill('2026-11-08');
+    // The demo launcher shifts seed dates to today; derive a real overdue date from the running API.
+    const overdueResponse = await page.request.get('/api/complaints?overdue=true&limit=1', { headers: { 'X-Demo-User': 'manager-1' } });
+    expect(overdueResponse.ok()).toBe(true);
+    const overdueRows = await overdueResponse.json();
+    expect(overdueRows.items.length).toBeGreaterThan(0);
+    const dueDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Omsk', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(overdueRows.items[0].dueAt));
+    await filters.getByLabel('Срок от').fill(dueDate);
+    await filters.getByLabel('Срок до').fill(dueDate);
     await filters.getByLabel('Только просроченные').check();
     await page.getByRole('button', { name: 'Применить фильтры' }).click();
     const items = page.locator('.complaint-item');

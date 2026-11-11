@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('UX: optional point, invalid draft, saved map, resume and honest translation failure', async ({ page }) => {
-  await page.route('**://*.tile.openstreetmap.org/**', route => route.abort());
+  await page.route('**://tile.openstreetmap.org/**', route => route.abort());
   await page.goto('/submit');
   await page.getByLabel('Категория', { exact: true }).selectOption('cross_department');
   const text = `UX-map-${Date.now()} Нужно улучшить вентиляцию на складе.`;
