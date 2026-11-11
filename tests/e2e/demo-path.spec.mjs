@@ -85,7 +85,9 @@ test('демо-путь: подача → назначение → уточне�
     await page.getByRole('link', { name: 'Открыть обращение' }).click();
     await expect(field(page, 'Ответственный')).toHaveText('Ожидает назначения');
 
+    // После #203 смена роли на карточке ведёт на парную карточку /queue/:id, поэтому в очередь идём через меню.
     await switchRole(page, 'manager');
+    await page.getByRole('navigation', { name: 'Основное меню' }).getByRole('link', { name: 'Очередь обращений' }).click();
     await expect(page.getByRole('heading', { name: 'Очередь обращений' })).toBeVisible();
     await filterSelect(page, 'Очередь').selectOption('unassigned');
     await page.getByRole('button', { name: 'Применить фильтры' }).click();
@@ -131,7 +133,8 @@ test('демо-путь: подача → назначение → уточне�
 
     await openInQueue(page, fallback.number);
     await page.getByLabel('Итог рассмотрения').selectOption('rejected');
-    await page.getByLabel('Обоснование решения').fill(refusal);
+    // После #204 поле объяснения при отказе подписано «Мотивированный отказ».
+    await page.getByLabel('Мотивированный отказ').fill(refusal);
     await page.getByRole('button', { name: 'Зафиксировать итог' }).click();
     await expectStatus(page, 'Отклонено');
 
@@ -145,7 +148,9 @@ test('демо-путь: подача → назначение → уточне�
   });
 
   await test.step('5. Руководитель фильтрует по подразделению, категории, статусу, сроку и находит просроченные', async () => {
+    // Смена роли с карточки автора снова ведёт на /queue/:id (#203): в очередь идём через меню.
     await switchRole(page, 'manager');
+    await page.getByRole('navigation', { name: 'Основное меню' }).getByRole('link', { name: 'Очередь обращений' }).click();
     await expect(page.getByRole('heading', { name: 'Очередь обращений' })).toBeVisible();
     const filters = page.locator('form.filter-form');
     await filterSelect(page, 'Подразделение').selectOption('procurement');
