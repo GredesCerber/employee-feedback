@@ -166,6 +166,9 @@ describe('клавиатура и смысл без цвета', () => {
     expect(document.activeElement?.textContent).toMatch(/Модус Трейд/);
     await user.tab();
     expect(document.activeElement).toBe(screen.getByLabelText('Демонстрационная роль'));
+    // #273: переключатель языка стоит в шапке сразу после выбора роли.
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByLabelText('Язык'));
     await user.tab();
     expect(document.activeElement).toBe(within(screen.getByRole('navigation', { name: 'Основное меню' })).getAllByRole('link')[0]);
     expect(document.getElementById('main')?.tagName).toBe('MAIN');

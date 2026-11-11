@@ -11,15 +11,19 @@ import DashboardPage from './pages/DashboardPage';
 import { AboutPage, DemoHint, ImitationBadge, useDemoHints } from './features/demo';
 import { NotificationBell } from './features/notifications';
 import { useTheme } from './features/theme';
+import { useLocale } from './i18n/locale';
+import type { Locale } from './i18n/locale';
+import type { Messages } from './i18n/messages';
 import type { ThemeChoice } from './features/theme';
 import './styles/tokens.css';
 import './shell.css';
 import './pages.css';
 
-const navigation: Record<Role, { path: string; label: string }[]> = {
-  employee: [{ path: '/my', label: 'Мои обращения' }, { path: '/submit', label: 'Новое обращение' }],
-  manager: [{ path: '/queue', label: 'Очередь обращений' }, { path: '/dashboard', label: 'Дашборд' }],
-  admin: [{ path: '/summary', label: 'Сводка' }, { path: '/dashboard', label: 'Дашборд' }],
+// Подписи пунктов меню берём из каталога языка (#273): pick выбирает строку в активном языке.
+const navigation: Record<Role, { path: string; label: (m: Messages) => string }[]> = {
+  employee: [{ path: '/my', label: m => m.nav.myComplaints }, { path: '/submit', label: m => m.nav.newComplaint }],
+  manager: [{ path: '/queue', label: m => m.nav.queue }, { path: '/dashboard', label: m => m.nav.dashboard }],
+  admin: [{ path: '/summary', label: m => m.nav.summary }, { path: '/dashboard', label: m => m.nav.dashboard }],
 };
 const home: Record<Role, string> = { employee: '/my', manager: '/queue', admin: '/summary' };
 
@@ -58,6 +62,7 @@ function Shell() {
   const location = useLocation();
   const hints = useDemoHints();
   const theme = useTheme();
+  const { locale, setLocale, t } = useLocale();
   function switchRole(next: string) {
     if (next !== 'employee' && next !== 'manager' && next !== 'admin') return;
     setRole(next);
@@ -68,11 +73,12 @@ function Shell() {
     <header className="app-header">
       <Link className="brand" to={home[role]}><span className="brand-mark" aria-hidden="true">М</span><span>Модус Трейд<small>Обратная связь сотрудников</small></span></Link>
       <label className="role-selector">Демонстрационная роль<select value={role} onChange={event => switchRole(event.target.value)}><option value="employee">Сотрудник</option><option value="manager">Руководитель</option><option value="admin">Администратор</option></select></label>
+      <label className="role-selector">{t(m => m.language.label)}<select value={locale} onChange={event => setLocale(event.target.value as Locale)}><option value="ru">{t(m => m.language.ru)}</option><option value="en">{t(m => m.language.en)}</option><option value="kk">{t(m => m.language.kk)}</option></select></label>
       <ImitationBadge hint="выбор роли — не настоящий вход, пароля и учётной записи нет" />
     </header>
     <p className="demo-notice">Демонстрация · только синтетические данные. Выбор роли имитирует вход.</p>
     <div className="workspace">
-      <nav aria-label="Основное меню">{navigation[role].map(item => <NavLink key={item.path} to={item.path}>{item.label}</NavLink>)}</nav>
+      <nav aria-label="Основное меню">{navigation[role].map(item => <NavLink key={item.path} to={item.path}>{t(item.label)}</NavLink>)}</nav>
       {/* Колокольчик стоит в DOM после меню (порядок Tab «шапка → меню» не меняется), а в шапку выводится стилями. */}
       {role !== 'admin' && <NotificationBell key={`bell-${role}`} role={role} />}
       <main id="main" tabIndex={-1} key={role}>
