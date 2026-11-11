@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { Attachment, Complaint, ComplaintType, Priority, User } from './model.js';
 import { terminalStatuses } from './model.js';
 import { ApiError, identity, invalid, listQuery, type ListQuery, present, queryParameters, validateBody, visibleComplaint } from './http.js';
-import { summarize } from './analytics.js';
+import { summarize, trends } from './analytics.js';
 import { matchesComplaintText, searchWords } from './search.js';
 
 interface CreateInput {
@@ -110,6 +110,15 @@ export function registerComplaints(app: FastifyInstance) {
     queryParameters(request, []);
     const { categories, departments } = app.store.referenceData;
     return summarize(app.store.list(), categories, new Date(), departments);
+  });
+
+  app.get('/analytics/trends', async (request) => {
+    identity(app, request, ['manager', 'admin']);
+    const department = queryParameters(request, ['department']).get('department');
+    if (department !== null && !/^[A-Za-z0-9_-]{1,100}$/.test(department)) invalid('Некорректный фильтр подразделения.');
+    const { categories, departments } = app.store.referenceData;
+    const items = app.store.list().filter(item => department === null || item.departmentId === department);
+    return trends(items, categories, new Date(), departments);
   });
 
   app.get<{ Params: { complaintId: string } }>('/complaints/:complaintId', async (request) => {
