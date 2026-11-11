@@ -4,6 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { ABOUT_ROWS } from '../src/features/demo';
 
 describe('#245 current capabilities on the honest demo page', () => {
+  it('#259 describes recurring topics as category counts rather than keyword matching', () => {
+    const row = ABOUT_ROWS.find(item => item.req === 'R7' && item.feature.startsWith('Сводка:'))!;
+    expect(row.imitation).toContain('категории с двумя и более обращениями');
+    expect(row.imitation).not.toMatch(/ключев[а-яё]* слов/);
+    expect(row.plan).toBe('семантический поиск дублей');
+  });
+
   it('acknowledges the in-app bell while keeping external delivery in the plan', () => {
     const row = ABOUT_ROWS.find(item => item.feature === 'Уведомления автору и ответственным')!;
     expect(row.build).toMatch(/колокольчик.*счётчик.*ссылк/i);
