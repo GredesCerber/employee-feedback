@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type { Complaint, User } from './model.js';
+import type { Complaint, ComplaintView, User } from './model.js';
 import { terminalStatuses } from './model.js';
 import type { ComplaintStore } from './store.js';
 import { ApiError, identity, present, queryParameters, isSimulated, visibleComplaint } from './http.js';
@@ -50,8 +50,8 @@ function topEntry(app: FastifyInstance, item: Complaint, user: User): Entry | nu
 }
 
 /** Complaint as seen by the given user: managers also get canUndo / undoExpiresAt. */
-export function presentFor(app: FastifyInstance, item: Complaint, user: User, now = Date.now()): Complaint {
-  const view = present(item, now);
+export function presentFor(app: FastifyInstance, item: Complaint, user: User, now = Date.now()): ComplaintView {
+  const view = present(item, now, user);
   if (user.role !== 'manager') return view;
   const entry = topEntry(app, item, user);
   const deadline = entry ? entry.at + undoWindowMs() : 0;

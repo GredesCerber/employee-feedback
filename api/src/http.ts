@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { fullFormats } from 'ajv-formats/dist/formats.js';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import type { Complaint, Role, User } from './model.js';
+import type { Complaint, ComplaintView, Role, User } from './model.js';
 import { terminalStatuses } from './model.js';
 
 export const contract = JSON.parse(readFileSync(new URL('../../contracts/api.yaml', import.meta.url), 'utf8'));
@@ -84,13 +84,22 @@ export function visibleComplaint(app: FastifyInstance, id: string, user: User): 
   }
   return item;
 }
-/** Simulator marker: only with DEMO_SIMULATION_ENABLED=true and `X-Demo-Source: simulator`; otherwise ignored. */
+/** Simulator marker is retained independently of response redaction. */
 export function isSimulated(request: FastifyRequest): boolean {
   return process.env.DEMO_SIMULATION_ENABLED === 'true' && request.headers['x-demo-source'] === 'simulator';
 }
-export function present(item: Complaint, now = Date.now()): Complaint {
-  return { ...item, simulated: item.simulated ?? false,
-    history: item.history.map(event => ({ ...event, simulated: event.simulated ?? false })), overdue: !terminalStatuses.includes(item.status) && Date.parse(item.dueAt) < now };
+/** Redact only response views; the stored author remains available for access checks. */
+export function present(item: Complaint, now = Date.now(), viewer?: User): ComplaintView {
+  const history = item.history.map(event => ({ ...event, simulated: event.simulated ?? false }));
+  const view = { ...item, simulated: item.simulated ?? false, history,
+    overdue: !terminalStatuses.includes(item.status) && Date.parse(item.dueAt) < now };
+  if (!item.anonymous || viewer?.id === item.author.id) return view;
+  return { ...view, author: { name: 'Аноним' },
+    comments: item.comments.map(comment => ({ ...comment,
+      author: comment.author.id === item.author.id ? { name: 'Автор (аноним)' as const } : comment.author })),
+    history: history.map(event => ({ ...event,
+      actor: event.actor?.id === item.author.id ? { name: 'Автор (аноним)' as const } : event.actor })),
+  };
 }
 export function queryParameters(request: FastifyRequest, allowed: string[]): URLSearchParams {
   const params = new URL(request.url, 'http://localhost').searchParams;
