@@ -159,6 +159,7 @@ describe('#128 «О прототипе»', () => {
   it('no longer says the AI helper is missing', () => {
     const row = ABOUT_ROWS.find(item => item.feature.startsWith('ИИ-помощник'))!;
     expect(row.build ?? '').not.toMatch(/ещё нет/);
-    expect(row.build ?? '').toMatch(/#128/);
+    expect(row.done ?? '').toMatch(/подсказка категории/);
+    expect(row.build ?? '').toContain('Демо ИИ');
   });
 });

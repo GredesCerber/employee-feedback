@@ -29,7 +29,19 @@ export default function SubmitPage() {
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const cooldown = useCooldown();
-  const assist = useSubmitAssist({ api, description, categories: reference.data?.categories ?? [], categoryId, setCategory });
+  function clearFieldError(field: string) {
+    setErrors(current => {
+      if (!(field in current)) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+  function chooseCategory(value: string) {
+    setCategory(value);
+    if (value) clearFieldError('categoryId');
+  }
+  const assist = useSubmitAssist({ api, description, categories: reference.data?.categories ?? [], categoryId, setCategory: chooseCategory });
   const [created, setCreated] = useState<Complaint>();
   const resultHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { if (created) resultHeading.current?.focus(); }, [created]);
@@ -75,11 +87,14 @@ export default function SubmitPage() {
     {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
     {reference.data && <form onSubmit={submit} noValidate className="complaint-form">
       <label htmlFor="complaint-type">Тип обращения</label><select id="complaint-type" value={type} onChange={event => setType(event.target.value as Complaint['type'])}><option value="problem">Проблема</option><option value="suggestion">Предложение</option><option value="praise">Благодарность</option></select>
-      <label htmlFor="category">Категория</label><select id="category" value={categoryId} onChange={event => setCategory(event.target.value)} required aria-invalid={Boolean(errors.categoryId)} aria-describedby={errors.categoryId ? 'category-error' : undefined}><option value="">Выберите категорию</option>{reference.data.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
+      <label htmlFor="category">Категория</label><select id="category" value={categoryId} onChange={event => chooseCategory(event.target.value)} required aria-invalid={Boolean(errors.categoryId)} aria-describedby={errors.categoryId ? 'category-error' : undefined}><option value="">Выберите категорию</option>{reference.data.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
       {errors.categoryId && <p id="category-error" role="alert" className="field-error">{errors.categoryId}</p>}
       <button type="button" className="suggest-button" disabled={!assist.canSuggest} onClick={assist.suggest}>Подсказать категорию</button>
-      <SuggestionNote assist={assist} categoryId={categoryId} categoryName={reference.data.categories.find(item => item.id === categoryId)?.name} apply={setCategory} />
-      <label htmlFor="description">Описание</label><textarea id="description" value={description} onChange={event => setDescription(event.target.value)} rows={5} maxLength={5000} required aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? 'description-error' : undefined} />
+      <SuggestionNote assist={assist} categoryId={categoryId} categoryName={reference.data.categories.find(item => item.id === categoryId)?.name} apply={chooseCategory} />
+      <label htmlFor="description">Описание</label><textarea id="description" value={description} onChange={event => {
+        setDescription(event.target.value);
+        if (event.target.value.trim()) clearFieldError('description');
+      }} rows={5} maxLength={5000} required aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? 'description-error' : undefined} />
       {errors.description && <p id="description-error" role="alert" className="field-error">{errors.description}</p>}
       <SimilarList items={assist.similar} />
       <label htmlFor="solution">Предлагаемое решение <span className="optional">(необязательно)</span></label><textarea id="solution" value={solution} onChange={event => setSolution(event.target.value)} rows={3} maxLength={5000} />
