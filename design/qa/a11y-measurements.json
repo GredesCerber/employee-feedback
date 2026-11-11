@@ -1,0 +1,2025 @@
+{
+  "source": "2a40328",
+  "tabSweeps": [
+    {
+      "screen": "submit",
+      "steps": [
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Уведомления, новых: 1",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 44,
+          "height": 44,
+          "viewportY": 33
+        },
+        {
+          "tag": "SELECT",
+          "id": "complaint-type",
+          "text": "Тип обращения",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 680,
+          "height": 45,
+          "viewportY": 394.390625
+        },
+        {
+          "tag": "SELECT",
+          "id": "category",
+          "text": "Категория",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 680,
+          "height": 45,
+          "viewportY": 495.390625
+        },
+        {
+          "tag": "TEXTAREA",
+          "id": "description",
+          "text": "Описание",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 680,
+          "height": 142,
+          "viewportY": 652.390625
+        },
+        {
+          "tag": "TEXTAREA",
+          "id": "solution",
+          "text": "Предлагаемое решение (необязательно)",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 680,
+          "height": 94,
+          "viewportY": 850.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Добавить тестовое вложение Имитация: не настоящий файл: сохраняются только название, тип и размер за",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 18,
+          "height": 18,
+          "viewportY": 623.390625
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Отправить обращение",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 205.171875,
+          "height": 46,
+          "viewportY": 720.390625
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "ТемаКак в системеСветлаяТёмная",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 145,
+          "height": 33,
+          "viewportY": 843.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Подсказки демо",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 18,
+          "height": 18,
+          "viewportY": 850.890625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "О прототипе",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 76.265625,
+          "height": 19.5,
+          "viewportY": 850.140625
+        },
+        {
+          "tag": "BODY",
+          "id": "",
+          "text": "Перейти к содержимомуММодус ТрейдОбратная связь сотрудниковДемонстрационная рольСотрудникРуководител",
+          "visibleFocus": false,
+          "outline": "none",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(227, 235, 242)",
+          "width": 1280,
+          "height": 1246.390625,
+          "viewportY": -346
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Перейти к содержимому",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 207.53125,
+          "height": 48,
+          "viewportY": 16
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "ММодус ТрейдОбратная связь сотрудников",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 213.234375,
+          "height": 46.5,
+          "viewportY": 29.75
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "Демонстрационная рольСотрудникРуководительАдминистратор",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 156,
+          "height": 36,
+          "viewportY": 46
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Мои обращения",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 240,
+          "height": 48,
+          "viewportY": 178.5
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Новое обращение",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 240,
+          "height": 48,
+          "viewportY": 234.5
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Уведомления, новых: 1",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 44,
+          "height": 44,
+          "viewportY": 33
+        }
+      ]
+    },
+    {
+      "screen": "my",
+      "steps": [
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Перейти к содержимому",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 207.53125,
+          "height": 48,
+          "viewportY": 16
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "ММодус ТрейдОбратная связь сотрудников",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 213.234375,
+          "height": 46.5,
+          "viewportY": 29.75
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "Демонстрационная рольСотрудникРуководительАдминистратор",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 156,
+          "height": 36,
+          "viewportY": 46
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Мои обращения",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 240,
+          "height": 48,
+          "viewportY": 178.5
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Новое обращение",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 240,
+          "height": 48,
+          "viewportY": 234.5
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Уведомления, новых: 1",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 44,
+          "height": 44,
+          "viewportY": 33
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-020",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 357.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-004",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 603.140625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-002",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 848.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-001",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 502.140625
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "ТемаКак в системеСветлаяТёмная",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 145,
+          "height": 33,
+          "viewportY": 843.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Подсказки демо",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 18,
+          "height": 18,
+          "viewportY": 850.890625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "О прототипе",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 76.265625,
+          "height": 19.5,
+          "viewportY": 850.140625
+        },
+        {
+          "tag": "BODY",
+          "id": "",
+          "text": "Перейти к содержимомуММодус ТрейдОбратная связь сотрудниковДемонстрационная рольСотрудникРуководител",
+          "visibleFocus": false,
+          "outline": "none",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(227, 235, 242)",
+          "width": 1280,
+          "height": 1532.390625,
+          "viewportY": -632
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Перейти к содержимому",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 207.53125,
+          "height": 48,
+          "viewportY": 16
+        }
+      ]
+    },
+    {
+      "screen": "queue",
+      "steps": [
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Перейти к содержимому",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 207.53125,
+          "height": 48,
+          "viewportY": 16
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "ММодус ТрейдОбратная связь сотрудников",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 213.234375,
+          "height": 46.5,
+          "viewportY": 29.75
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "Демонстрационная рольСотрудникРуководительАдминистратор",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 156,
+          "height": 36,
+          "viewportY": 46
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Очередь обращений",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 240,
+          "height": 48,
+          "viewportY": 178.5
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Дашборд",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 240,
+          "height": 48,
+          "viewportY": 234.5
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Уведомления",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 44,
+          "height": 44,
+          "viewportY": 33
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Поиск по номеру или тексту",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 733.46875,
+          "height": 43,
+          "viewportY": 327.390625
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Скачать CSV",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 124.53125,
+          "height": 46,
+          "viewportY": 324.390625
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "ПодразделениеВсе подразделенияЗакупкиБухгалтерияПроектированиеПродажиПроектыАдминистрация",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 407,
+          "height": 43,
+          "viewportY": 441.390625
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "КатегорияВсе категорииМежотдельное взаимодействиеИнформационная прозрачностьКаталог и данныеОбучение",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 407,
+          "height": 43,
+          "viewportY": 441.390625
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "СтатусВсе статусыНовоеНа рассмотренииВ работеОжидает уточненияРеализованоОтклоненоЗакрыто",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 407,
+          "height": 43,
+          "viewportY": 527.390625
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "ОчередьВсе обращенияБез ответственногоС ответственным",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 407,
+          "height": 43,
+          "viewportY": 527.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "due-after",
+          "text": "Срок от",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 407,
+          "height": 45,
+          "viewportY": 613.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "due-after",
+          "text": "Срок от",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 407,
+          "height": 45,
+          "viewportY": 613.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "due-after",
+          "text": "Срок от",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 407,
+          "height": 45,
+          "viewportY": 613.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "due-after",
+          "text": "Срок от",
+          "visibleFocus": false,
+          "outline": "none",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(227, 235, 242)",
+          "width": 407,
+          "height": 45,
+          "viewportY": 613.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Срок до",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 407,
+          "height": 45,
+          "viewportY": 613.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Срок до",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 407,
+          "height": 45,
+          "viewportY": 613.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Срок до",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 407,
+          "height": 45,
+          "viewportY": 613.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Срок до",
+          "visibleFocus": false,
+          "outline": "none",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(227, 235, 242)",
+          "width": 407,
+          "height": 45,
+          "viewportY": 613.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Только просроченные",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 18,
+          "height": 18,
+          "viewportY": 687.390625
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Применить фильтры",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 190.96875,
+          "height": 46,
+          "viewportY": 734.390625
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Сбросить",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 103.265625,
+          "height": 46,
+          "viewportY": 734.390625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-020",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 872.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-019",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 436.140625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-018",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 681.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-017",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 436.140625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-016",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 681.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-015",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 436.140625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-014",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 681.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-013",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 436.140625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-012",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 681.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-011",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 436.140625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-010",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 681.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-009",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 436.140625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-008",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 681.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-007",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 436.140625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-006",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 681.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-005",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 436.140625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-004",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 681.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-003",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 436.140625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-002",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 681.640625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-001",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 51,
+          "height": 27,
+          "viewportY": 542.140625
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "ТемаКак в системеСветлаяТёмная",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 145,
+          "height": 33,
+          "viewportY": 843.390625
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Подсказки демо",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 18,
+          "height": 18,
+          "viewportY": 850.890625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "О прототипе",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 76.265625,
+          "height": 19.5,
+          "viewportY": 850.140625
+        },
+        {
+          "tag": "BODY",
+          "id": "",
+          "text": "Перейти к содержимомуММодус ТрейдОбратная связь сотрудниковДемонстрационная рольСотрудникРуководител",
+          "visibleFocus": false,
+          "outline": "none",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(227, 235, 242)",
+          "width": 1280,
+          "height": 5908.390625,
+          "viewportY": -5008
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Перейти к содержимому",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 207.53125,
+          "height": 48,
+          "viewportY": 16
+        }
+      ]
+    },
+    {
+      "screen": "card",
+      "steps": [
+        {
+          "tag": "A",
+          "id": "",
+          "text": "К очереди",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 76.265625,
+          "height": 21,
+          "viewportY": 212.5
+        },
+        {
+          "tag": "SELECT",
+          "id": "assignee",
+          "text": "Назначить ответственного",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 828,
+          "height": 45,
+          "viewportY": 427.765625
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Назначить",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 110.96875,
+          "height": 46,
+          "viewportY": 484.765625
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Начать рассмотрение",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 193.859375,
+          "height": 46,
+          "viewportY": 651.765625
+        },
+        {
+          "tag": "TEXTAREA",
+          "id": "manager-comment",
+          "text": "Комментарий или вопрос",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 828,
+          "height": 94,
+          "viewportY": 753.765625
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Добавить комментарий",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 208.765625,
+          "height": 46,
+          "viewportY": 853.765625
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Запросить уточнение",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 191.71875,
+          "height": 46,
+          "viewportY": 853.765625
+        },
+        {
+          "tag": "SELECT",
+          "id": "outcome",
+          "text": "Итог рассмотрения",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 828,
+          "height": 45,
+          "viewportY": 427.765625
+        },
+        {
+          "tag": "TEXTAREA",
+          "id": "explanation",
+          "text": "Мотивированный отказ",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 828,
+          "height": 118,
+          "viewportY": 588.765625
+        },
+        {
+          "tag": "TEXTAREA",
+          "id": "decision-actions",
+          "text": "Дальнейшие действия (необязательно)",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 828,
+          "height": 70,
+          "viewportY": 754.765625
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Зафиксировать итог",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 185.96875,
+          "height": 46,
+          "viewportY": 836.765625
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "ТемаКак в системеСветлаяТёмная",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 145,
+          "height": 33,
+          "viewportY": 842.765625
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Подсказки демо",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 18,
+          "height": 18,
+          "viewportY": 850.265625
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "О прототипе",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 76.265625,
+          "height": 19.5,
+          "viewportY": 849.515625
+        },
+        {
+          "tag": "BODY",
+          "id": "",
+          "text": "Перейти к содержимомуММодус ТрейдОбратная связь сотрудниковДемонстрационная рольСотрудникРуководител",
+          "visibleFocus": false,
+          "outline": "none",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(227, 235, 242)",
+          "width": 1280,
+          "height": 2686.765625,
+          "viewportY": -1787
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Перейти к содержимому",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 207.53125,
+          "height": 48,
+          "viewportY": 16
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "ММодус ТрейдОбратная связь сотрудников",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 213.234375,
+          "height": 46.5,
+          "viewportY": 29.75
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "Демонстрационная рольСотрудникРуководительАдминистратор",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 156,
+          "height": 36,
+          "viewportY": 46
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Очередь обращений",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 240,
+          "height": 48,
+          "viewportY": 178.5
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Дашборд",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 240,
+          "height": 48,
+          "viewportY": 234.5
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Уведомления",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 44,
+          "height": 44,
+          "viewportY": 33
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "К очереди",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 76.265625,
+          "height": 21,
+          "viewportY": 212.5
+        }
+      ]
+    },
+    {
+      "screen": "dashboard",
+      "steps": [
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Уведомления",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 44,
+          "height": 44,
+          "viewportY": 33
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "ПодразделениеВсе подразделенияЗакупкиБухгалтерияПроектированиеПродажиПроектыАдминистрация",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 138,
+          "height": 21,
+          "viewportY": 369.390625
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Обновить",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 106.34375,
+          "height": 46,
+          "viewportY": 344.390625
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Обновить сводку за неделю",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 106.34375,
+          "height": 46,
+          "viewportY": 431.390625
+        },
+        {
+          "tag": "SUMMARY",
+          "id": "",
+          "text": "Таблица по дням",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 828,
+          "height": 19.5,
+          "viewportY": 439.953125
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-001",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 41.375,
+          "height": 24,
+          "viewportY": 551.953125
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-002",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 43.828125,
+          "height": 24,
+          "viewportY": 605.953125
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-003",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 43.828125,
+          "height": 24,
+          "viewportY": 659.953125
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "A-005",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 43.828125,
+          "height": 24,
+          "viewportY": 713.953125
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "ТемаКак в системеСветлаяТёмная",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 145,
+          "height": 33,
+          "viewportY": 842.953125
+        },
+        {
+          "tag": "INPUT",
+          "id": "",
+          "text": "Подсказки демо",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 18,
+          "height": 18,
+          "viewportY": 850.453125
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "О прототипе",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 76.265625,
+          "height": 19.5,
+          "viewportY": 849.703125
+        },
+        {
+          "tag": "BODY",
+          "id": "",
+          "text": "Перейти к содержимомуММодус ТрейдОбратная связь сотрудниковДемонстрационная рольСотрудникРуководител",
+          "visibleFocus": false,
+          "outline": "none",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(227, 235, 242)",
+          "width": 1280,
+          "height": 3772.953125,
+          "viewportY": -2873
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Перейти к содержимому",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 207.53125,
+          "height": 48,
+          "viewportY": 16
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "ММодус ТрейдОбратная связь сотрудников",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 213.234375,
+          "height": 46.5,
+          "viewportY": 29.75
+        },
+        {
+          "tag": "SELECT",
+          "id": "",
+          "text": "Демонстрационная рольСотрудникРуководительАдминистратор",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 156,
+          "height": 36,
+          "viewportY": 46
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Очередь обращений",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 240,
+          "height": 48,
+          "viewportY": 178.5
+        },
+        {
+          "tag": "A",
+          "id": "",
+          "text": "Дашборд",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 240,
+          "height": 48,
+          "viewportY": 234.5
+        },
+        {
+          "tag": "BUTTON",
+          "id": "",
+          "text": "Уведомления",
+          "visibleFocus": true,
+          "outline": "solid",
+          "outlineWidth": "3px",
+          "outlineColor": "rgb(255, 179, 92)",
+          "width": 44,
+          "height": 44,
+          "viewportY": 33
+        }
+      ]
+    }
+  ],
+  "keyboardActivation": [
+    {
+      "width": 360,
+      "skipLabel": "Перейти к содержимому",
+      "skipTarget": "main",
+      "nativeFocus": {
+        "tag": "INPUT",
+        "id": "due-after",
+        "visible": false
+      },
+      "bellOpened": true,
+      "focusRestored": true,
+      "tableOpened": true
+    },
+    {
+      "width": 768,
+      "skipLabel": "Перейти к содержимому",
+      "skipTarget": "main",
+      "nativeFocus": {
+        "tag": "INPUT",
+        "id": "due-after",
+        "visible": false
+      },
+      "bellOpened": true,
+      "focusRestored": true,
+      "tableOpened": true
+    },
+    {
+      "width": 1280,
+      "skipLabel": "Перейти к содержимому",
+      "skipTarget": "main",
+      "nativeFocus": {
+        "tag": "INPUT",
+        "id": "due-after",
+        "visible": false
+      },
+      "bellOpened": true,
+      "focusRestored": true,
+      "tableOpened": true
+    }
+  ],
+  "activeButtonColors": [
+    {
+      "theme": "light",
+      "screen": "queue",
+      "colors": [
+        {
+          "name": "Уведомления",
+          "fg": "rgb(24, 55, 82)",
+          "bg": "rgb(255, 255, 255)",
+          "opacity": "1"
+        },
+        {
+          "name": "Скачать CSV",
+          "fg": "rgb(25, 51, 72)",
+          "bg": "rgb(255, 255, 255)",
+          "opacity": "1"
+        },
+        {
+          "name": "Применить фильтры",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(24, 90, 133)",
+          "opacity": "1"
+        },
+        {
+          "name": "Сбросить",
+          "fg": "rgb(25, 51, 72)",
+          "bg": "rgb(255, 255, 255)",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "screen": "card",
+      "colors": [
+        {
+          "name": "Уведомления",
+          "fg": "rgb(24, 55, 82)",
+          "bg": "rgb(255, 255, 255)",
+          "opacity": "1"
+        },
+        {
+          "name": "Назначить",
+          "fg": "rgb(25, 51, 72)",
+          "bg": "rgb(255, 255, 255)",
+          "opacity": "1"
+        },
+        {
+          "name": "Начать рассмотрение",
+          "fg": "rgb(25, 51, 72)",
+          "bg": "rgb(255, 255, 255)",
+          "opacity": "1"
+        },
+        {
+          "name": "Добавить комментарий",
+          "fg": "rgb(25, 51, 72)",
+          "bg": "rgb(255, 255, 255)",
+          "opacity": "1"
+        },
+        {
+          "name": "Запросить уточнение",
+          "fg": "rgb(25, 51, 72)",
+          "bg": "rgb(255, 255, 255)",
+          "opacity": "1"
+        },
+        {
+          "name": "Зафиксировать итог",
+          "fg": "rgb(255, 255, 255)",
+          "bg": "rgb(24, 90, 133)",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "screen": "dashboard",
+      "colors": [
+        {
+          "name": "Уведомления",
+          "fg": "rgb(24, 55, 82)",
+          "bg": "rgb(255, 255, 255)",
+          "opacity": "1"
+        },
+        {
+          "name": "Обновить",
+          "fg": "rgb(25, 51, 72)",
+          "bg": "rgb(255, 255, 255)",
+          "opacity": "1"
+        },
+        {
+          "name": "Обновить сводку за неделю",
+          "fg": "rgb(25, 51, 72)",
+          "bg": "rgb(255, 255, 255)",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "screen": "queue",
+      "colors": [
+        {
+          "name": "Уведомления",
+          "fg": "rgb(244, 248, 251)",
+          "bg": "rgb(22, 35, 47)",
+          "opacity": "1"
+        },
+        {
+          "name": "Скачать CSV",
+          "fg": "rgb(227, 235, 242)",
+          "bg": "rgb(22, 35, 47)",
+          "opacity": "1"
+        },
+        {
+          "name": "Применить фильтры",
+          "fg": "rgb(11, 22, 32)",
+          "bg": "rgb(124, 188, 236)",
+          "opacity": "1"
+        },
+        {
+          "name": "Сбросить",
+          "fg": "rgb(227, 235, 242)",
+          "bg": "rgb(22, 35, 47)",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "screen": "card",
+      "colors": [
+        {
+          "name": "Уведомления",
+          "fg": "rgb(244, 248, 251)",
+          "bg": "rgb(22, 35, 47)",
+          "opacity": "1"
+        },
+        {
+          "name": "Назначить",
+          "fg": "rgb(227, 235, 242)",
+          "bg": "rgb(22, 35, 47)",
+          "opacity": "1"
+        },
+        {
+          "name": "Начать рассмотрение",
+          "fg": "rgb(227, 235, 242)",
+          "bg": "rgb(22, 35, 47)",
+          "opacity": "1"
+        },
+        {
+          "name": "Добавить комментарий",
+          "fg": "rgb(227, 235, 242)",
+          "bg": "rgb(22, 35, 47)",
+          "opacity": "1"
+        },
+        {
+          "name": "Запросить уточнение",
+          "fg": "rgb(227, 235, 242)",
+          "bg": "rgb(22, 35, 47)",
+          "opacity": "1"
+        },
+        {
+          "name": "Зафиксировать итог",
+          "fg": "rgb(11, 22, 32)",
+          "bg": "rgb(124, 188, 236)",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "screen": "dashboard",
+      "colors": [
+        {
+          "name": "Уведомления",
+          "fg": "rgb(244, 248, 251)",
+          "bg": "rgb(22, 35, 47)",
+          "opacity": "1"
+        },
+        {
+          "name": "Обновить",
+          "fg": "rgb(227, 235, 242)",
+          "bg": "rgb(22, 35, 47)",
+          "opacity": "1"
+        },
+        {
+          "name": "Обновить сводку за неделю",
+          "fg": "rgb(227, 235, 242)",
+          "bg": "rgb(22, 35, 47)",
+          "opacity": "1"
+        }
+      ]
+    }
+  ],
+  "contrast": [
+    {
+      "theme": "light",
+      "kind": "status",
+      "name": "new",
+      "fg": "rgb(49, 86, 110)",
+      "bg": "rgb(229, 238, 244)",
+      "ratio": 6.65
+    },
+    {
+      "theme": "light",
+      "kind": "status",
+      "name": "in_review",
+      "fg": "rgb(49, 86, 110)",
+      "bg": "rgb(229, 238, 244)",
+      "ratio": 6.65
+    },
+    {
+      "theme": "light",
+      "kind": "status",
+      "name": "in_progress",
+      "fg": "rgb(31, 79, 120)",
+      "bg": "rgb(227, 237, 247)",
+      "ratio": 7.24
+    },
+    {
+      "theme": "light",
+      "kind": "status",
+      "name": "awaiting_clarification",
+      "fg": "rgb(117, 75, 8)",
+      "bg": "rgb(255, 240, 216)",
+      "ratio": 6.76
+    },
+    {
+      "theme": "light",
+      "kind": "status",
+      "name": "implemented",
+      "fg": "rgb(40, 93, 55)",
+      "bg": "rgb(230, 241, 232)",
+      "ratio": 6.68
+    },
+    {
+      "theme": "light",
+      "kind": "status",
+      "name": "rejected",
+      "fg": "rgb(139, 48, 37)",
+      "bg": "rgb(252, 235, 231)",
+      "ratio": 7.14
+    },
+    {
+      "theme": "light",
+      "kind": "status",
+      "name": "closed",
+      "fg": "rgb(40, 93, 55)",
+      "bg": "rgb(230, 241, 232)",
+      "ratio": 6.68
+    },
+    {
+      "theme": "light",
+      "kind": "button",
+      "name": "Уведомления, новых: 1",
+      "fg": "rgb(24, 55, 82)",
+      "bg": "rgb(255, 255, 255)",
+      "opacity": "1",
+      "disabled": false,
+      "ratio": 12.3
+    },
+    {
+      "theme": "light",
+      "kind": "button",
+      "name": "Подсказать категорию",
+      "fg": "rgb(25, 51, 72)",
+      "bg": "rgb(255, 255, 255)",
+      "opacity": "0.55",
+      "disabled": true,
+      "ratio": 13.06
+    },
+    {
+      "theme": "light",
+      "kind": "button",
+      "name": "Отправить обращение",
+      "fg": "rgb(255, 255, 255)",
+      "bg": "rgb(24, 90, 133)",
+      "opacity": "1",
+      "disabled": false,
+      "ratio": 7.39
+    },
+    {
+      "theme": "dark",
+      "kind": "status",
+      "name": "new",
+      "fg": "rgb(185, 212, 232)",
+      "bg": "rgb(29, 50, 67)",
+      "ratio": 8.58
+    },
+    {
+      "theme": "dark",
+      "kind": "status",
+      "name": "in_review",
+      "fg": "rgb(185, 212, 232)",
+      "bg": "rgb(29, 50, 67)",
+      "ratio": 8.58
+    },
+    {
+      "theme": "dark",
+      "kind": "status",
+      "name": "in_progress",
+      "fg": "rgb(169, 205, 240)",
+      "bg": "rgb(27, 47, 69)",
+      "ratio": 8.24
+    },
+    {
+      "theme": "dark",
+      "kind": "status",
+      "name": "awaiting_clarification",
+      "fg": "rgb(255, 210, 138)",
+      "bg": "rgb(58, 42, 12)",
+      "ratio": 9.78
+    },
+    {
+      "theme": "dark",
+      "kind": "status",
+      "name": "implemented",
+      "fg": "rgb(159, 220, 176)",
+      "bg": "rgb(23, 51, 34)",
+      "ratio": 8.7
+    },
+    {
+      "theme": "dark",
+      "kind": "status",
+      "name": "rejected",
+      "fg": "rgb(255, 176, 166)",
+      "bg": "rgb(58, 29, 25)",
+      "ratio": 8.77
+    },
+    {
+      "theme": "dark",
+      "kind": "status",
+      "name": "closed",
+      "fg": "rgb(159, 220, 176)",
+      "bg": "rgb(23, 51, 34)",
+      "ratio": 8.7
+    },
+    {
+      "theme": "dark",
+      "kind": "button",
+      "name": "Уведомления, новых: 1",
+      "fg": "rgb(244, 248, 251)",
+      "bg": "rgb(22, 35, 47)",
+      "opacity": "1",
+      "disabled": false,
+      "ratio": 14.95
+    },
+    {
+      "theme": "dark",
+      "kind": "button",
+      "name": "Подсказать категорию",
+      "fg": "rgb(227, 235, 242)",
+      "bg": "rgb(22, 35, 47)",
+      "opacity": "0.55",
+      "disabled": true,
+      "ratio": 13.25
+    },
+    {
+      "theme": "dark",
+      "kind": "button",
+      "name": "Отправить обращение",
+      "fg": "rgb(11, 22, 32)",
+      "bg": "rgb(124, 188, 236)",
+      "opacity": "1",
+      "disabled": false,
+      "ratio": 8.92
+    }
+  ],
+  "matrix": [
+    {
+      "screen": "submit",
+      "width": 360,
+      "path": "/submit",
+      "scrollWidth": 360,
+      "overflow": [
+        "1"
+      ],
+      "unnamed": 0
+    },
+    {
+      "screen": "my",
+      "width": 360,
+      "path": "/my",
+      "scrollWidth": 360,
+      "overflow": [
+        "1"
+      ],
+      "unnamed": 0
+    },
+    {
+      "screen": "queue",
+      "width": 360,
+      "path": "/queue",
+      "scrollWidth": 360,
+      "overflow": [],
+      "unnamed": 0
+    },
+    {
+      "screen": "card",
+      "width": 360,
+      "path": "/queue/complaint-1",
+      "scrollWidth": 360,
+      "overflow": [],
+      "unnamed": 0
+    },
+    {
+      "screen": "dashboard",
+      "width": 360,
+      "path": "/dashboard",
+      "scrollWidth": 360,
+      "overflow": [],
+      "unnamed": 0
+    },
+    {
+      "screen": "submit",
+      "width": 768,
+      "path": "/submit",
+      "scrollWidth": 768,
+      "overflow": [
+        "1"
+      ],
+      "unnamed": 0
+    },
+    {
+      "screen": "my",
+      "width": 768,
+      "path": "/my",
+      "scrollWidth": 768,
+      "overflow": [
+        "1"
+      ],
+      "unnamed": 0
+    },
+    {
+      "screen": "queue",
+      "width": 768,
+      "path": "/queue",
+      "scrollWidth": 768,
+      "overflow": [],
+      "unnamed": 0
+    },
+    {
+      "screen": "card",
+      "width": 768,
+      "path": "/queue/complaint-1",
+      "scrollWidth": 768,
+      "overflow": [],
+      "unnamed": 0
+    },
+    {
+      "screen": "dashboard",
+      "width": 768,
+      "path": "/dashboard",
+      "scrollWidth": 768,
+      "overflow": [],
+      "unnamed": 0
+    },
+    {
+      "screen": "submit",
+      "width": 1280,
+      "path": "/submit",
+      "scrollWidth": 1280,
+      "overflow": [
+        "1"
+      ],
+      "unnamed": 0
+    },
+    {
+      "screen": "my",
+      "width": 1280,
+      "path": "/my",
+      "scrollWidth": 1280,
+      "overflow": [
+        "1"
+      ],
+      "unnamed": 0
+    },
+    {
+      "screen": "queue",
+      "width": 1280,
+      "path": "/queue",
+      "scrollWidth": 1280,
+      "overflow": [],
+      "unnamed": 0
+    },
+    {
+      "screen": "card",
+      "width": 1280,
+      "path": "/queue/complaint-1",
+      "scrollWidth": 1280,
+      "overflow": [],
+      "unnamed": 0
+    },
+    {
+      "screen": "dashboard",
+      "width": 1280,
+      "path": "/dashboard",
+      "scrollWidth": 1280,
+      "overflow": [],
+      "unnamed": 0
+    }
+  ]
+}
