@@ -133,7 +133,7 @@ export default function QueuePage() {
     setExporting(true); setExportError('');
     try {
       const { data } = await api.GET('/complaints/export', { params: { query: filterParams(applied) }, parseAs: 'blob' });
-      if (!(data instanceof Blob)) throw new Error('empty');
+      if (!data || data.size === 0) throw new Error('empty');
       const link = document.createElement('a');
       const href = URL.createObjectURL(data);
       link.href = href; link.download = exportFileName();
