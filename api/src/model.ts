@@ -34,7 +34,11 @@ export interface Complaint {
   simulated?: boolean;
   canUndo?: boolean; undoExpiresAt?: string | null;
   anonymous?: boolean;
+  /** Optional author-chosen point; absent when not chosen. */
+  location?: GeoPoint;
 }
+
+export interface GeoPoint { latitude: number; longitude: number }
 
 export interface AnonymousActor { name: 'Аноним' | 'Автор (аноним)' }
 /** Response-only shape. Never save it: the store retains the real author for access checks. */
