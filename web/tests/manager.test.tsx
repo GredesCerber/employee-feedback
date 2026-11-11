@@ -114,9 +114,19 @@ describe('manager queue acceptance', () => {
     await screen.findByText('Ожидает уточнения');
     await asAuthor(user);
     expect(screen.getAllByText('Уточните номер заявки.').length).toBeGreaterThan(0);
+    const previousFetch = globalThis.fetch;
+    let finishReply!: () => void;
+    const pendingReply = new Promise<void>(resolve => { finishReply = resolve; });
+    vi.stubGlobal('fetch', vi.fn(async (request: Request) => {
+      if (request.method === 'POST' && new URL(request.url).pathname.endsWith('/comments')) await pendingReply;
+      return previousFetch(request);
+    }));
     await user.type(screen.getByLabelText('Ваш ответ на уточнение'), 'Номер заявки 123.');
     await user.click(screen.getByRole('button', { name: 'Отправить ответ' }));
+    expect((screen.getByRole('button', { name: 'Отправка…' }) as HTMLButtonElement).disabled).toBe(true);
+    finishReply();
     expect(await screen.findByText('Номер заявки 123.')).toBeTruthy();
+    expect(screen.getByText('Ответ на уточнение отправлен.')).toBeTruthy();
     expect(screen.getByText('На рассмотрении')).toBeTruthy();
     expect(screen.queryByLabelText('Ваш ответ на уточнение')).toBeNull();
     const responseRequest = requests.filter(request => request.method === 'POST').at(-1)!;
