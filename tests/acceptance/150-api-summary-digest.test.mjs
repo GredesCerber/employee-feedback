@@ -102,7 +102,7 @@ test('#150 the shared provider receives only aggregates and cache expires at 60 
   app.ai = createAiProvider({ apiKey: KEY, fetch: async (_url, init) => {
     const body = JSON.parse(init.body); calls.push(body);
     const facts = JSON.parse(body.messages[0].content);
-    return response(JSON.stringify({ text: `За период поступило ${facts.total} обращений. Просрочено: ${facts.overdueCount}.` }));
+    return response(JSON.stringify({ text: `За период поступило ${facts.total} обращений. Топ-категория «${facts.byCategory[0].name}»: ${facts.byCategory[0].count}. Просрочено: ${facts.overdueCount}.` }));
   } });
   const first = await digest(app);
   assert.equal(first.source, 'llm');
@@ -135,6 +135,7 @@ test('#150 provider failures, timeouts and invalid text fall back without leakin
     async () => Response.json({ error: { message: KEY } }, { status: 500 }),
     async () => response('not JSON'),
     async () => response(JSON.stringify({ text: '  ' })),
+    async () => response(JSON.stringify({ text: 'За период поступило 999999 обращений.' })),
     async () => response(JSON.stringify({ text: KEY })),
     async (_url, init) => new Promise((_resolve, reject) => { init.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError'))); }),
   ];
