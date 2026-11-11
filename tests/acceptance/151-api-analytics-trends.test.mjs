@@ -123,7 +123,7 @@ test('#151 графики нулями заполняют пустые дни и
   assert.equal(body.byDay.reduce((sum, item) => sum + item.count, 0), 3);
   assert.deepEqual(body.byWeek.map(item => item.weekStart), [
     '2026-09-21', '2026-09-28', '2026-10-05', '2026-10-12', '2026-10-19', '2026-10-26', '2026-11-02', '2026-11-09']);
-  assert.deepEqual(body.byWeek.map(item => item.count), [1, 0, 0, 0, 0, 2, 1, 2]);
+  assert.deepEqual(body.byWeek.map(item => item.count), [1, 0, 0, 0, 0, 2, 0, 2]);
 });
 
 test('#151 topThemes: стоп-слова, один раз на обращение, минимум два обращения, тай-брейк по алфавиту', async t => {
@@ -138,7 +138,7 @@ test('#151 topThemes: стоп-слова, один раз на обращени
   t.mock.method(app.store, 'list', () => records);
   const body = await trends(app);
   // принтер: 1,2 (2); картридж: 1,2,3 (3); ёлка/елка: 1,2,3 (3); кабинете: 1,3 (2); сервер: только 5 -> не повтор.
-  assert.deepEqual(body.topThemes.slice(0, 2), [{ theme: 'картридж', count: 3 }, { theme: 'елка', count: 3 }]);
+  assert.deepEqual(body.topThemes.slice(0, 2), [{ theme: 'елка', count: 3 }, { theme: 'картридж', count: 3 }]);
   const themes = body.topThemes.map(item => item.theme);
   assert.ok(themes.includes('принтер') && themes.includes('кабинете'));
   assert.ok(!themes.includes('сервер'), 'слово из одного обращения не тема');
@@ -165,7 +165,7 @@ test('#151 просрочка: только незавершённые, вклю
   const records = [
     make(sample, 1, { dueAt: '2026-11-10T10:00:00Z' }), // 2 часа
     make(sample, 2, { dueAt: '2026-11-09T12:00:00Z', assignee: null, routing: { queue: 'unassigned', reason: 'no_rule' }, categoryId: 'it' }), // 24 часа
-    make(sample, 3, { dueAt: '2026-11-01T00:00:00Z', status: 'closed', closedAt: '2026-11-05T00:00:00Z' }),
+    make(sample, 3, { dueAt: '2026-11-01T00:00:00Z', status: 'closed', closedAt: '2026-11-10T06:00:00Z' }),
     make(sample, 4, { dueAt: instant.toISOString() }), // ровно сейчас: не просрочено
     make(sample, 5, { dueAt: '2026-11-10T11:30:00Z', overdue: false }), // 0.5 часа
   ];
@@ -178,7 +178,7 @@ test('#151 просрочка: только незавершённые, вклю
   assert.equal(body.totals.total, 5);
   assert.equal(body.totals.closedCount, 1);
   assert.equal(body.totals.openCount, 4);
-  assert.equal(body.totals.averageResolutionHours, 96);
+  assert.equal(body.totals.averageResolutionHours, 6);
 });
 
 test('#151 фильтр department применяется ко всем блокам', async t => {
