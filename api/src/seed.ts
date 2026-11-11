@@ -38,21 +38,48 @@ export const seedReferenceData: ReferenceData = {
   assignees: seedUsers.filter((user) => user.role === 'manager'),
 };
 
-/** Fixed UTC timestamps are synthetic demonstration data, never real response metrics. */
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+const DUE_DAYS = 7;
+/** Hours until the first response in relative mode: varied on purpose, at most 12 so it never lands in the future. */
+const relativeResponseHours = [1, 3, 6, 2, 12];
+
+/**
+ * Creation time of seed row `index`.
+ * Default: fixed 2026-11-01 09:xx UTC, so existing tests and stored data stay stable.
+ * SEED_RELATIVE_DATES=1 (demo launch and hosting): days are counted back from the start of the current UTC day.
+ * Rows 1-5 are 8-9 days old, so their 7-day term has already passed; rows 6-20 are 1-6 days old and due in the future.
+ * Nothing is created today, therefore no timestamp can be later than the moment of the call.
+ */
+function seedCreatedAt(index: number, relative: boolean, now: Date): number {
+  if (!relative) return Date.UTC(2026, 10, 1, 9, index);
+  const dayStart = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const daysAgo = index < 2 ? 9 : index < 5 ? 8 : 6 - Math.floor(((index - 5) * 6) / 15);
+  return dayStart - daysAgo * DAY + 9 * HOUR + index * 60_000;
+}
+
+/**
+ * Synthetic demonstration timestamps, never real response metrics.
+ * Called on every seeding (start, --seed-reset, demo reset), so relative dates follow the current day.
+ */
 export function seedComplaints(): Complaint[] {
+  const relative = process.env.SEED_RELATIVE_DATES === '1';
+  const now = new Date();
   return rows.map((row, index) => {
     const author = seedUsers.find((user) => user.name === row.author && user.role === 'employee')!;
     const assignee = seedUsers.find((user) => user.name === row.assignee && user.role === 'manager')!;
-    const createdAt = new Date(Date.UTC(2026, 10, 1, 9, index)).toISOString();
-    const firstResponseAt = row.status === 'new' ? null : new Date(Date.parse(createdAt) + 3600000).toISOString();
-    const closedAt = terminalStatuses.includes(row.status) ? new Date(Date.parse(createdAt) + 86400000).toISOString() : null;
+    const createdMs = seedCreatedAt(index, relative, now);
+    const createdAt = new Date(createdMs).toISOString();
+    const responseHours = relative ? relativeResponseHours[index % relativeResponseHours.length]! : 1;
+    const firstResponseAt = row.status === 'new' ? null : new Date(createdMs + responseHours * HOUR).toISOString();
+    const closedAt = terminalStatuses.includes(row.status) ? new Date(createdMs + DAY).toISOString() : null;
     const updatedAt = closedAt ?? firstResponseAt ?? createdAt;
     return {
       id: `complaint-${index + 1}`, number: row.number, type: row.type, categoryId: row.categoryId,
       departmentId: row.departmentId, author, description: row.description, proposedSolution: null,
       priority: row.priority, attachments: [], status: row.status, assignee,
       routing: { queue: 'assigned', reason: 'category_rule' }, createdAt, updatedAt,
-      dueAt: new Date(Date.parse(createdAt) + 7 * 86400000).toISOString(), firstResponseAt, closedAt,
+      dueAt: new Date(createdMs + DUE_DAYS * DAY).toISOString(), firstResponseAt, closedAt,
       overdue: false,
       comments: ['A-005', 'A-013'].includes(row.number) ? [{
         id: `seed-clarification-${index + 1}`, author: assignee, kind: 'clarification_request',
