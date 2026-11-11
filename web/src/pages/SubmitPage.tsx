@@ -7,6 +7,7 @@ import { errorMessage, requireData, retryAfterOf, useCooldown, useResource } fro
 import { Loading, LoadError } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
 import { ImitationBadge } from '../features/demo';
+import { AnonymousBadge } from '../features/complaintMeta';
 import { SimilarList, SuggestionNote, useSubmitAssist } from '../features/submitAssist';
 
 const fieldIds: Record<string, string> = { categoryId: 'category', description: 'description', proposedSolution: 'solution', type: 'complaint-type' };
@@ -24,6 +25,7 @@ export default function SubmitPage() {
   const [description, setDescription] = useState('');
   const [solution, setSolution] = useState('');
   const [attachment, setAttachment] = useState(false);
+  const [anonymous, setAnonymous] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState('');
   const [busy, setBusy] = useState(false);
@@ -58,6 +60,7 @@ export default function SubmitPage() {
     try {
       const result = await api.POST('/complaints', { body: {
         type, categoryId, description: description.trim(),
+        ...(anonymous ? { anonymous: true } : {}),
         ...(solution.trim() ? { proposedSolution: solution.trim() } : {}),
         ...(attachment ? { attachments: [{ name: 'sample-request.txt', mediaType: 'text/plain', sizeBytes: 120, isPlaceholder: true }] } : {}),
       } });
@@ -77,7 +80,7 @@ export default function SubmitPage() {
 
   if (created) return <><section className="section">
     <p className="eyebrow">Отправлено</p><h1 ref={resultHeading} tabIndex={-1}>Обращение зарегистрировано</h1>
-    <p className="registration-number">{created.number}</p><p>{created.nextAction}</p>
+    <p className="registration-number">{created.number}</p>{(created.anonymous ?? anonymous) && <p><AnonymousBadge /></p>}<p>{created.nextAction}</p>
     <div className="actions"><Link className="primary-link" to={`/my/${created.id}`}>Открыть обращение</Link><Link to="/my">К моим обращениям</Link></div>
   </section>{announcement}</>;
 
@@ -98,6 +101,8 @@ export default function SubmitPage() {
       {errors.description && <p id="description-error" role="alert" className="field-error">{errors.description}</p>}
       <SimilarList items={assist.similar} />
       <label htmlFor="solution">Предлагаемое решение <span className="optional">(необязательно)</span></label><textarea id="solution" value={solution} onChange={event => setSolution(event.target.value)} rows={3} maxLength={5000} />
+      <label className="checkbox-label"><input type="checkbox" checked={anonymous} onChange={event => setAnonymous(event.target.checked)} aria-describedby="anonymous-hint" />Подать анонимно</label>
+      <p id="anonymous-hint" className="field-hint">Ответственный не видит автора, но по тексту и вложениям автора могут узнать. Не указывайте лишних подробностей, по которым вас можно опознать.</p>
       <label className="checkbox-label"><input type="checkbox" checked={attachment} onChange={event => setAttachment(event.target.checked)} />Добавить тестовое вложение <ImitationBadge hint="не настоящий файл: сохраняются только название, тип и размер заглушки" /></label>
       <p className="field-hint">Файл-заглушка sample-request.txt: сохраняются только название, тип и размер, содержимое не загружается.</p>
       {(cooldown.active || failure) && <p role="alert" className="field-error">{cooldown.active ? cooldown.message : failure}</p>}

@@ -35,6 +35,11 @@ export function authorLabel(item: Complaint) {
   return item.anonymous ? `${item.author.name} (анонимно для руководителей)` : item.author.name;
 }
 
+/** Бейдж «Анонимно»: автор скрыт от других читателей (`anonymous: true`). */
+export function AnonymousBadge() {
+  return <span className="anonymous-badge">Анонимно</span>;
+}
+
 /** Название из справочника вместо id. Пока справочник грузится — многоточие, если записи нет — сам id. */
 export function referenceName(list: readonly { id: string; name: string }[] | undefined, id: string, loading: boolean) {
   return list?.find(entry => entry.id === id)?.name ?? (loading ? '…' : id);
