@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type { Attachment, Complaint, ComplaintType, Priority, User } from './model.js';
+import type { Attachment, Complaint, ComplaintType, ComplaintView, Priority, User } from './model.js';
 import { terminalStatuses } from './model.js';
 import { ApiError, identity, invalid, listQuery, type ListQuery, queryParameters, validateBody, isSimulated, visibleComplaint } from './http.js';
 import { presentFor, recordAction, snapshot } from './undo.js';
@@ -8,7 +8,7 @@ import { matchesComplaintText, searchWords } from './search.js';
 
 interface CreateInput {
   type: ComplaintType; categoryId: string; description: string; proposedSolution?: string;
-  priority?: Priority; attachments?: Attachment[];
+  priority?: Priority; attachments?: Attachment[]; anonymous?: boolean;
 }
 
 const typeLabels: Record<string, string> = { problem: 'Проблема', suggestion: 'Предложение', praise: 'Похвала' };
@@ -17,7 +17,7 @@ const statusLabels: Record<string, string> = { new: 'Новое', in_review: 'Н
 const csvHeader = ['номер', 'тип', 'категория', 'подразделение', 'статус', 'ответственный', 'создано', 'срок',
   'просрочено', 'первый ответ', 'итог'];
 
-function filteredComplaints(app: FastifyInstance, user: User, query: ListQuery): Complaint[] {
+function filteredComplaints(app: FastifyInstance, user: User, query: ListQuery): ComplaintView[] {
   const words = searchWords(query.q);
   const now = Date.now();
   return app.store.list().filter(item => user.role !== 'employee' || item.author.id === user.id)
@@ -70,6 +70,7 @@ export function registerComplaints(app: FastifyInstance) {
     const item: Complaint = {
       id: `complaint-${index}`, number: `A-${String(index).padStart(3, '0')}`, type: body.type,
       categoryId: category.id, departmentId: user.departmentId, author: user,
+      ...(body.anonymous !== undefined ? { anonymous: body.anonymous } : {}),
       description: body.description.trim(), proposedSolution: body.proposedSolution?.trim() ?? null,
       priority: body.priority ?? 'medium', attachments: body.attachments ?? [], status: 'new', assignee,
       routing: assignee ? { queue: 'assigned', reason: 'category_rule' } : { queue: 'unassigned', reason: 'no_rule' },

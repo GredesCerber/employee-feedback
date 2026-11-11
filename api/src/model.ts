@@ -33,6 +33,15 @@ export interface Complaint {
   /** Created by the demo simulator (X-Demo-Source header, DEMO_SIMULATION_ENABLED=true). */
   simulated?: boolean;
   canUndo?: boolean; undoExpiresAt?: string | null;
+  anonymous?: boolean;
 }
+
+export interface AnonymousActor { name: 'Аноним' | 'Автор (аноним)' }
+/** Response-only shape. Never save it: the store retains the real author for access checks. */
+export type ComplaintView = Omit<Complaint, 'author' | 'comments' | 'history'> & {
+  author: User | AnonymousActor;
+  comments: (Omit<Comment, 'author'> & { author: User | AnonymousActor })[];
+  history: (Omit<HistoryEvent, 'actor'> & { actor: User | AnonymousActor | null })[];
+};
 
 export const terminalStatuses: Status[] = ['implemented', 'rejected', 'closed'];
