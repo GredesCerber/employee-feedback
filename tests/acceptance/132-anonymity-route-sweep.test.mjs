@@ -27,7 +27,31 @@ const noLeak = (response, label) => assert.deepEqual(leaked(response), [], `${la
 const json = (response, status) => { assert.equal(response.statusCode, status, response.body); return response.json(); };
 
 function newApp(t) {
-  const app = buildApp(); t.after(() => app.close());
+  const keys = ['ANTHROPIC_API_KEY', 'PERSIST_FILE', 'DATABASE_URL'];
+  const saved = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  const originalFetch = globalThis.fetch;
+  const networkCalls = [];
+  globalThis.fetch = async (...args) => {
+    networkCalls.push(args[0]);
+    throw new Error('External HTTP is forbidden in acceptance tests');
+  };
+  let app;
+  try {
+    for (const key of keys) delete process.env[key];
+    app = buildApp();
+  } catch (error) {
+    globalThis.fetch = originalFetch;
+    throw error;
+  } finally {
+    for (const key of keys) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+  }
+  t.after(async () => {
+    try { await app.close(); } finally { globalThis.fetch = originalFetch; }
+    assert.deepEqual(networkCalls, [], 'acceptance test must make no external HTTP calls');
+  });
   // Test-only fixture isolation: remove the author's seeded complaints (private Map, no product code touched).
   const records = app.store.records;
   for (const [id, item] of [...records]) if (item.author.id === author.id) records.delete(id);
@@ -64,6 +88,21 @@ test('#132 every contract operation has an anonymity probe (new routes cannot do
   for (const operation of operations) {
     assert.ok(operation.operationId in probes || mutations.includes(operation.operationId),
       `no anonymity probe for ${operation.method.toUpperCase()} ${operation.path} (${operation.operationId})`);
+  }
+});
+
+test('#132 inherited synthetic API key cannot enable network access', async (t) => {
+  const previousKey = process.env.ANTHROPIC_API_KEY;
+  t.after(() => {
+    if (previousKey === undefined) delete process.env.ANTHROPIC_API_KEY;
+    else process.env.ANTHROPIC_API_KEY = previousKey;
+  });
+  process.env.ANTHROPIC_API_KEY = 'synthetic-test-key';
+  const { req } = newApp(t);
+  assert.equal(process.env.ANTHROPIC_API_KEY, 'synthetic-test-key');
+  for (const url of ['/complaints/suggest-category?text=проблема%20с%20вентиляцией%20на%20складе', '/summary/digest']) {
+    const response = await req('GET', url);
+    assert.equal(response.statusCode, 200, response.body);
   }
 });
 
@@ -163,7 +202,8 @@ test('#132 search by author name or id (q) and author-like filters do not find t
     for (const url of [`/complaints?limit=100&q=${q}`, `/complaints/export?q=${q}`, `/complaints?limit=100&q=${q}&status=new`]) {
       const response = await req('GET', url, undefined, user);
       assert.equal(response.statusCode, 200, response.body);
-      assert.ok(!response.body.includes(item.id), `${user}: ${url} found the anonymous complaint by author`);
+      assert.ok(!response.body.includes(url.startsWith('/complaints/export') ? item.number : item.id),
+        `${user}: ${url} found the anonymous complaint by author`);
       noLeak(response, `${user} ${url}`);
     }
     // Unknown filter names are not part of the contract; if one is ever implemented it must not match anonymous items.
@@ -179,6 +219,11 @@ test('#132 search by author name or id (q) and author-like filters do not find t
   // Control: the MARK in the description is searchable, so an empty result above is not a broken search.
   const byText = json(await req('GET', `/complaints?limit=100&q=${encodeURIComponent(MARK)}`), 200);
   assert.ok(byText.items.some((entry) => entry.id === item.id));
+  for (const user of READERS) {
+    const exported = await req('GET', `/complaints/export?q=${encodeURIComponent(MARK)}`, undefined, user);
+    assert.equal(exported.statusCode, 200, exported.body);
+    assert.ok(exported.body.includes(item.number), `${user}: MARK export includes the anonymous row`);
+  }
 });
 
 test('#132 the author still sees themself everywhere they may read: card, list, own thread, notifications', async (t) => {
@@ -220,7 +265,11 @@ test('#132 non-anonymous complaints are unchanged: managers and admins still see
     assert.equal(list.items.find((entry) => entry.id === item.id).author.id, author.id);
     const exported = await req('GET', '/complaints/export', undefined, user);
     assert.equal(exported.statusCode, 200);
-    assert.ok(leaked(exported).length > 0 || !exported.body.includes(item.id), 'export keeps the author of non-anonymous rows');
+    assert.match(exported.headers['content-type'], /^text\/csv/);
+    assert.ok(exported.body.startsWith('\uFEFFномер,тип,категория,подразделение,статус,ответственный,создано,срок,просрочено,первый ответ,итог\r\n'));
+    for (const entry of [item, flagged]) {
+      assert.ok(exported.body.split('\r\n').some((row) => row.startsWith(`${entry.number},`)), `${user}: exported row ${entry.number}`);
+    }
     // Searching by the author name keeps working for regular complaints.
     const byName = json(await req('GET', `/complaints?limit=100&q=${encodeURIComponent(MARK)}`, undefined, user), 200);
     assert.ok(byName.items.some((entry) => entry.id === item.id));
