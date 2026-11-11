@@ -18,7 +18,7 @@ export const MIN_TEXT_LENGTH = 10;
 
 const sourceBadge: Record<Source, { label: string; hint: string }> = {
   'demo-fixture': { label: 'Демо ИИ', hint: 'записанный ответ, а не живая модель' },
-  rules: { label: 'Демо ИИ', hint: 'простые локальные правила, не живая модель' },
+  rules: { label: 'Правила (без ИИ)', hint: 'простые локальные правила, не живая модель' },
   llm: { label: 'ИИ', hint: 'ответ живой модели; проверьте категорию сами' },
   none: { label: 'Демо ИИ', hint: 'записанный ответ, а не живая модель' },
 };

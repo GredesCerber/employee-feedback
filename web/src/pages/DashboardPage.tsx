@@ -5,6 +5,7 @@ import type { components } from '../api/client';
 import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError } from '../features/complaint';
 import { BarChart } from './SummaryPage';
+import { WeeklyDigest } from '../features/weeklyDigest';
 import './dashboard.css';
 
 type DayCount = components['schemas']['DayCount'];
@@ -76,6 +77,7 @@ export default function DashboardPage() {
       {trends && <p className="muted">Данные на <time dateTime={trends.generatedAt}>{dateLabel(trends.generatedAt)}</time></p>}
       {trends && <button onClick={result.reload}>Обновить</button>}
     </div>
+    <WeeklyDigest department={department} />
     {result.loading && <Loading label="Загрузка дашборда…" />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {trends && totals && <>
