@@ -1,0 +1,7 @@
+{
+  "name": "employee-feedback",
+  "private": true,
+  "scripts": {
+    "demo:sim": "node scripts/demo-sim/index.mjs"
+  }
+}
