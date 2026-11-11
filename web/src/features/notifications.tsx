@@ -1,3 +1,4 @@
+import { useI18n, localeNames, notificationText, type Locale } from '../i18n';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../app/session';
@@ -78,13 +79,14 @@ function useNotifications(role: string) {
   return { items, unread, markSeen, loading, error, reload: load };
 }
 
-function formatTime(value: string) {
+function formatTime(value: string, locale: Locale) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString(localeNames[locale], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 /** Колокольчик уведомлений (R8): имитация ленты событий внутри приложения. */
 export function NotificationBell({ role }: { role: string }) {
+  const { t, locale } = useI18n();
   const { items, unread, markSeen, loading, error, reload } = useNotifications(role);
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -95,26 +97,26 @@ export function NotificationBell({ role }: { role: string }) {
     markSeen();
     if (restoreFocus) buttonRef.current?.focus();
   }
-  const label = unread > 0 ? `Уведомления, новых: ${unread}` : 'Уведомления';
+  const label = unread > 0 ? (locale === 'ru' ? `Уведомления, новых: ${unread}` : `${t('Уведомления')}: ${new Intl.NumberFormat(localeNames[locale]).format(unread)}`) : t('Уведомления');
 
   return <div className="notification-bell" onKeyDown={event => { if (open && event.key === 'Escape') close(true); }}>
     <button ref={buttonRef} type="button" className="notification-button" aria-label={label} aria-expanded={open} aria-controls={panelId} onClick={() => (open ? close() : setOpen(true))}>
       <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>
       {unread > 0 && <span className="notification-count" aria-hidden="true">{unread}</span>}
     </button>
-    {open && <section id={panelId} className="notification-panel" role="region" aria-label="Уведомления">
-      <h2 className="notification-title">Уведомления <ImitationBadge hint={IMITATION_HINT} /></h2>
-      {loading && <p className="muted" role="status">Обновление уведомлений…</p>}
+    {open && <section id={panelId} className="notification-panel" role="region" aria-label={t("Уведомления")}>
+      <h2 className="notification-title">{t("Уведомления")} <ImitationBadge hint={IMITATION_HINT} /></h2>
+      {loading && <p className="muted" role="status">{t("Обновление уведомлений…")}</p>}
       {!loading && error && <LoadError key={error.attempt}
-        message="Не удалось обновить уведомления. Повторяем автоматически каждые 30 секунд."
+        message={t("Не удалось обновить уведомления. Повторяем автоматически каждые 30 секунд.")}
         retry={() => { void reload(); }} retryAfter={error.retryAfter} />}
       {items.length === 0
-        ? !loading && !error && <p className="muted notification-empty">Новых уведомлений нет</p>
+        ? !loading && !error && <p className="muted notification-empty">{t("Новых уведомлений нет")}</p>
         : <ul className="notification-list">{items.map(entry => <li key={entry.id}>
-          <Link to={entry.href} onClick={() => close()}>{entry.message}</Link>{entry.simulated && <> <ImitationBadge hint="создано демо-симулятором" /></>}
-          <small className="muted">{entry.complaintNumber} · {formatTime(entry.createdAt)}</small>
+          <Link to={entry.href} onClick={() => close()}>{notificationText(locale, entry.message)}</Link>{entry.simulated && <> <ImitationBadge hint={t("создано демо-симулятором")} /></>}
+          <small className="muted">{entry.complaintNumber} · {formatTime(entry.createdAt, locale)}</small>
         </li>)}</ul>}
-      <p className="notification-note">{IMITATION_NOTE}</p>
+      <p className="notification-note">{t(IMITATION_NOTE)}</p>
     </section>}
   </div>;
 }

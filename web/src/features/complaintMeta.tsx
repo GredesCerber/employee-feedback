@@ -1,3 +1,4 @@
+import { useI18n, type Locale } from '../i18n';
 import type { components } from '../api/client';
 import type { Complaint } from './complaint';
 
@@ -23,21 +24,23 @@ export const commentKindLabels: Record<CommentKind, string> = {
 };
 
 export function CommentKindBadge({ kind }: { kind: CommentKind }) {
-  return <span className={`comment-kind comment-kind-${kind}`}>{commentKindLabels[kind]}</span>;
+  const { t } = useI18n();
+  return <span className={`comment-kind comment-kind-${kind}`}>{t(commentKindLabels[kind])}</span>;
 }
 
 /** Анонимный автор (`AnonymousActor`) приходит без id и показывается как «Аноним». */
 export function isAnonymousActor(actor: Actor): actor is components['schemas']['AnonymousActor'] {
   return !('id' in actor);
 }
-export function authorLabel(item: Complaint) {
-  if (isAnonymousActor(item.author)) return 'Аноним';
-  return item.anonymous ? `${item.author.name} (анонимно для руководителей)` : item.author.name;
+export function authorLabel(item: Complaint, locale: Locale = 'ru') {
+  if (isAnonymousActor(item.author)) return locale === 'en' ? 'Anonymous' : locale === 'kk' ? 'Аноним' : 'Аноним';
+  return item.anonymous ? `${item.author.name} (${locale === 'en' ? 'anonymous to managers' : locale === 'kk' ? 'басшылар үшін анонимді' : 'анонимно для руководителей'})` : item.author.name;
 }
 
 /** Бейдж «Анонимно»: автор скрыт от других читателей (`anonymous: true`). */
 export function AnonymousBadge() {
-  return <span className="anonymous-badge">Анонимно</span>;
+  const { t } = useI18n();
+  return <span className="anonymous-badge">{t("Анонимно")}</span>;
 }
 
 /** Название из справочника вместо id. Пока справочник грузится — многоточие, если записи нет — сам id. */

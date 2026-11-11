@@ -1,0 +1,8 @@
+.map-picker-canvas { height: 300px; width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted); }
+.map-picker-fields, .map-picker-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3); }
+.map-picker-fields label { display: grid; gap: var(--space-1); }
+.map-picker-marker { background: var(--color-primary); border: 3px solid var(--color-on-primary); border-radius: var(--radius-pill); box-shadow: 0 0 0 2px var(--color-primary); }
+.optional-map { min-width: 0; margin-block: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); }
+.optional-map > summary { cursor: pointer; min-height: 44px; line-height: 1.6; font-weight: 600; overflow-wrap: anywhere; }
+.map-picker-fields label { flex: 1 1 140px; min-width: 0; }
+.map-picker-fields input { min-width: 0; width: 100%; }

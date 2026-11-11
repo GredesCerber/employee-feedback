@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
 import type { ApiClient, components } from '../api/client';
 import { requireData, retryAfterOf, useCooldown } from './data';
@@ -82,29 +83,31 @@ export function useSubmitAssist(options: { api: ApiClient; description: string; 
 }
 
 export function SimilarList({ items }: { items: Similar[] }) {
+  const { t } = useI18n();
   if (!items.length) return null;
-  return <div className="similar-box"><p className="field-hint">Похожие обращения: возможно, вопрос уже подавали.</p>
-    <ul className="similar-list" aria-label="Похожие обращения">{items.map(item => <li key={item.id}>
+  return <div className="similar-box"><p className="field-hint">{t("Похожие обращения: возможно, вопрос уже подавали.")}</p>
+    <ul className="similar-list" aria-label={t("Похожие обращения")}>{items.map(item => <li key={item.id}>
       <span className="complaint-number">{item.number}</span> <span>{item.categoryName}</span> <StatusBadge status={item.status} />
     </li>)}</ul></div>;
 }
 
 export function SuggestionNote({ assist, categoryId, categoryName, apply }: { assist: ReturnType<typeof useSubmitAssist>; categoryId: string; categoryName: string | undefined; apply: (id: string) => void }) {
+  const { t } = useI18n();
   const { suggestion, cooldown } = assist;
   if (!suggestion && !cooldown.active) return null;
   let body: React.ReactNode = null;
   if (cooldown.active) body = cooldown.message;
-  else if (suggestion?.kind === 'failed') body = suggestion.message;
-  else if (suggestion?.kind === 'none') body = 'Подходящей категории не нашлось, выберите её вручную.';
+  else if (suggestion?.kind === 'failed') body = t(suggestion.message);
+  else if (suggestion?.kind === 'none') body = t('Подходящей категории не нашлось, выберите её вручную.');
   else if (suggestion?.kind === 'found') {
     const { category, source } = suggestion;
     const badge = sourceBadge[source];
     body = <>
-      <ImitationBadge label={badge.label} hint={badge.hint} /> Подсказка: <strong>{category.name}</strong>.
+      <ImitationBadge label={t(badge.label)} hint={t(badge.hint)} /> {t("Подсказка:")} <strong>{category.name}</strong>.
       {categoryId === category.id
-        ? ' Эта категория уже выбрана.'
-        : <> Выбрана другая категория{categoryName ? ` («${categoryName}»)` : ''}, мы её не меняли. <button type="button" onClick={() => apply(category.id)}>Применить: {category.name}</button></>}
+        ? t(" Эта категория уже выбрана.")
+        : <> {t("Выбрана другая категория")}{categoryName ? ` («${categoryName}»)` : ''}{t(", мы её не меняли.")} <button type="button" onClick={() => apply(category.id)}>{t("Применить:")} {category.name}</button></>}
     </>;
   }
-  return <div className="suggestion-note" role="status" aria-label="Подсказка категории">{body}</div>;
+  return <div className="suggestion-note" role="status" aria-label={t("Подсказка категории")}>{body}</div>;
 }

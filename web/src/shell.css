@@ -5,7 +5,7 @@ a { color: var(--color-primary); }
 button, select, input, textarea { font: inherit; }
 :focus-visible { outline: 3px solid var(--color-focus); outline-offset: 4px; }
 .app-shell { max-width: 1440px; margin: auto; }
-.app-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 36px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.app-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 36px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
 .brand { display: flex; gap: 12px; align-items: center; font-weight: 700; font-size: 19px; text-decoration: none; color: inherit; }
 .brand small { display: block; font-size: 12px; font-weight: 400; color: var(--color-text-muted); }
 .brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; color: var(--color-on-primary); background: var(--color-text-strong); }
@@ -54,3 +54,47 @@ h1[tabindex="-1"]:focus-visible { outline: 3px solid var(--color-focus); outline
 .notification-note { margin: var(--space-3) 0 0; font-size: 12px; color: var(--color-warning-text); }
 @media (max-width: 720px) { .app-header { padding-right: 20px; } .notification-bell { top: 20px; right: 20px; } }
 .about-build { margin: 4px 0 0; font-size: 12px; font-weight: 400; color: var(--color-warning-text); }
+/* Общие состояния элементов управления и поверхностей. */
+button, select, input:not([type="checkbox"]):not([type="radio"]), textarea, .primary-link {
+  min-height: 44px;
+}
+select, input:not([type="checkbox"]):not([type="radio"]), textarea {
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+select { padding-right: 32px; }
+textarea { min-height: 112px; line-height: 1.6; }
+input::placeholder, textarea::placeholder { color: var(--color-text-muted); opacity: 1; transition: opacity 160ms ease; }
+input:focus::placeholder, textarea:focus::placeholder { opacity: .65; }
+input[readonly], textarea[readonly] { background: var(--color-surface-muted); }
+input:disabled, select:disabled, textarea:disabled { opacity: .65; cursor: not-allowed; }
+input:not(:disabled):hover, select:not(:disabled):hover, textarea:not(:disabled):hover { border-color: var(--color-primary); }
+input:focus-visible, select:focus-visible, textarea:focus-visible { border-color: var(--color-primary); }
+button, .primary-link, nav a { min-height: 44px; }
+.primary-link { display: inline-flex; align-items: center; justify-content: center; }
+button:not(:disabled):hover, .primary-link:hover, nav a:hover { box-shadow: 0 2px 8px var(--color-shadow-interactive); }
+button:not(:disabled):active, .primary-link:active { transform: translateY(1px); }
+.role-selector, .theme-selector, .language-selector { gap: var(--space-2); }
+.language-selector { display: flex; align-items: center; font-weight: 500; }
+h1, h2, h3 { text-wrap: balance; }
+p, li, dd { line-height: 1.6; }
+.section { min-width: 0; box-shadow: var(--shadow-card); }
+.complaint-item, .dashboard-panel, .metric-card { box-shadow: var(--shadow-card); }
+.registration-number, .metric-value, .notification-count { font-variant-numeric: tabular-nums; }
+.notification-panel, .demo-hint, .load-error, .empty-state, .similar-box, .suggestion-note, .weekly-digest { animation: surface-enter 180ms ease-out both; }
+.section > h1, .section > .eyebrow, .optional-map[open] .map-picker { animation: surface-enter 180ms ease-out both; }
+@keyframes surface-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+/* Explicit properties keep theme changes smooth without delaying input. */
+:root, body, .app-header, .section, .demo-notice, .demo-controls, nav a, .notification-panel,
+.complaint-item, .metric-card, .dashboard-panel, .filter-form, .next-action, .decision,
+button, .primary-link, input, select, textarea, .status-badge, .demo-hint, .empty-state {
+  transition: color 200ms ease, background-color 200ms ease, border-color 200ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition-duration: 0s !important; scroll-behavior: auto !important; }
+  button:not(:disabled):active, .primary-link:active { transform: none; }
+}

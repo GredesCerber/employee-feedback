@@ -22,6 +22,7 @@ export interface Decision {
   outcome: 'implemented' | 'rejected' | 'closed'; explanation: string; actions: string | null;
   author: User; createdAt: string;
 }
+export interface LocationPoint { latitude: number; longitude: number }
 export interface Complaint {
   id: string; number: string; type: ComplaintType; categoryId: string; departmentId: string;
   author: User; description: string; proposedSolution: string | null; priority: Priority;
@@ -34,6 +35,7 @@ export interface Complaint {
   simulated?: boolean;
   canUndo?: boolean; undoExpiresAt?: string | null;
   anonymous?: boolean;
+  location?: LocationPoint;
 }
 
 export interface AnonymousActor { name: 'Аноним' | 'Автор (аноним)' }

@@ -1,3 +1,4 @@
+import { referenceLabel, systemText, useI18n } from '../i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
@@ -9,6 +10,13 @@ import type { Complaint } from '../features/complaint';
 import { ImitationBadge } from '../features/demo';
 import { AnonymousBadge } from '../features/complaintMeta';
 import { SimilarList, SuggestionNote, useSubmitAssist } from '../features/submitAssist';
+import { MapPicker, type LocationPoint } from '../features/MapPicker';
+
+const mapCopy = {
+  ru: { title: 'Указать место на карте — необязательно', invalid: 'Проверьте широту и долготу или очистите координаты.', privacy: 'Точное место может косвенно указать на автора анонимного обращения.', selected: 'Точка выбрана' },
+  en: { title: 'Add a location on the map — optional', invalid: 'Check the latitude and longitude or clear the coordinates.', privacy: 'An exact location may indirectly identify the author of an anonymous complaint.', selected: 'Location selected' },
+  kk: { title: 'Картада орынды белгілеу — міндетті емес', invalid: 'Ендік пен бойлықты тексеріңіз немесе координаттарды тазалаңыз.', privacy: 'Нақты орын анонимді өтініш авторын жанама түрде танытуы мүмкін.', selected: 'Орын белгіленді' },
+};
 
 const fieldIds: Record<string, string> = { categoryId: 'category', description: 'description', proposedSolution: 'solution', type: 'complaint-type' };
 function focusFirstInvalid(errors: Record<string, string>) {
@@ -17,6 +25,8 @@ function focusFirstInvalid(errors: Record<string, string>) {
 }
 
 export default function SubmitPage() {
+  const { t, locale } = useI18n();
+  const mapLabels = mapCopy[locale];
   const { api } = useSession();
   const load = useCallback(async () => requireData((await api.GET('/reference-data')).data), [api]);
   const reference = useResource(load);
@@ -26,6 +36,10 @@ export default function SubmitPage() {
   const [solution, setSolution] = useState('');
   const [attachment, setAttachment] = useState(false);
   const [anonymous, setAnonymous] = useState(false);
+  const [point, setPoint] = useState<LocationPoint>();
+  const [mapOpen, setMapOpen] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [locationValid, setLocationValid] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState('');
   const [busy, setBusy] = useState(false);
@@ -54,6 +68,7 @@ export default function SubmitPage() {
     const nextErrors: Record<string, string> = {};
     if (!categoryId) nextErrors.categoryId = 'Выберите категорию.';
     if (!description.trim()) nextErrors.description = 'Опишите проблему или предложение.';
+    if (!locationValid) nextErrors.location = mapLabels.invalid;
     setErrors(nextErrors); setFailure('');
     if (Object.keys(nextErrors).length) { focusFirstInvalid(nextErrors); return; }
     lock.current = true; setBusy(true);
@@ -61,6 +76,7 @@ export default function SubmitPage() {
       const result = await api.POST('/complaints', { body: {
         type, categoryId, description: description.trim(),
         ...(anonymous ? { anonymous: true } : {}),
+        ...(point ? { location: point } : {}),
         ...(solution.trim() ? { proposedSolution: solution.trim() } : {}),
         ...(attachment ? { attachments: [{ name: 'sample-request.txt', mediaType: 'text/plain', sizeBytes: 120, isPlaceholder: true }] } : {}),
       } });
@@ -76,37 +92,46 @@ export default function SubmitPage() {
     } finally { lock.current = false; setBusy(false); }
   }
 
-  const announcement = <p className="visually-hidden" aria-live="polite">{created ? `Обращение ${created.number} зарегистрировано.` : ''}</p>;
+  const announcement = <p className="visually-hidden" aria-live="polite">{created ? (locale === 'en' ? `Complaint ${created.number} registered.` : locale === 'kk' ? `${created.number} өтініші тіркелді.` : `Обращение ${created.number} зарегистрировано.`) : ''}</p>;
 
   if (created) return <><section className="section">
-    <p className="eyebrow">Отправлено</p><h1 ref={resultHeading} tabIndex={-1}>Обращение зарегистрировано</h1>
-    <p className="registration-number">{created.number}</p>{(created.anonymous ?? anonymous) && <p><AnonymousBadge /></p>}<p>{created.nextAction}</p>
-    <div className="actions"><Link className="primary-link" to={`/my/${created.id}`}>Открыть обращение</Link><Link to="/my">К моим обращениям</Link></div>
+    <p className="eyebrow">{t("Отправлено")}</p><h1 ref={resultHeading} tabIndex={-1}>{t("Обращение зарегистрировано")}</h1>
+    <p className="registration-number">{created.number}</p>{(created.anonymous ?? anonymous) && <p><AnonymousBadge /></p>}<p>{systemText(locale, created.nextAction)}</p>
+    <div className="actions"><Link className="primary-link" to={`/my/${created.id}`}>{t("Открыть обращение")}</Link><Link to="/my">{t("К моим обращениям")}</Link></div>
   </section>{announcement}</>;
 
-  return <><section className="section"><p className="eyebrow">Обратная связь</p><h1>Новое обращение</h1>
-    <p className="muted">Сообщите о проблеме или предложите улучшение. Обращение видят вы, руководители и администраторы.</p>
-    {reference.loading && <Loading label="Загрузка категорий…" />}
+  return <><section className="section"><p className="eyebrow">{t("Обратная связь")}</p><h1>{t("Новое обращение")}</h1>
+    <p className="muted">{t("Сообщите о проблеме или предложите улучшение. Обращение видят вы, руководители и администраторы.")}</p>
+    {reference.loading && <Loading label={t("Загрузка категорий…")} />}
     {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
     {reference.data && <form onSubmit={submit} noValidate className="complaint-form">
-      <label htmlFor="complaint-type">Тип обращения</label><select id="complaint-type" value={type} onChange={event => setType(event.target.value as Complaint['type'])}><option value="problem">Проблема</option><option value="suggestion">Предложение</option><option value="praise">Благодарность</option></select>
-      <label htmlFor="category">Категория</label><select id="category" value={categoryId} onChange={event => chooseCategory(event.target.value)} required aria-invalid={Boolean(errors.categoryId)} aria-describedby={errors.categoryId ? 'category-error' : undefined}><option value="">Выберите категорию</option>{reference.data.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
-      {errors.categoryId && <p id="category-error" role="alert" className="field-error">{errors.categoryId}</p>}
-      <button type="button" className="suggest-button" disabled={!assist.canSuggest} onClick={assist.suggest}>Подсказать категорию</button>
+      <label htmlFor="complaint-type">{t("Тип обращения")}</label><select id="complaint-type" value={type} onChange={event => setType(event.target.value as Complaint['type'])}><option value="problem">{t("Проблема")}</option><option value="suggestion">{t("Предложение")}</option><option value="praise">{t("Благодарность")}</option></select>
+      <label htmlFor="category">{t("Категория")}</label><select id="category" value={categoryId} onChange={event => chooseCategory(event.target.value)} required aria-invalid={Boolean(errors.categoryId)} aria-describedby={errors.categoryId ? 'category-error' : undefined}><option value="">{t("Выберите категорию")}</option>{reference.data.categories.map(category => <option key={category.id} value={category.id}>{referenceLabel(locale, 'category', category.id, category.name)}</option>)}</select>
+      {errors.categoryId && <p id="category-error" role="alert" className="field-error">{t(errors.categoryId)}</p>}
+      <button type="button" className="suggest-button" disabled={!assist.canSuggest} onClick={assist.suggest}>{t("Подсказать категорию")}</button>
       <SuggestionNote assist={assist} categoryId={categoryId} categoryName={reference.data.categories.find(item => item.id === categoryId)?.name} apply={chooseCategory} />
-      <label htmlFor="description">Описание</label><textarea id="description" value={description} onChange={event => {
+      <label htmlFor="description">{t("Описание")}</label><textarea id="description" value={description} onChange={event => {
         setDescription(event.target.value);
         if (event.target.value.trim()) clearFieldError('description');
       }} rows={5} maxLength={5000} required aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? 'description-error' : undefined} />
-      {errors.description && <p id="description-error" role="alert" className="field-error">{errors.description}</p>}
+      {errors.description && <p id="description-error" role="alert" className="field-error">{t(errors.description)}</p>}
       <SimilarList items={assist.similar} />
-      <label htmlFor="solution">Предлагаемое решение <span className="optional">(необязательно)</span></label><textarea id="solution" value={solution} onChange={event => setSolution(event.target.value)} rows={3} maxLength={5000} />
-      <label className="checkbox-label"><input type="checkbox" checked={anonymous} onChange={event => setAnonymous(event.target.checked)} aria-describedby="anonymous-hint" />Подать анонимно</label>
-      <p id="anonymous-hint" className="field-hint">Ответственный не видит автора, но по тексту и вложениям автора могут узнать. Не указывайте лишних подробностей, по которым вас можно опознать.</p>
-      <label className="checkbox-label"><input type="checkbox" checked={attachment} onChange={event => setAttachment(event.target.checked)} />Добавить тестовое вложение <ImitationBadge hint="не настоящий файл: сохраняются только название, тип и размер заглушки" /></label>
-      <p className="field-hint">Файл-заглушка sample-request.txt: сохраняются только название, тип и размер, содержимое не загружается.</p>
-      {(cooldown.active || failure) && <p role="alert" className="field-error">{cooldown.active ? cooldown.message : failure}</p>}
-      <button className="primary-button" disabled={busy || cooldown.active} type="submit">{busy ? 'Отправка…' : 'Отправить обращение'}</button>
+      <label htmlFor="solution">{t("Предлагаемое решение")} <span className="optional">{t("(необязательно)")}</span></label><textarea id="solution" value={solution} onChange={event => setSolution(event.target.value)} rows={3} maxLength={5000} />
+      <details className="optional-map" open={mapOpen} onToggle={event => { setMapOpen(event.currentTarget.open); if (event.currentTarget.open) setMapLoaded(true); }}>
+        <summary>{mapLabels.title}{point ? ` · ${mapLabels.selected}` : ''}</summary>
+        {mapLoaded && <MapPicker value={point} onChange={setPoint} onValidityChange={valid => {
+          setLocationValid(valid);
+          if (valid) clearFieldError('location');
+        }} />}
+        {anonymous && point && <p className="field-hint">{mapLabels.privacy}</p>}
+      </details>
+      {errors.location && <p role="alert" className="field-error">{errors.location}</p>}
+      <label className="checkbox-label"><input type="checkbox" checked={anonymous} onChange={event => setAnonymous(event.target.checked)} aria-describedby="anonymous-hint" />{t("Подать анонимно")}</label>
+      <p id="anonymous-hint" className="field-hint">{t("Ответственный не видит автора, но по тексту и вложениям автора могут узнать. Не указывайте лишних подробностей, по которым вас можно опознать.")}</p>
+      <label className="checkbox-label"><input type="checkbox" checked={attachment} onChange={event => setAttachment(event.target.checked)} />{t("Добавить тестовое вложение")} <ImitationBadge hint={t("не настоящий файл: сохраняются только название, тип и размер заглушки")} /></label>
+      <p className="field-hint">{t("Файл-заглушка sample-request.txt: сохраняются только название, тип и размер, содержимое не загружается.")}</p>
+      {(cooldown.active || failure) && <p role="alert" className="field-error">{cooldown.active ? cooldown.message : t(failure)}</p>}
+      <button className="primary-button" disabled={busy || cooldown.active} type="submit">{busy ? t("Отправка…") : t("Отправить обращение")}</button>
     </form>}
   </section>{announcement}</>;
 }

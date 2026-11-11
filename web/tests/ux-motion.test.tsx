@@ -9,10 +9,10 @@ const pages = readFileSync(resolve(root, 'src/pages.css'), 'utf8');
 
 describe('theme and motion polish', () => {
   it('applies a saved explicit theme before the application loads', () => {
-    const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
-    expect(script).toBeTruthy();
-    expect(html.indexOf('<script>')).toBeLessThan(html.indexOf('/src/main.tsx'));
-    const apply = new Function('localStorage', 'document', script!);
+    const script = readFileSync(resolve(root, 'public/theme-init.js'), 'utf8');
+    expect(html).toContain('<script src="/theme-init.js"></script>');
+    expect(html.indexOf('/theme-init.js')).toBeLessThan(html.indexOf('/src/main.tsx'));
+    const apply = new Function('localStorage', 'document', script);
     for (const value of ['light', 'dark', 'system', null]) {
       const document = { documentElement: { dataset: {} as Record<string, string> } };
       apply({ getItem: () => value }, document);

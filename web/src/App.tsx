@@ -1,3 +1,4 @@
+import { I18nProvider, useI18n, type Locale } from './i18n';
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { SessionProvider, useSession } from './app/session';
 import type { Role } from './app/session';
@@ -10,6 +11,7 @@ import QueuePage from './pages/QueuePage';
 import DashboardPage from './pages/DashboardPage';
 import { AboutPage, DemoHint, ImitationBadge, useDemoHints } from './features/demo';
 import { NotificationBell } from './features/notifications';
+import { LastComplaintButton } from './features/LastComplaint';
 import { useTheme } from './features/theme';
 import type { ThemeChoice } from './features/theme';
 import './styles/tokens.css';
@@ -53,6 +55,7 @@ function cardPath(pathname: string, next: Role): string | undefined {
 }
 
 function Shell() {
+  const { t, locale, setLocale } = useI18n();
   const { role, setRole } = useSession();
   const navigate = useNavigate();
   const location = useLocation();
@@ -64,15 +67,16 @@ function Shell() {
     navigate(cardPath(location.pathname, next) ?? returnPath(location.state, next) ?? home[next], { replace: true });
   }
   return <div className="app-shell">
-    <a className="skip-link" href="#main">Перейти к содержимому</a>
+    <a className="skip-link" href="#main">{t("Перейти к содержимому")}</a>
     <header className="app-header">
-      <Link className="brand" to={home[role]}><span className="brand-mark" aria-hidden="true">М</span><span>Модус Трейд<small>Обратная связь сотрудников</small></span></Link>
-      <label className="role-selector">Демонстрационная роль<select value={role} onChange={event => switchRole(event.target.value)}><option value="employee">Сотрудник</option><option value="manager">Руководитель</option><option value="admin">Администратор</option></select></label>
-      <ImitationBadge hint="выбор роли — не настоящий вход, пароля и учётной записи нет" />
+      <Link className="brand" to={home[role]}><span className="brand-mark" aria-hidden="true">{t("М")}</span><span>{t("Модус Трейд")}<small>{t("Обратная связь сотрудников")}</small></span></Link>
+      <label className="role-selector">{t("Демонстрационная роль")}<select value={role} onChange={event => switchRole(event.target.value)}><option value="employee">{t("Сотрудник")}</option><option value="manager">{t("Руководитель")}</option><option value="admin">{t("Администратор")}</option></select></label>
+      <label className="language-selector">Language / Язык / Тіл<select aria-label="Language / Язык / Тіл" value={locale} onChange={event => setLocale(event.target.value as Locale)}><option value="ru">Русский</option><option value="en">English</option><option value="kk">Қазақша</option></select></label>
+      <ImitationBadge hint={t("выбор роли — не настоящий вход, пароля и учётной записи нет")} />
     </header>
-    <p className="demo-notice">Демонстрация · только синтетические данные. Выбор роли имитирует вход.</p>
+    <p className="demo-notice">{t("Демонстрация · только синтетические данные. Выбор роли имитирует вход.")}</p>
     <div className="workspace">
-      <nav aria-label="Основное меню">{navigation[role].map(item => <NavLink key={item.path} to={item.path}>{item.label}</NavLink>)}</nav>
+      <nav aria-label={t("Основное меню")}>{navigation[role].map(item => <NavLink key={item.path} to={item.path}>{t(item.label)}</NavLink>)}<LastComplaintButton key={role} /></nav>
       {/* Колокольчик стоит в DOM после меню (порядок Tab «шапка → меню» не меняется), а в шапку выводится стилями. */}
       {role !== 'admin' && <NotificationBell key={`bell-${role}`} role={role} />}
       <main id="main" tabIndex={-1} key={role}>
@@ -87,13 +91,13 @@ function Shell() {
           <Route path="/dashboard" element={<RoleRoute role={['manager', 'admin']}><DashboardPage /></RoleRoute>} />
           <Route path="/summary" element={<RoleRoute role="admin"><SummaryPage /></RoleRoute>} />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="*" element={<section className="section"><h1>Страница не найдена</h1><Link to={home[role]}>Вернуться к обращениям</Link></section>} />
+          <Route path="*" element={<section className="section"><h1>{t("Страница не найдена")}</h1><Link to={home[role]}>{t("Вернуться к обращениям")}</Link></section>} />
         </Routes>
       </main>
     </div>
     {/* Демо-панель после основного содержимого: не мешает порядку Tab «шапка → меню → содержимое». */}
-    <footer className="demo-controls" aria-label="Демонстрация"><label className="theme-selector">Тема<select value={theme.theme} onChange={event => theme.set(event.target.value as ThemeChoice)}><option value="system">Как в системе</option><option value="light">Светлая</option><option value="dark">Тёмная</option></select></label><label className="checkbox-label hints-toggle"><input type="checkbox" checked={hints.enabled} onChange={event => hints.set(event.target.checked)} />Подсказки демо</label><Link to="/about">О прототипе</Link></footer>
+    <footer className="demo-controls" aria-label={t("Демонстрация")}><label className="theme-selector">{t("Тема")}<select value={theme.theme} onChange={event => theme.set(event.target.value as ThemeChoice)}><option value="system">{t("Как в системе")}</option><option value="light">{t("Светлая")}</option><option value="dark">{t("Тёмная")}</option></select></label><label className="checkbox-label hints-toggle"><input type="checkbox" checked={hints.enabled} onChange={event => hints.set(event.target.checked)} />{t("Подсказки демо")}</label><Link to="/about">{t("О прототипе")}</Link></footer>
   </div>;
 }
 
-export default function App() { return <SessionProvider><Shell /></SessionProvider>; }
+export default function App() { return <I18nProvider><SessionProvider><Shell /></SessionProvider></I18nProvider>; }

@@ -1,3 +1,4 @@
+import { referenceLabel, localeNames, useI18n, localizeError } from '../i18n';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -77,6 +78,8 @@ function exportFileName(now = new Date()) {
 }
 
 export default function QueuePage() {
+  const { t, locale } = useI18n();
+  const number = new Intl.NumberFormat(localeNames[locale]);
   const { api, role } = useSession();
   const heading = useRef<HTMLHeadingElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -177,36 +180,36 @@ export default function QueuePage() {
     setSearchParams(new URLSearchParams());
   }
 
-  return <section className="section"><p className="eyebrow">Рабочая область руководителя</p><h1 ref={heading} tabIndex={-1}>Очередь обращений</h1>
-    {reference.loading && <Loading label="Загрузка фильтров…" />}
+  return <section className="section"><p className="eyebrow">{t("Рабочая область руководителя")}</p><h1 ref={heading} tabIndex={-1}>{t("Очередь обращений")}</h1>
+    {reference.loading && <Loading label={t("Загрузка фильтров…")} />}
     {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
     <div className="queue-toolbar" role="search">
-      <label className="search-field">Поиск по номеру или тексту<input type="search" value={search} maxLength={200} onChange={event => setSearch(event.target.value)} /></label>
-      {role !== 'employee' && <button type="button" className="export-button" onClick={download} disabled={exporting}>{exporting ? 'Готовим файл…' : 'Скачать CSV'}</button>}
+      <label className="search-field">{t("Поиск по номеру или тексту")}<input type="search" value={search} maxLength={200} onChange={event => setSearch(event.target.value)} /></label>
+      {role !== 'employee' && <button type="button" className="export-button" onClick={download} disabled={exporting}>{exporting ? t("Готовим файл…") : t("Скачать CSV")}</button>}
     </div>
-    {exportError && <p role="alert" className="field-error">{exportError}</p>}
-    {reference.data && <button type="button" className="filter-toggle" aria-expanded={filtersOpen} aria-controls="queue-filters" onClick={() => setFiltersOpen(open => !open)}>Фильтры</button>}
+    {exportError && <p role="alert" className="field-error">{localizeError(locale, exportError)}</p>}
+    {reference.data && <button type="button" className="filter-toggle" aria-expanded={filtersOpen} aria-controls="queue-filters" onClick={() => setFiltersOpen(open => !open)}>{t("Фильтры")}</button>}
     {reference.data && <form id="queue-filters" className={filtersOpen ? 'filter-form is-open' : 'filter-form'} onSubmit={apply}>
-      <label>Подразделение<select value={filters.departmentId} onChange={event => setFilters({ ...filters, departmentId: event.target.value })}><option value="">Все подразделения</option>{reference.data.departments.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-      <label>Категория<select value={filters.categoryId} onChange={event => setFilters({ ...filters, categoryId: event.target.value })}><option value="">Все категории</option>{reference.data.categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-      <label>Статус<select value={filters.status} onChange={event => setFilters({ ...filters, status: event.target.value as Filters['status'] })}><option value="">Все статусы</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-      <label>Очередь<select value={filters.queue} onChange={event => setFilters({ ...filters, queue: event.target.value as Filters['queue'] })}><option value="">Все обращения</option><option value="unassigned">Без ответственного</option><option value="assigned">С ответственным</option></select></label>
-      <label>Срок от<input id="due-after" type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueAfter} onChange={event => setFilters({ ...filters, dueAfter: event.target.value })} /></label>
-      <label>Срок до<input type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueBefore} onChange={event => setFilters({ ...filters, dueBefore: event.target.value })} /></label>
-      <label className="checkbox-label"><input type="checkbox" checked={filters.overdue} onChange={event => setFilters({ ...filters, overdue: event.target.checked })} />Только просроченные</label>
-      <label className="checkbox-label"><input type="checkbox" checked={filters.hideSimulated} onChange={event => setFilters({ ...filters, hideSimulated: event.target.checked })} />Скрыть имитацию</label>
-      {filterError && <p id="filter-error" role="alert" className="field-error">{filterError}</p>}
-      <div className="actions"><button className="primary-button" type="submit">Применить фильтры</button><button type="button" onClick={reset}>Сбросить</button></div>
+      <label>{t("Подразделение")}<select value={filters.departmentId} onChange={event => setFilters({ ...filters, departmentId: event.target.value })}><option value="">{t("Все подразделения")}</option>{reference.data.departments.map(item => <option key={item.id} value={item.id}>{referenceLabel(locale, 'department', item.id, item.name)}</option>)}</select></label>
+      <label>{t("Категория")}<select value={filters.categoryId} onChange={event => setFilters({ ...filters, categoryId: event.target.value })}><option value="">{t("Все категории")}</option>{reference.data.categories.map(item => <option key={item.id} value={item.id}>{referenceLabel(locale, 'category', item.id, item.name)}</option>)}</select></label>
+      <label>{t("Статус")}<select value={filters.status} onChange={event => setFilters({ ...filters, status: event.target.value as Filters['status'] })}><option value="">{t("Все статусы")}</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{t(label)}</option>)}</select></label>
+      <label>{t("Очередь")}<select value={filters.queue} onChange={event => setFilters({ ...filters, queue: event.target.value as Filters['queue'] })}><option value="">{t("Все обращения")}</option><option value="unassigned">{t("Без ответственного")}</option><option value="assigned">{t("С ответственным")}</option></select></label>
+      <label>{t("Срок от")}<input id="due-after" type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueAfter} onChange={event => setFilters({ ...filters, dueAfter: event.target.value })} /></label>
+      <label>{t("Срок до")}<input type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueBefore} onChange={event => setFilters({ ...filters, dueBefore: event.target.value })} /></label>
+      <label className="checkbox-label"><input type="checkbox" checked={filters.overdue} onChange={event => setFilters({ ...filters, overdue: event.target.checked })} />{t("Только просроченные")}</label>
+      <label className="checkbox-label"><input type="checkbox" checked={filters.hideSimulated} onChange={event => setFilters({ ...filters, hideSimulated: event.target.checked })} />{t("Скрыть имитацию")}</label>
+      {filterError && <p id="filter-error" role="alert" className="field-error">{t(filterError)}</p>}
+      <div className="actions"><button className="primary-button" type="submit">{t("Применить фильтры")}</button><button type="button" onClick={reset}>{t("Сбросить")}</button></div>
     </form>}
-    {(result.loading || stale) && <Loading label="Загрузка очереди…" />}
+    {(result.loading || stale) && <Loading label={t("Загрузка очереди…")} />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
-    {shown && !stale && <><p className="muted queue-counter" aria-live="polite"><span>Найдено: {shown.total}</span>{overall.data !== undefined && <> <span>из {overall.data}</span></>}</p>
-      {shown.items.length === 0 ? <div className="empty-state"><p>{applied.q ? `По запросу «${applied.q}» обращений нет.` : 'По выбранным фильтрам обращений нет.'}</p><p className="muted">Измените условия или нажмите «Сбросить фильтры», чтобы увидеть всю очередь.</p><div className="actions"><button type="button" onClick={() => { reset(); heading.current?.focus(); }}>Сбросить фильтры</button>{applied.q && <button type="button" onClick={clearSearch}>Сбросить поиск</button>}</div></div> : <ul className="complaint-list">{shown.items.map(item => <li className="complaint-item" key={item.id}>
-        <div className="item-header"><Link className="complaint-number" to={`/queue/${item.id}`}>{item.number}</Link>{item.simulated && <ImitationBadge hint="создано демо-симулятором" />}<StatusBadge status={item.status} /></div>
-        <p className="item-description">{item.description}</p><p className="muted">{item.assignee?.name ?? 'Без ответственного'}</p>
-        <p className={item.overdue ? 'overdue' : 'muted'}>{item.overdue ? 'Просрочено · срок ' : 'Срок: '}{dateLabel(item.dueAt)}</p>
+    {shown && !stale && <><p className="muted queue-counter" aria-live="polite"><span>{t("Найдено:")} {number.format(shown.total)}</span>{overall.data !== undefined && <> <span>{t("из")} {number.format(overall.data)}</span></>}</p>
+      {shown.items.length === 0 ? <div className="empty-state"><p>{applied.q ? t('По запросу «{query}» обращений нет.', { query: applied.q }) : t("По выбранным фильтрам обращений нет.")}</p><p className="muted">{t("Измените условия или нажмите «Сбросить фильтры», чтобы увидеть всю очередь.")}</p><div className="actions"><button type="button" onClick={() => { reset(); heading.current?.focus(); }}>{t("Сбросить фильтры")}</button>{applied.q && <button type="button" onClick={clearSearch}>{t("Сбросить поиск")}</button>}</div></div> : <ul className="complaint-list">{shown.items.map(item => <li className="complaint-item" key={item.id}>
+        <div className="item-header"><Link className="complaint-number" to={`/queue/${item.id}`}>{item.number}</Link>{item.simulated && <ImitationBadge hint={t("создано демо-симулятором")} />}<StatusBadge status={item.status} /></div>
+        <p className="item-description">{item.description}</p><p className="muted">{item.assignee?.name ?? t("Без ответственного")}</p>
+        <p className={item.overdue ? 'overdue' : 'muted'}>{item.overdue ? t("Просрочено · срок ") : t("Срок: ")}{dateLabel(item.dueAt, locale)}</p>
       </li>)}</ul>}
-      {shown.total > 20 && <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 20))}>Назад</button><span>Страница {Math.floor(offset / 20) + 1} из {Math.max(1, Math.ceil(shown.total / 20))}</span><button disabled={offset + shown.items.length >= shown.total} onClick={() => setOffset(offset + 20)}>Далее</button></div>}
+      {shown.total > 20 && <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 20))}>{t("Назад")}</button><span>{t("Страница")} {Math.floor(offset / 20) + 1} {t("из")} {Math.max(1, Math.ceil(shown.total / 20))}</span><button disabled={offset + shown.items.length >= shown.total} onClick={() => setOffset(offset + 20)}>{t("Далее")}</button></div>}
     </>}
   </section>;
 }

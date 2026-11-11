@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n';
 import { useState } from 'react';
 import { Link, matchPath, useLocation } from 'react-router-dom';
 
@@ -48,6 +49,7 @@ export function useDemoHints() {
 
 /** Плашка «Шаг N из 6» для текущего экрана. */
 export function DemoHint() {
+  const { t } = useI18n();
   const { pathname } = useLocation();
   const { state } = useLocation();
   const found = stepFor(pathname);
@@ -55,15 +57,16 @@ export function DemoHint() {
   const step = found && found.path === '/my/:complaintId' && typeof override === 'number' ? DEMO_STEPS.find(item => item.n === override) ?? found : found;
   if (!step) return null;
   const next = NEXT[step.n]!;
-  return <aside role="note" aria-label="Подсказка демо" className="demo-hint">
-    <p><strong>Шаг {step.n} из {DEMO_STEPS.length}:</strong> {step.action}.</p>
-    <p className="demo-hint-next"><Link to={next.to}>{next.label}</Link></p>
+  return <aside role="note" aria-label={t("Подсказка демо")} className="demo-hint">
+    <p><strong>{t("Шаг")} {step.n} {t("из")} {DEMO_STEPS.length}:</strong> {t(step.action)}.</p>
+    <p className="demo-hint-next"><Link to={next.to}>{t(next.label)}</Link></p>
   </aside>;
 }
 
 /** Бейдж «Имитация» с объяснением, что за ним нет настоящей системы. */
 export function ImitationBadge({ hint, label = 'Имитация' }: { hint: string; label?: string }) {
-  return <span className="imitation-badge" title={hint}>{label}<span className="visually-hidden">: {hint}</span></span>;
+  const { t } = useI18n();
+  return <span className="imitation-badge" title={t(hint)}>{t(label)}<span className="visually-hidden">: {t(hint)}</span></span>;
 }
 
 export type AboutRow = {
@@ -98,14 +101,15 @@ export const ABOUT_ROWS: AboutRow[] = [
 ];
 
 export function AboutPage() {
-  return <section className="section"><p className="eyebrow">Честная демонстрация</p><h1>О прототипе</h1>
-    <p className="muted">Что в этом прототипе работает по-настоящему, что показано имитацией и что остаётся в плане развития. Данные только синтетические.</p>
-    <div className="about-table-wrap"><table className="about-table" aria-label="Реализовано, имитация, план">
-      <thead><tr><th scope="col">Требование</th><th scope="col">Функция</th><th scope="col">Реализовано</th><th scope="col">Имитация</th><th scope="col">План</th></tr></thead>
-      <tbody>{ABOUT_ROWS.map(row => <tr key={`${row.req}-${row.feature}`}>
+  const { t } = useI18n();
+  return <section className="section"><p className="eyebrow">{t("Честная демонстрация")}</p><h1>{t("О прототипе")}</h1>
+    <p className="muted">{t("Что в этом прототипе работает по-настоящему, что показано имитацией и что остаётся в плане развития. Данные только синтетические.")}</p>
+    <div className="about-table-wrap"><table className="about-table" aria-label={t("Реализовано, имитация, план")}>
+      <thead><tr><th scope="col">{t("Требование")}</th><th scope="col">{t("Функция")}</th><th scope="col">{t("Реализовано")}</th><th scope="col">{t("Имитация")}</th><th scope="col">{t("План")}</th></tr></thead>
+      <tbody>{ABOUT_ROWS.map(row => <tr key={`${row.req}-${t(row.feature)}`}>
         <td>{row.req}</td>
-        <th scope="row">{row.feature}{row.build && <p className="about-build">Сейчас: {row.build}</p>}</th>
-        <td>{row.done ?? '—'}</td><td>{row.imitation ?? '—'}</td><td>{row.plan ?? '—'}</td>
+        <th scope="row">{t(row.feature)}{row.build && <p className="about-build">{t("Сейчас:")} {t(row.build)}</p>}</th>
+        <td>{row.done ? t(row.done) : '—'}</td><td>{row.imitation ? t(row.imitation) : '—'}</td><td>{row.plan ? t(row.plan) : '—'}</td>
       </tr>)}</tbody>
     </table></div>
   </section>;

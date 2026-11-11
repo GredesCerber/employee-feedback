@@ -1829,6 +1829,144 @@
           }
         ]
       }
+    },
+    "/complaints/{complaintId}/translations": {
+      "post": {
+        "operationId": "translateComplaintText",
+        "tags": [
+          "Complaints"
+        ],
+        "summary": "Translate one selected message without changing its original",
+        "description": "Explicit user action only. Check session and complaint visibility before contacting the provider. Send only selected text (1–5000 characters) and targetLocale. Never send identity, IDs, attachments or other messages. No key or provider failure returns 503; no fabricated translation or local template fallback. Per-user write rate limit applies. Missing/foreign complaint returns the same 404.",
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "complaintId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranslationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Translated plain text; original complaint remains unchanged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TranslationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing demo session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "description": "Missing or inaccessible complaint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported content type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid locale, source or comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          },
+          "503": {
+            "description": "Translation unavailable; original remains available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-demo-steps": [
+          3,
+          4
+        ]
+      }
     }
   },
   "components": {
@@ -2093,6 +2231,26 @@
         },
         "description": "MVP attachment metadata only. No bytes, URLs, download, antivirus or external fetching. UI must label it as a test-file placeholder, not an uploaded file."
       },
+      "Location": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          }
+        }
+      },
       "CreateComplaint": {
         "type": "object",
         "additionalProperties": false,
@@ -2135,6 +2293,9 @@
             },
             "maxItems": 5,
             "default": []
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
           },
           "anonymous": {
             "type": "boolean",
@@ -2507,6 +2668,9 @@
           "priority": {
             "$ref": "#/components/schemas/Priority"
           },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
           "attachments": {
             "type": "array",
             "items": {
@@ -2861,7 +3025,8 @@
               "INTERNAL_ERROR",
               "RATE_LIMITED",
               "UNDO_EXPIRED",
-              "NOTHING_TO_UNDO"
+              "NOTHING_TO_UNDO",
+              "TRANSLATION_UNAVAILABLE"
             ]
           },
           "message": {
@@ -3806,6 +3971,69 @@
             }
           }
         ]
+      },
+      "TranslationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "targetLocale"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "description",
+              "proposedSolution",
+              "comment",
+              "decision",
+              "actions"
+            ]
+          },
+          "targetLocale": {
+            "type": "string",
+            "enum": [
+              "ru",
+              "en",
+              "kk"
+            ]
+          },
+          "commentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        },
+        "description": "Select existing text of a visible complaint. comment requires commentId. Other fields forbid commentId. Original text is never modified."
+      },
+      "TranslationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "translatedText",
+          "targetLocale",
+          "source"
+        ],
+        "properties": {
+          "translatedText": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 15000
+          },
+          "targetLocale": {
+            "type": "string",
+            "enum": [
+              "ru",
+              "en",
+              "kk"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "const": "llm"
+          }
+        }
       }
     },
     "responses": {

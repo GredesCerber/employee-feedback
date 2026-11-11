@@ -1,3 +1,4 @@
+import { useI18n, localizeError } from '../i18n';
 import { useCallback, useRef, useState } from 'react';
 import { useSession } from '../app/session';
 import type { components } from '../api/client';
@@ -12,6 +13,7 @@ type CommentKind = components['schemas']['CommentInput']['kind'];
 type OnUpdated = (message?: string) => void;
 
 function useMutation(onUpdated: OnUpdated) {
+  const { locale } = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setErrorText] = useState('');
   const [field, setField] = useState('');
@@ -29,7 +31,7 @@ function useMutation(onUpdated: OnUpdated) {
     catch (failure) {
       const wait = retryAfterOf(failure);
       if (wait) cooldown.start(wait);
-      setError(wait ? '' : errorMessage(failure));
+      setError(wait ? '' : localizeError(locale, errorMessage(failure)));
     }
     finally { lock.current = false; setBusy(false); }
   }
@@ -43,6 +45,7 @@ function useMutation(onUpdated: OnUpdated) {
 }
 
 export function AuthorReply({ item, onUpdated }: { item: Complaint; onUpdated: OnUpdated }) {
+  const { t } = useI18n();
   const { api } = useSession();
   const [text, setText] = useState('');
   const mutation = useMutation(onUpdated);
@@ -50,15 +53,16 @@ export function AuthorReply({ item, onUpdated }: { item: Complaint; onUpdated: O
   if (item.status !== 'awaiting_clarification') return null;
   return <form className="action-panel" onSubmit={event => {
     event.preventDefault();
-    if (!text.trim()) { mutation.setError('Введите ответ на уточнение.', 'author-reply'); return; }
-    void mutation.run(async () => requireData((await api.POST('/complaints/{complaintId}/comments', { params: { path: { complaintId: item.id } }, body: { kind: 'clarification_response', text: text.trim() } })).data), 'Ответ на уточнение отправлен.');
-  }}><h2>Ответить на уточнение</h2>{question && <blockquote className="preserve-lines">{question.text}</blockquote>}<label htmlFor="author-reply">Ваш ответ на уточнение</label><textarea id="author-reply" aria-required="true" {...mutation.invalid('author-reply', 'author-reply-error')} rows={3} maxLength={5000} value={text} onChange={event => setText(event.target.value)} />
-    {mutation.error && <p id="author-reply-error" role="alert" className="field-error">{mutation.error}</p>}
-    <button className="primary-button" disabled={mutation.busy} type="submit">{mutation.busy ? 'Отправка…' : 'Отправить ответ'}</button>
+    if (!text.trim()) { mutation.setError("Введите ответ на уточнение.", 'author-reply'); return; }
+    void mutation.run(async () => requireData((await api.POST('/complaints/{complaintId}/comments', { params: { path: { complaintId: item.id } }, body: { kind: 'clarification_response', text: text.trim() } })).data), "Ответ на уточнение отправлен.");
+  }}><h2>{t("Ответить на уточнение")}</h2>{question && <blockquote className="preserve-lines">{question.text}</blockquote>}<label htmlFor="author-reply">{t("Ваш ответ на уточнение")}</label><textarea id="author-reply" aria-required="true" {...mutation.invalid('author-reply', 'author-reply-error')} rows={3} maxLength={5000} value={text} onChange={event => setText(event.target.value)} />
+    {mutation.error && <p id="author-reply-error" role="alert" className="field-error">{t(mutation.error)}</p>}
+    <button className="primary-button" disabled={mutation.busy} type="submit">{mutation.busy ? t("Отправка…") : t("Отправить ответ")}</button>
   </form>;
 }
 
 export function ManagerActions({ item, onUpdated }: { item: Complaint; onUpdated: OnUpdated }) {
+  const { t } = useI18n();
   const { api } = useSession();
   const load = useCallback(async () => requireData((await api.GET('/reference-data')).data), [api]);
   const reference = useResource(load);
@@ -83,31 +87,31 @@ export function ManagerActions({ item, onUpdated }: { item: Complaint; onUpdated
       kind === 'clarification_request' ? 'Запрос уточнения отправлен автору.' : 'Комментарий добавлен.');
   }
 
-  return <div className="management-panel"><h2>Обработка обращения</h2>
-    {mutation.error && <div className="load-error"><p id="manager-action-error" role="alert">{mutation.error}</p><button type="button" onClick={() => onUpdated()}>Обновить карточку</button></div>}
+  return <div className="management-panel"><h2>{t("Обработка обращения")}</h2>
+    {mutation.error && <div className="load-error"><p id="manager-action-error" role="alert">{t(mutation.error)}</p><button type="button" onClick={() => onUpdated()}>{t("Обновить карточку")}</button></div>}
     <fieldset disabled={mutation.busy}>
-      <legend>Назначение</legend>
-      {reference.loading && <Loading label="Загрузка ответственных…" />}
+      <legend>{t("Назначение")}</legend>
+      {reference.loading && <Loading label={t("Загрузка ответственных…")} />}
       {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
       {reference.data && <form className="action-panel" onSubmit={event => {
         event.preventDefault();
-        if (!assigneeId) { mutation.setError('Выберите ответственного.', 'assignee'); return; }
-        void mutation.run(async () => requireData((await api.PATCH('/complaints/{complaintId}/assignment', { params: { path }, body: { assigneeId } })).data), 'Ответственный назначен.');
-      }}><label htmlFor="assignee">Назначить ответственного</label><select id="assignee" aria-required="true" {...mutation.invalid('assignee', 'manager-action-error')} value={assigneeId} onChange={event => setAssignee(event.target.value)}><option value="">Назначить ответственного</option>{reference.data.assignees.map(user => <option value={user.id} key={user.id}>{user.name}</option>)}</select><button type="submit">Назначить</button></form>}
+        if (!assigneeId) { mutation.setError("Выберите ответственного.", 'assignee'); return; }
+        void mutation.run(async () => requireData((await api.PATCH('/complaints/{complaintId}/assignment', { params: { path }, body: { assigneeId } })).data), "Ответственный назначен.");
+      }}><label htmlFor="assignee">{t("Назначить ответственного")}</label><select id="assignee" aria-required="true" {...mutation.invalid('assignee', 'manager-action-error')} value={assigneeId} onChange={event => setAssignee(event.target.value)}><option value="">{t("Назначить ответственного")}</option>{reference.data.assignees.map(user => <option value={user.id} key={user.id}>{user.name}</option>)}</select><button type="submit">{t("Назначить")}</button></form>}
     </fieldset>
-    <fieldset disabled={mutation.busy}><legend>Статус и обсуждение</legend>
-      <div className="actions">{(['in_review', 'in_progress'] as const).filter(status => allowed.includes(status)).map(status => <button key={status} onClick={() => void mutation.run(async () => requireData((await api.PATCH('/complaints/{complaintId}/status', { params: { path }, body: { status } })).data), 'Статус обращения изменён.')}>{status === 'in_progress' ? 'Взять в работу' : item.status === 'new' ? 'Начать рассмотрение' : 'Вернуть на рассмотрение'}</button>)}</div>
-      <div className="action-panel"><label htmlFor="manager-comment">Комментарий или вопрос</label><textarea id="manager-comment" {...mutation.invalid('manager-comment', 'manager-action-error')} rows={3} maxLength={5000} value={comment} onChange={event => setComment(event.target.value)} /><div className="actions"><button onClick={() => postComment('comment')}>Добавить комментарий</button>{allowed.includes('awaiting_clarification') && <button onClick={() => postComment('clarification_request')}>Запросить уточнение</button>}</div></div>
+    <fieldset disabled={mutation.busy}><legend>{t("Статус и обсуждение")}</legend>
+      <div className="actions">{(['in_review', 'in_progress'] as const).filter(status => allowed.includes(status)).map(status => <button key={status} onClick={() => void mutation.run(async () => requireData((await api.PATCH('/complaints/{complaintId}/status', { params: { path }, body: { status } })).data), "Статус обращения изменён.")}>{status === 'in_progress' ? t("Взять в работу") : item.status === 'new' ? t("Начать рассмотрение") : t("Вернуть на рассмотрение")}</button>)}</div>
+      <div className="action-panel"><label htmlFor="manager-comment">{t("Комментарий или вопрос")}</label><textarea id="manager-comment" {...mutation.invalid('manager-comment', 'manager-action-error')} rows={3} maxLength={5000} value={comment} onChange={event => setComment(event.target.value)} /><div className="actions"><button onClick={() => postComment('comment')}>{t("Добавить комментарий")}</button>{allowed.includes('awaiting_clarification') && <button onClick={() => postComment('clarification_request')}>{t("Запросить уточнение")}</button>}</div></div>
     </fieldset>
-    {outcomes.length > 0 && <fieldset disabled={mutation.busy}><legend>Завершение</legend><form className="action-panel" onSubmit={event => {
+    {outcomes.length > 0 && <fieldset disabled={mutation.busy}><legend>{t("Завершение")}</legend><form className="action-panel" onSubmit={event => {
       event.preventDefault();
-      if (!explanation.trim()) { mutation.setError('Объясните решение или причину отказа.', 'explanation'); return; }
-      void mutation.run(async () => requireData((await api.POST('/complaints/{complaintId}/decision', { params: { path }, body: { outcome, explanation: explanation.trim(), ...(actions.trim() ? { actions: actions.trim() } : {}) } })).data), 'Итог рассмотрения зафиксирован.');
-    }}><label htmlFor="outcome">Итог рассмотрения</label><select id="outcome" value={outcome} onChange={event => setOutcome(event.target.value as Outcome)}>{outcomes.map(value => <option key={value} value={value}>{statusLabels[value]}</option>)}</select>
-      {item.status === 'new' && outcomes.length === 1 && <p className="muted">Сейчас доступен только отказ: чтобы выбрать другой итог, сначала начните рассмотрение.</p>}
-      <label htmlFor="explanation">{outcome === 'rejected' ? 'Мотивированный отказ' : 'Обоснование решения'}</label><textarea id="explanation" aria-required="true" {...mutation.invalid('explanation', 'manager-action-error')} rows={4} maxLength={5000} value={explanation} onChange={event => setExplanation(event.target.value)} />
-      <label htmlFor="decision-actions">Дальнейшие действия (необязательно)</label><textarea id="decision-actions" rows={2} maxLength={5000} value={actions} onChange={event => setActions(event.target.value)} />
-      <button type="submit" className="primary-button">Зафиксировать итог</button>
+      if (!explanation.trim()) { mutation.setError("Объясните решение или причину отказа.", 'explanation'); return; }
+      void mutation.run(async () => requireData((await api.POST('/complaints/{complaintId}/decision', { params: { path }, body: { outcome, explanation: explanation.trim(), ...(actions.trim() ? { actions: actions.trim() } : {}) } })).data), "Итог рассмотрения зафиксирован.");
+    }}><label htmlFor="outcome">{t("Итог рассмотрения")}</label><select id="outcome" value={outcome} onChange={event => setOutcome(event.target.value as Outcome)}>{outcomes.map(value => <option key={value} value={value}>{t(statusLabels[value])}</option>)}</select>
+      {item.status === 'new' && outcomes.length === 1 && <p className="muted">{t("Сейчас доступен только отказ: чтобы выбрать другой итог, сначала начните рассмотрение.")}</p>}
+      <label htmlFor="explanation">{outcome === 'rejected' ? t("Мотивированный отказ") : t("Обоснование решения")}</label><textarea id="explanation" aria-required="true" {...mutation.invalid('explanation', 'manager-action-error')} rows={4} maxLength={5000} value={explanation} onChange={event => setExplanation(event.target.value)} />
+      <label htmlFor="decision-actions">{t("Дальнейшие действия (необязательно)")}</label><textarea id="decision-actions" rows={2} maxLength={5000} value={actions} onChange={event => setActions(event.target.value)} />
+      <button type="submit" className="primary-button">{t("Зафиксировать итог")}</button>
     </form></fieldset>}
   </div>;
 }

@@ -1,3 +1,4 @@
+import { useI18n, localeNames, referenceLabel } from '../i18n';
 import { useCallback, useId } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSession } from '../app/session';
@@ -9,7 +10,6 @@ import { WeeklyDigest } from '../features/weeklyDigest';
 import './dashboard.css';
 
 type DayCount = components['schemas']['DayCount'];
-const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
 
 /** «2026-11-10» → «10.11» без перевода часового пояса: даты в ответе уже в UTC. */
 const shortDate = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}`;
@@ -18,6 +18,8 @@ const LINE = { width: 640, height: 260, left: 56, right: 16, top: 16, bottom: 56
 
 /** Линейный график «обращения по дням» на чистом SVG: оси с подписями, точки, таблица-альтернатива рядом. */
 function LineChart({ title, days }: { title: string; days: DayCount[] }) {
+  const { t, locale } = useI18n();
+  const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const titleId = useId();
   const max = Math.max(1, ...days.map(day => day.count));
   const plotWidth = LINE.width - LINE.left - LINE.right, plotHeight = LINE.height - LINE.top - LINE.bottom;
@@ -37,13 +39,15 @@ function LineChart({ title, days }: { title: string; days: DayCount[] }) {
       : <text key={day.date} className="chart-tick" x={x(index)} y={baseline + 18} textAnchor="middle">{shortDate(day.date)}</text>)}
     <polyline className="line-path" points={days.map((day, index) => `${x(index)},${y(day.count)}`).join(' ')} />
     {days.map((day, index) => <circle key={day.date} data-point={day.date} className="line-point" cx={x(index)} cy={y(day.count)} r={4} />)}
-    <text className="chart-axis-title" x={LINE.left + plotWidth / 2} y={LINE.height - 6} textAnchor="middle">Дата</text>
-    <text className="chart-axis-title" x={14} y={LINE.top + plotHeight / 2} textAnchor="middle" transform={`rotate(-90 14 ${LINE.top + plotHeight / 2})`}>Обращений</text>
+    <text className="chart-axis-title" x={LINE.left + plotWidth / 2} y={LINE.height - 6} textAnchor="middle">{t("Дата")}</text>
+    <text className="chart-axis-title" x={14} y={LINE.top + plotHeight / 2} textAnchor="middle" transform={`rotate(-90 14 ${LINE.top + plotHeight / 2})`}>{t("Обращений")}</text>
   </svg>;
 }
 
 function CountTable({ label, head, rows }: { label: string; head: string; rows: { key: string; name: string; count: number }[] }) {
-  return <table className="dashboard-table" aria-label={label}><thead><tr><th scope="col">{head}</th><th scope="col">Количество</th></tr></thead>
+  const { t, locale } = useI18n();
+  const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
+  return <table className="dashboard-table" aria-label={label}><thead><tr><th scope="col">{head}</th><th scope="col">{t("Количество")}</th></tr></thead>
     <tbody>{rows.map(row => <tr key={row.key}><th scope="row">{row.name}</th><td>{number.format(row.count)}</td></tr>)}</tbody></table>;
 }
 
@@ -52,6 +56,8 @@ function Tile({ id, title, value, note }: { id: string; title: string; value: st
 }
 
 export default function DashboardPage() {
+  const { t, locale } = useI18n();
+  const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const { api, role } = useSession();
   const [params, setParams] = useSearchParams();
   const department = params.get('department')?.trim() ?? '';
@@ -67,53 +73,53 @@ export default function DashboardPage() {
   function selectDepartment(value: string) {
     setParams(value ? { department: value } : {}, { replace: true });
   }
-  return <section className="section"><p className="eyebrow">Обзор для руководителя</p><h1>Дашборд</h1>
-    <p className="muted">Где копятся обращения и что уже просрочено.</p>
+  return <section className="section"><p className="eyebrow">{t("Обзор для руководителя")}</p><h1>{t("Дашборд")}</h1>
+    <p className="muted">{t("Где копятся обращения и что уже просрочено.")}</p>
     <div className="dashboard-toolbar">
-      {reference.data && <label>Подразделение<select value={department} onChange={event => selectDepartment(event.target.value)}>
-        <option value="">Все подразделения</option>
-        {reference.data.departments.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+      {reference.data && <label>{t("Подразделение")}<select value={department} onChange={event => selectDepartment(event.target.value)}>
+        <option value="">{t("Все подразделения")}</option>
+        {reference.data.departments.map(item => <option key={item.id} value={item.id}>{referenceLabel(locale, 'department', item.id, item.name)}</option>)}
       </select></label>}
-      {trends && <p className="muted">Данные на <time dateTime={trends.generatedAt}>{dateLabel(trends.generatedAt)}</time></p>}
-      {trends && <button onClick={result.reload}>Обновить</button>}
+      {trends && <p className="muted">{t("Данные на")} <time dateTime={trends.generatedAt}>{dateLabel(trends.generatedAt, locale)}</time></p>}
+      {trends && <button onClick={result.reload}>{t("Обновить")}</button>}
     </div>
     <WeeklyDigest department={department} />
-    {result.loading && <Loading label="Загрузка дашборда…" />}
+    {result.loading && <Loading label={t("Загрузка дашборда…")} />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {trends && totals && <>
       <div className="dashboard-tiles">
-        <Tile id="dash-total" title="Всего обращений" value={number.format(totals.total)} note="С учётом закрытых" />
-        <Tile id="dash-open" title="Открытых" value={number.format(totals.openCount)} note={`Закрыто ${number.format(totals.closedCount)}`} />
-        <Tile id="dash-overdue" title="Просрочено" value={number.format(totals.overdueCount)} note="Срок прошёл, решения нет" />
-        <Tile id="dash-resolution" title="Среднее время решения" value={totals.averageResolutionHours === null ? 'Нет закрытых' : `${number.format(totals.averageResolutionHours)} ч`}
-          note="От подачи до закрытия" />
+        <Tile id="dash-total" title={t("Всего обращений")} value={number.format(totals.total)} note={t("С учётом закрытых")} />
+        <Tile id="dash-open" title={t("Открытых")} value={number.format(totals.openCount)} note={`${t("Закрыто")} ${number.format(totals.closedCount)}`} />
+        <Tile id="dash-overdue" title={t("Просрочено")} value={number.format(totals.overdueCount)} note={t("Срок прошёл, решения нет")} />
+        <Tile id="dash-resolution" title={t("Среднее время решения")} value={totals.averageResolutionHours === null ? t("Нет закрытых") : `${number.format(totals.averageResolutionHours)} ${locale === 'en' ? 'h' : locale === 'kk' ? 'сағ' : 'ч'}`}
+          note={t("От подачи до закрытия")} />
       </div>
-      {empty && <p className="summary-empty" role="status">Обращений пока нет — графики появятся после первой подачи.</p>}
+      {empty && <p className="summary-empty" role="status">{t("Обращений пока нет — графики появятся после первой подачи.")}</p>}
       <div className="dashboard-grid">
-        {!empty && <section className="dashboard-panel dashboard-wide"><h2>Обращения по дням</h2><p className="muted">Последние 14 дней, UTC.</p>
-          <figure className="dashboard-chart"><LineChart title="Обращения по дням" days={trends.byDay} /></figure>
-          <details><summary>Таблица по дням</summary>
-            <CountTable label="Обращения по дням" head="Дата" rows={trends.byDay.map(day => ({ key: day.date, name: shortDate(day.date), count: day.count }))} />
+        {!empty && <section className="dashboard-panel dashboard-wide"><h2>{t("Обращения по дням")}</h2><p className="muted">{t("Последние 14 дней, UTC.")}</p>
+          <figure className="dashboard-chart"><LineChart title={t("Обращения по дням")} days={trends.byDay} /></figure>
+          <details><summary>{t("Таблица по дням")}</summary>
+            <CountTable label={t("Обращения по дням")} head={t("Дата")} rows={trends.byDay.map(day => ({ key: day.date, name: shortDate(day.date), count: day.count }))} />
           </details>
         </section>}
-        {!empty && <section className="dashboard-panel"><h2>По категориям</h2>
-          <figure className="dashboard-chart"><BarChart title="Обращения по категориям" bars={trends.byCategory.map(item => ({ label: item.categoryName, value: item.count }))} />
-            <figcaption className="chart-axis-note">По горизонтали — число обращений</figcaption></figure>
-          <CountTable label="Обращения по категориям" head="Категория" rows={trends.byCategory.map(item => ({ key: item.categoryId, name: item.categoryName, count: item.count }))} />
+        {!empty && <section className="dashboard-panel"><h2>{t("По категориям")}</h2>
+          <figure className="dashboard-chart"><BarChart title={t("Обращения по категориям")} bars={trends.byCategory.map(item => ({ label: referenceLabel(locale, 'category', item.categoryId, item.categoryName), value: item.count }))} />
+            <figcaption className="chart-axis-note">{t("По горизонтали — число обращений")}</figcaption></figure>
+          <CountTable label={t("Обращения по категориям")} head={t("Категория")} rows={trends.byCategory.map(item => ({ key: item.categoryId, name: referenceLabel(locale, 'category', item.categoryId, item.categoryName), count: item.count }))} />
         </section>}
-        {!empty && <section className="dashboard-panel"><h2>По подразделениям</h2>
-          <figure className="dashboard-chart"><BarChart title="Обращения по подразделениям" bars={trends.byDepartment.map(item => ({ label: item.departmentName, value: item.count }))} />
-            <figcaption className="chart-axis-note">По горизонтали — число обращений</figcaption></figure>
-          <CountTable label="Обращения по подразделениям" head="Подразделение" rows={trends.byDepartment.map(item => ({ key: item.departmentId, name: item.departmentName, count: item.count }))} />
+        {!empty && <section className="dashboard-panel"><h2>{t("По подразделениям")}</h2>
+          <figure className="dashboard-chart"><BarChart title={t("Обращения по подразделениям")} bars={trends.byDepartment.map(item => ({ label: referenceLabel(locale, 'department', item.departmentId, item.departmentName), value: item.count }))} />
+            <figcaption className="chart-axis-note">{t("По горизонтали — число обращений")}</figcaption></figure>
+          <CountTable label={t("Обращения по подразделениям")} head={t("Подразделение")} rows={trends.byDepartment.map(item => ({ key: item.departmentId, name: referenceLabel(locale, 'department', item.departmentId, item.departmentName), count: item.count }))} />
         </section>}
-        <section className="dashboard-panel dashboard-wide"><h2>Просроченные</h2>
-          {trends.overdue.length === 0 ? <p>Просроченных обращений нет.</p>
-            : <ul className="overdue-list" aria-label="Просроченные обращения">{trends.overdue.map(item => <li key={item.id}>
+        <section className="dashboard-panel dashboard-wide"><h2>{t("Просроченные")}</h2>
+          {trends.overdue.length === 0 ? <p>{t("Просроченных обращений нет.")}</p>
+            : <ul className="overdue-list" aria-label={t("Просроченные обращения")}>{trends.overdue.map(item => <li key={item.id}>
               {role === 'manager' ? <Link to={`/queue/${encodeURIComponent(item.id)}`}>{item.number}</Link> : <span className="overdue-number">{item.number}</span>}
-              <span>{item.categoryName}</span>
-              <span className="overdue-hours">просрочено на {number.format(Math.round(item.overdueHours))} ч</span>
+              <span>{referenceLabel(locale, 'category', item.categoryId, item.categoryName)}</span>
+              <span className="overdue-hours">{t("просрочено на")} {number.format(Math.round(item.overdueHours))} {t("ч")}</span>
             </li>)}</ul>}
-          {role !== 'manager' && trends.overdue.length > 0 && <p className="muted">Карточки открывает руководитель в очереди обращений.</p>}
+          {role !== 'manager' && trends.overdue.length > 0 && <p className="muted">{t("Карточки открывает руководитель в очереди обращений.")}</p>}
         </section>
       </div>
     </>}
