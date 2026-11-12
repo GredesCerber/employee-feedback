@@ -4,6 +4,9 @@
 // открытия страницы ходим только по ссылкам и переключателю роли — без page.goto.
 import { test, expect } from '@playwright/test';
 
+// Условный вход (#288): каждый переход в тесте начинается сотрудником, как раньше; экран входа проверяет login.spec.mjs.
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('demo-session', 'employee-1')); });
+
 const run = `e2e-${Date.now().toString(36)}`;
 const roles = { employee: 'employee', manager: 'manager', admin: 'admin' };
 

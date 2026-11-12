@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// Условный вход (#288): каждый переход в тесте начинается сотрудником, как раньше; экран входа проверяет login.spec.mjs.
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('demo-session', 'employee-1')); });
+
 test('UX: optional point, invalid draft, saved map, resume and honest translation failure', async ({ page }) => {
   await page.route('**://tile.openstreetmap.org/**', route => route.abort());
   await page.goto('/submit');
