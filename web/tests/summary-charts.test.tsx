@@ -75,12 +75,13 @@ describe('#111 summary charts', () => {
     expect(within(screen.getByRole('region', { name: 'Среднее время первого ответа' })).getByText(/9,6\s*ч/)).toBeTruthy();
   });
 
-  it('lists recurring topics as "повторяется N раз" with a link to the queue filtered by category', async () => {
+  it('lists recurring topics and explains queue access to the administrator', async () => {
     await openSummary();
     const list = await screen.findByRole('list', { name: 'Повторяющиеся темы' });
     const item = within(list).getByText(/Межотдельное взаимодействие/).closest('li')!;
     expect(item.textContent).toMatch(/повторяется 3 раза/);
-    expect(within(item).getByRole('link').getAttribute('href')).toBe('/queue?categoryId=cross_department');
+    expect(within(item).queryByRole('link')).toBeNull();
+    expect(within(item).getByText('Очередь доступна руководителю')).toBeTruthy();
     expect(within(list).getByText(/Обучение/).closest('li')!.textContent).toMatch(/повторяется 2 раза/);
   });
 
@@ -93,3 +94,4 @@ describe('#111 summary charts', () => {
     expect(document.body.innerHTML).not.toMatch(/NaN|Infinity/);
   });
 });
+

@@ -106,7 +106,8 @@ export default function SummaryPage() {
   const { t, locale } = useI18n();
   const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const percent = new Intl.NumberFormat(localeNames[locale], { style: 'percent', maximumFractionDigits: 1 });
-  const { api } = useSession();
+  const { api, role } = useSession();
+  const queueHint = { ru: 'Очередь доступна руководителю', en: 'The queue is available to managers', kk: 'Кезек басшыға қолжетімді' }[locale];
   const load = useCallback(async () => requireData((await api.GET('/summary')).data), [api]);
   const result = useResource(load);
   const summary = result.data;
@@ -146,7 +147,7 @@ export default function SummaryPage() {
         <section className="metric-card" aria-labelledby="summary-total"><h2 id="summary-total">{t("Всего обращений")}</h2><p className="metric-value">{number.format(summary.total)}</p><p className="muted">{t("За всё время")}</p></section>
         <section className="metric-card" aria-labelledby="summary-closed"><h2 id="summary-closed">{t("Доля закрытых")}</h2><p className="metric-value">{percent.format(summary.closedShare)}</p><p className="muted">{t("Завершено")} {number.format(summary.closedCount)} {t("из")} {number.format(summary.total)}{t(". Включены реализованные, отклонённые и закрытые.")}</p></section>
         <section className="metric-card" aria-labelledby="summary-response"><h2 id="summary-response">{t("Среднее время первого ответа")}</h2><p className="metric-value">{summary.averageFirstResponseHours === null ? t("Нет ответов") : `${number.format(summary.averageFirstResponseHours)} ч`}</p><p className="muted">{summary.respondedCount > 0 ? `По ${number.format(summary.respondedCount)} обращениям с первым ответом` : t("Показатель появится после первого ответа руководителя")}</p></section>
-        {summary.overdueCount !== undefined && <section className="metric-card summary-overdue" aria-labelledby="summary-overdue"><h2 id="summary-overdue">{t("Просрочено")}<span className="visually-hidden">: {number.format(summary.overdueCount)}</span></h2><p className="metric-value" aria-hidden="true">{number.format(summary.overdueCount)}</p><p className="muted">{t("Срок прошёл, решения нет.")}</p><Link to="/queue?overdue=1">{t("Открыть просроченные в очереди")}</Link></section>}
+        {summary.overdueCount !== undefined && <section className="metric-card summary-overdue" aria-labelledby="summary-overdue"><h2 id="summary-overdue">{t("Просрочено")}<span className="visually-hidden">: {number.format(summary.overdueCount)}</span></h2><p className="metric-value" aria-hidden="true">{number.format(summary.overdueCount)}</p><p className="muted">{t("Срок прошёл, решения нет.")}</p>{role === 'admin' ? <span className="muted">{queueHint}</span> : <Link to="/queue?overdue=1">{t("Открыть просроченные в очереди")}</Link>}</section>}
       </div>
       {summary.total === 0 && <p className="summary-empty" role="status">{t("Обращений пока нет — диаграммы появятся после первой подачи.")}</p>}
       <div className="summary-sections">
@@ -159,7 +160,7 @@ export default function SummaryPage() {
             <figure className="summary-chart"><BarChart title={t("Повторяющиеся темы по категориям")} bars={topicBars} /></figure>
             <ul className="topic-list" aria-label={t("Повторяющиеся темы")}>{summary.recurringTopics.map(topic => <li key={topic.categoryId}>
               <span className="topic-name">{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</span> <span className="topic-count">{timesLabel(topic.count, locale)}</span>{' '}
-              <Link to={`/queue?categoryId=${encodeURIComponent(topic.categoryId)}`}>{t("Открыть в очереди")}</Link>
+              {role === 'admin' ? <span className="muted">{queueHint}</span> : <Link to={`/queue?categoryId=${encodeURIComponent(topic.categoryId)}`}>{t("Открыть в очереди")}</Link>}
             </li>)}</ul>
             <table aria-label={t("Повторяющиеся темы")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Количество")}</th></tr></thead><tbody>{summary.recurringTopics.map(topic => <tr key={topic.categoryId}><th scope="row">{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</th><td>{number.format(topic.count)}</td></tr>)}</tbody></table>
           </>}

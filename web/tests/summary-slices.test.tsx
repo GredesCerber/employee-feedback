@@ -69,10 +69,13 @@ describe('#130 summary slices', () => {
     expect(cells(within(table).getByRole('row', { name: /Обучение/ }))).toEqual(['0', '—']);
   });
 
-  it('shows an overdue card with the count and a link to the overdue queue', async () => {
+  it('shows the overdue count and queue guidance to the administrator', async () => {
     await openSummary();
     const card = await screen.findByRole('region', { name: 'Просрочено: 3' });
-    expect(within(card).getByRole('link').getAttribute('href')).toBe('/queue?overdue=1');
+    expect(within(card).getByText('3')).toBeTruthy();
+    expect(within(card).getByText('Срок прошёл, решения нет.')).toBeTruthy();
+    expect(within(card).queryByRole('link')).toBeNull();
+    expect(within(card).getByText('Очередь доступна руководителю')).toBeTruthy();
   });
 
   it('omits the new blocks when the API does not return the optional fields', async () => {
@@ -124,3 +127,4 @@ describe('#130 demo reset', () => {
     expect(screen.getByRole('button', { name: 'Сбросить демо' })).toBeTruthy();
   });
 });
+
