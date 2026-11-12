@@ -7,12 +7,13 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
 import { AnonymousBadge } from '../features/complaintMeta';
+import type { Complaint } from '../features/complaint';
 import { dateLabel, Loading, LoadError, StatusBadge, statusLabels, typeLabels } from '../features/complaint';
 import { PageCompletionSignal } from '../features/CompletionSignal';
 import { IdeaQuick } from '../features/IdeaQuick';
 import { useRevealOnView } from '../features/designMotion';
-import { answerDaysLabel, hasMyFilters, MY_SEARCH_MAX, myFiltersFromUrl, myFiltersToQuery, myFiltersToUrl } from '../features/myComplaintsFilters';
-import type { MyFilters } from '../features/myComplaintsFilters';
+import { answerDaysLabel, hasMyFilters, MY_FETCH_LIMIT, MY_FETCH_MAX_PAGES, MY_PAGE_SIZE, MY_SEARCH_MAX, myFiltersFromUrl, myFiltersToQuery, mySortFromUrl, mySortLabels, myStateToUrl, sortMyComplaints } from '../features/myComplaintsFilters';
+import type { MyFilters, MySort } from '../features/myComplaintsFilters';
 import '../styles/feedback-layout.css';
 import '../features/myComplaints.css';
 
@@ -46,6 +47,7 @@ export default function MyComplaintsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlKey = searchParams.toString();
   const applied = useMemo(() => myFiltersFromUrl(new URLSearchParams(urlKey)), [urlKey]);
+  const sort = useMemo(() => mySortFromUrl(new URLSearchParams(urlKey)), [urlKey]);
   const active = hasMyFilters(applied);
   const [search, setSearch] = useState(applied.q);
   const [offset, setOffset] = useState(0);
@@ -54,9 +56,11 @@ export default function MyComplaintsPage() {
   appliedRef.current = applied;
   const heading = useRef<HTMLHeadingElement>(null);
 
-  const update = useCallback((next: MyFilters) => {
+  const sortRef = useRef(sort);
+  sortRef.current = sort;
+  const update = useCallback((next: MyFilters, nextSort: MySort = sortRef.current) => {
     setOffset(0);
-    setSearchParams(myFiltersToUrl(next), { replace: true });
+    setSearchParams(myStateToUrl(next, nextSort), { replace: true });
   }, [setSearchParams]);
 
   // Адрес изменился извне (назад/вперёд): поле поиска показывает то, что применено.
@@ -68,8 +72,23 @@ export default function MyComplaintsPage() {
     return () => clearTimeout(timer);
   }, [search, update]);
 
-  const load = useCallback(async () => requireData((await api.GET('/complaints', { params: { query: myFiltersToQuery(applied, offset) } })).data), [api, applied, offset]);
+  // #312 B3: порядок по умолчанию отдаёт сервер постранично; другой порядок — все свои обращения, отсортированные здесь.
+  const serverOffset = sort === 'new' ? offset : 0;
+  const load = useCallback(async () => {
+    if (sort === 'new') return requireData((await api.GET('/complaints', { params: { query: myFiltersToQuery(applied, serverOffset) } })).data);
+    const items: Complaint[] = [];
+    let total = 0;
+    for (let page = 0; page < MY_FETCH_MAX_PAGES; page += 1) {
+      const query = { ...myFiltersToQuery(applied, page * MY_FETCH_LIMIT), limit: MY_FETCH_LIMIT };
+      const data = requireData((await api.GET('/complaints', { params: { query } })).data);
+      items.push(...data.items);
+      total = data.total;
+      if (data.items.length === 0 || items.length >= total) break;
+    }
+    return { items: sortMyComplaints(items, sort), total: Math.max(total, items.length), limit: MY_PAGE_SIZE, offset: 0 };
+  }, [api, applied, serverOffset, sort]);
   const result = useResource(load);
+  const visible = result.data ? (sort === 'new' ? result.data.items : result.data.items.slice(offset, offset + MY_PAGE_SIZE)) : [];
   useEffect(() => { if (result.data && result.data.total > 0) setSeenAny(true); }, [result.data]);
 
   const number = new Intl.NumberFormat(localeNames[locale]);
@@ -102,6 +121,9 @@ export default function MyComplaintsPage() {
         <option value="">{t("Все статусы")}</option>
         {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{t(label)}</option>)}
       </select></label>
+      <label className="my-filter-sort">{t("Сортировка")}<select value={sort} onChange={event => update({ ...applied, q: search }, event.target.value as MySort)}>
+        {Object.entries(mySortLabels).map(([value, label]) => <option key={value} value={value}>{t(label)}</option>)}
+      </select></label>
       {active && <button type="button" className="my-filter-reset" onClick={reset}>{t("Сбросить")}</button>}
     </form>}
     {result.loading && <Loading label={t("Загрузка обращений…")} />}
@@ -111,12 +133,12 @@ export default function MyComplaintsPage() {
         <p className="muted my-counter" aria-live="polite">{active
           ? <>{t("Найдено:")} {number.format(result.data.total)}</>
           : <>{t("Всего обращений:")} {number.format(result.data.total)}</>}</p>
-        <PageCompletionSignal items={result.data.items} />
-        {result.data.items.length === 0 ? <div className="empty-state my-no-results">
+        <PageCompletionSignal items={visible} />
+        {visible.length === 0 ? <div className="empty-state my-no-results">
           <p>{applied.q ? t("По запросу «{query}» обращений не найдено.", { query: applied.q }) : t("Обращений с выбранным статусом нет.")}</p>
           <p className="muted">{t("Измените поиск или статус либо нажмите «Сбросить», чтобы снова увидеть все свои обращения.")}</p>
           <div className="actions"><button type="button" onClick={() => { reset(); heading.current?.focus(); }}>{t("Сбросить")}</button></div>
-        </div> : <ul className="complaint-list">{result.data.items.map(item => <li key={item.id} ref={reveal} className="complaint-item reveal-panel">
+        </div> : <ul className="complaint-list">{visible.map(item => <li key={item.id} ref={reveal} className="complaint-item reveal-panel">
           <div className="item-header"><Link className="complaint-number" to={`/my/${item.id}`}>{item.number}</Link>{item.anonymous && <AnonymousBadge />}<StatusBadge status={item.status} /></div>
           <p className="item-description">{item.description}</p>
           <p className="muted">{t(typeLabels[item.type])} · {dateLabel(item.createdAt, locale)}</p>
@@ -125,7 +147,7 @@ export default function MyComplaintsPage() {
             <div><dt>{t("Срок")}</dt><dd className={item.overdue ? 'overdue' : undefined}>{item.overdue && t("Просрочено · срок ")}{dateLabel(item.dueAt, locale)}</dd></div>
           </dl>
         </li>)}</ul>}
-        {result.data.total > 20 && <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(value => Math.max(0, value - 20))}>{t("Назад")}</button><span>{t("Страница")} {Math.floor(offset / 20) + 1} {t("из")} {Math.max(1, Math.ceil(result.data.total / 20))}</span><button disabled={offset + result.data.items.length >= result.data.total} onClick={() => setOffset(value => value + 20)}>{t("Далее")}</button></div>}
+        {result.data.total > MY_PAGE_SIZE && <div className="pagination"><button disabled={offset === 0} onClick={() => setOffset(value => Math.max(0, value - MY_PAGE_SIZE))}>{t("Назад")}</button><span>{t("Страница")} {Math.floor(offset / MY_PAGE_SIZE) + 1} {t("из")} {Math.max(1, Math.ceil(result.data.total / MY_PAGE_SIZE))}</span><button disabled={offset + visible.length >= result.data.total} onClick={() => setOffset(value => value + MY_PAGE_SIZE)}>{t("Далее")}</button></div>}
       </>}
     </>}
   </section>;

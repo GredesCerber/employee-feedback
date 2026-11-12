@@ -61,6 +61,20 @@ export function AuthorReply({ item, onUpdated }: { item: Complaint; onUpdated: O
   </form>;
 }
 
+/** Имитация из И3 (docs/research/integrations.md): кнопка только показывает заглушку, запросов нет. */
+export function BitrixTaskStub({ item }: { item: Complaint }) {
+  const { t } = useI18n();
+  const { role } = useSession();
+  const [notice, setNotice] = useState('');
+  if (role !== 'manager' || item.status !== 'implemented') return null;
+  return <div className="integration-stub">
+    <p><button type="button" onClick={() => setNotice(t("Интеграция с Битрикс24 запланирована. В демо задача не отправляется"))}>{t("Создать задачу в Битрикс24")}</button>{' '}
+      <span className="imitation-mark">{t("Планируется интеграция")}</span></p>
+    <p className="muted">{t("Имитация: в демо кнопка только показывает, как это будет работать, и ничего не отправляет.")}</p>
+    {notice && <p role="status">{notice}</p>}
+  </div>;
+}
+
 export function ManagerActions({ item, onUpdated }: { item: Complaint; onUpdated: OnUpdated }) {
   const { t } = useI18n();
   const { api } = useSession();
