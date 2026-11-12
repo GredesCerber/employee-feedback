@@ -65,7 +65,8 @@
   .status-step-text { align-items: flex-start; padding-top: 6px; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  :root:not([data-design-motion="off"]) .status-step.is-current .status-step-marker { animation: status-step-in 420ms cubic-bezier(.2, .72, .2, 1) both; }
+  :root:not([data-design-motion="off"]) .status-step.is-current .status-step-marker { animation: status-step-in var(--motion-medium) var(--motion-ease) both; }
+  :root:not([data-design-motion="off"]) .copy-number-status:not(:empty) { animation: notice-in var(--motion-medium) var(--motion-ease) both; }
 }
 @keyframes status-step-in { from { transform: scale(.82); opacity: .4; } to { transform: scale(1); opacity: 1; } }
 

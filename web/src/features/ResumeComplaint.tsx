@@ -52,5 +52,5 @@ export function LastComplaintButton() {
       }
     } finally { setBusy(false); }
   }
-  return <div className="last-complaint">{id && <button type="button" disabled={busy} onClick={resume}>{busy ? labels.busy : labels.button}</button>}{visibleError && <p role="alert">{visibleError}</p>}</div>;
+  return <div className="last-complaint">{id && <button type="button" disabled={busy} aria-busy={busy} onClick={resume}>{busy ? labels.busy : labels.button}</button>}{visibleError && <p role="alert">{visibleError}</p>}</div>;
 }
