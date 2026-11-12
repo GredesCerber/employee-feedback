@@ -51,11 +51,11 @@ describe('#312 A3 character counter', () => {
   });
 
   it('shows «n / 5000» for description and solution, linked with aria-describedby', async () => {
-    const { user, description, solution } = await openForm();
+    const { description, solution } = await openForm();
     expect(description.maxLength).toBe(5000);
     const counter = document.getElementById(description.getAttribute('aria-describedby')!)!;
     expect(counter.textContent).toContain('0 / 5000');
-    await user.type(description, 'Привет');
+    fireEvent.change(description, { target: { value: 'Привет' } });
     expect(counter.textContent).toContain('6 / 5000');
     const solutionCounter = document.getElementById(solution.getAttribute('aria-describedby')!)!;
     expect(solutionCounter.textContent).toContain('0 / 5000');
@@ -78,8 +78,8 @@ describe('#312 A2 draft in sessionStorage', () => {
   it('restores category, texts, anonymity and location after leaving the form, with a visible note', async () => {
     const first = await openForm();
     await first.user.selectOptions(first.category, 'cross_department');
-    await first.user.type(first.description, 'Черновик описания');
-    await first.user.type(first.solution, 'Моё решение');
+    fireEvent.change(first.description, { target: { value: 'Черновик описания' } });
+    fireEvent.change(first.solution, { target: { value: 'Моё решение' } });
     await first.user.click(screen.getByLabelText('Подать анонимно'));
     // Точку на карте в jsdom не поставить, кладём её в черновик напрямую — проверяем чтение.
     const saved = readDraft('employee')!;
@@ -120,7 +120,7 @@ describe('#312 A2 draft in sessionStorage', () => {
   it('keeps the draft after a failed submit and clears it after a successful one', async () => {
     const { user, description, category } = await openForm();
     await user.selectOptions(category, 'cross_department');
-    await user.type(description, 'Текст обращения');
+    fireEvent.change(description, { target: { value: 'Текст обращения' } });
     postMode = 'fail';
     await user.click(screen.getByRole('button', { name: 'Отправить обращение' }));
     await screen.findByText(/Сервер временно недоступен|Не удалось|ошиб/i);
@@ -145,8 +145,8 @@ describe('#312 A2 draft in sessionStorage', () => {
   it('works without storage access', async () => {
     const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('denied'); });
     const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('denied'); });
-    const { user, description } = await openForm();
-    await user.type(description, 'Без хранилища');
+    const { description } = await openForm();
+    fireEvent.change(description, { target: { value: 'Без хранилища' } });
     expect(description.value).toBe('Без хранилища');
     spy.mockRestore(); set.mockRestore();
   });
@@ -176,7 +176,7 @@ describe('#312 A4 category cards', () => {
 
   it('auto-suggestion still fills the category and highlights the suggested card', async () => {
     const { user, description, category } = await openForm();
-    await user.type(description, 'Одни и те же данные вводим в разные системы');
+    fireEvent.change(description, { target: { value: 'Одни и те же данные вводим в разные системы' } });
     await user.click(screen.getByRole('button', { name: 'Подсказать категорию' }));
     await screen.findByText('Предложено подсказкой');
     expect(category.value).toBe('it');
