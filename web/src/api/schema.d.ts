@@ -418,6 +418,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/complaints/{complaintId}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque complaint ID (not its displayed registration number). */
+                complaintId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rate the result after the final decision
+         * @description Employee author only. Allowed once, only after the complaint is implemented, rejected or closed; otherwise 409. A second rating is 409. Another employee's complaint is 404 as everywhere. Saves feedback {understood, solved, comment?, createdAt} on the complaint; never changes status or decision. Managers and admins see the rating in the complaint.
+         */
+        post: operations["recordFeedback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/improvements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Improvements feed: you suggested, we did
+         * @description All roles. Depersonalized list of implemented complaints, newest first: category, the decision text, date, how many authors gave feedback and how many confirmed the result. Complaints linked to one shared problem form one item (reportersCount). Never returns complaint text, author, number, comments or anonymous data; mine marks items the viewer authored.
+         */
+        get: operations["listImprovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pilot effect panel for a period
+         * @description Manager and admin only. Aggregates complaints created in the half-open UTC period [now-days, now) next to the previous equal period: reach of employees, reviewed share, implemented count, authors' feedback (understood and solved shares) and category changes. Shares are 0..1 or null when the denominator is 0. No complaint text or personal data.
+         */
+        get: operations["getImpact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/problems": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List shared problems
+         * @description Manager and admin only. Shared problems created from several complaints, newest first, with linked complaint numbers and statuses.
+         */
+        get: operations["listProblems"];
+        put?: never;
+        /**
+         * Join complaints into a shared problem
+         * @description Manager only. Links 2..20 existing nonterminal complaints that are not yet in a problem into one problem with a title and optional plan; otherwise 404 for an unknown id, 409 when a complaint is terminal or already linked. Each complaint gets problem and a history entry; authors see the plan on their card. When any linked complaint later gets an implemented or rejected decision, the same decision is applied to the other open linked complaints.
+         */
+        post: operations["createProblem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -643,6 +730,10 @@ export interface components {
             undoExpiresAt?: string | null;
             /** @description true when created by the demo simulator (X-Demo-Source: simulator with DEMO_SIMULATION_ENABLED=true). Always false otherwise. */
             simulated?: boolean;
+            /** @description Author's rating after the final decision. Absent until given; null is never used. */
+            feedback?: components["schemas"]["Feedback"];
+            /** @description Shared problem the complaint is linked to. Absent when not linked. */
+            problem?: components["schemas"]["ProblemRef"];
         };
         /** @description total is the count after authorization and filters, before pagination. Stable order: createdAt descending then id ascending. */
         ComplaintList: {
@@ -1212,6 +1303,115 @@ export interface components {
             /** @constant */
             status: "ready";
             complaints: number;
+        };
+        /** @description Author's short rating after the review is finished. */
+        FeedbackInput: {
+            /** @description Was the answer understandable? */
+            understood: boolean;
+            /** @description Was the problem solved? */
+            solved: boolean;
+            /** @description Optional free text. */
+            comment?: string;
+        };
+        Feedback: {
+            understood: boolean;
+            solved: boolean;
+            comment?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @description Shared problem a complaint is linked to. */
+        ProblemRef: {
+            id: string;
+            title: string;
+            plan: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ProblemInput: {
+            title: string;
+            /** @description Optional action plan text. */
+            plan?: string;
+            complaintIds: string[];
+        };
+        ProblemMember: {
+            id: string;
+            number: string;
+            status: components["schemas"]["Status"];
+            categoryId: string;
+        };
+        ProblemGroup: {
+            id: string;
+            title: string;
+            plan: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /**
+             * @description resolved when every linked complaint is terminal.
+             * @enum {string}
+             */
+            status: "open" | "resolved";
+            complaints: components["schemas"]["ProblemMember"][];
+        };
+        ProblemList: {
+            items: components["schemas"]["ProblemGroup"][];
+            total: number;
+        };
+        /** @description Depersonalized public item: no complaint text, author, number or comments. */
+        Improvement: {
+            key: string;
+            categoryId: string;
+            categoryName: string;
+            /** @description Decision explanation of the implemented complaint(s). */
+            result: string;
+            /** Format: date-time */
+            implementedAt: string;
+            problemTitle: string | null;
+            /** @description Complaints behind the improvement: 1, or the size of the shared problem. */
+            reportersCount: number;
+            /** @description Authors who gave feedback. */
+            answeredCount: number;
+            /** @description Authors who confirmed the problem is solved. */
+            confirmedCount: number;
+            /** @description True when the viewer authored one of the complaints. */
+            mine: boolean;
+        };
+        ImprovementList: {
+            items: components["schemas"]["Improvement"][];
+            total: number;
+            /** Format: date-time */
+            generatedAt: string;
+        };
+        ImpactPeriod: {
+            total: number;
+            /** @description Distinct authors of complaints created in the period. */
+            reachEmployees: number;
+            employeesTotal: number;
+            /** @description Status other than new. */
+            reviewedCount: number;
+            reviewedShare: number | null;
+            implementedCount: number;
+            feedbackCount: number;
+            /** @description Feedback with solved=true. */
+            solvedCount: number;
+            solvedShare: number | null;
+            understoodShare: number | null;
+        };
+        CategoryChange: {
+            categoryId: string;
+            categoryName: string;
+            current: number;
+            previous: number;
+        };
+        /** @description Pilot effect panel: current period [now-days, now) against the previous equal period. */
+        Impact: {
+            /** Format: date-time */
+            generatedAt: string;
+            days: number;
+            current: components["schemas"]["ImpactPeriod"];
+            previous: components["schemas"]["ImpactPeriod"];
+            /** @description Categories with complaints in either period, by current count descending then categoryId. */
+            categories: components["schemas"]["CategoryChange"][];
         };
     };
     responses: {
@@ -2154,6 +2354,158 @@ export interface operations {
                     "application/json": components["schemas"]["HealthReady"];
                 };
             };
+            500: components["responses"]["Internal"];
+        };
+    };
+    recordFeedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Opaque complaint ID (not its displayed registration number). */
+                complaintId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackInput"];
+            };
+        };
+        responses: {
+            /** @description Rating saved. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Complaint"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            413: components["responses"]["TooLarge"];
+            415: components["responses"]["Unsupported"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    listImprovements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Improvements, possibly empty. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    getImpact: {
+        parameters: {
+            query?: {
+                /** @description Period length in days; default 30. */
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aggregates, zero-filled when empty. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Impact"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    listProblems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Problems, possibly empty. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    createProblem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemInput"];
+            };
+        };
+        responses: {
+            /** @description Problem created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemGroup"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            413: components["responses"]["TooLarge"];
+            415: components["responses"]["Unsupported"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
             500: components["responses"]["Internal"];
         };
     };
