@@ -3,6 +3,7 @@ import type { ReferenceData } from '../model.js';
 import { MIN_SUGGESTION_LENGTH, suggestDemoCategory } from '../discovery.js';
 import { createAnthropicClassifier, describeFailure, type CategoryClassifier } from './anthropic.js';
 import { suggestByRules } from './rules.js';
+import { compatConfigsFromEnv, timeoutFromEnv, CompatError, createCompatClassifier, type CompatClassifier, type CompatProviderConfig } from './openai-compatible.js';
 import { hasDigestFacts, templateDigest, type DigestContent, type DigestFacts } from './digest.js';
 
 export const DEFAULT_AI_MODEL = 'claude-haiku-5-5';
@@ -21,11 +22,15 @@ export interface AiProviderOptions {
   timeoutMs?: number;
   /** Test seam for the SDK HTTP layer (recorded responses instead of the network). */
   fetch?: typeof globalThis.fetch;
+  /** Chain before Anthropic: Gemini first, then the second provider (xAI or Groq), then local rules. */
+  compat?: CompatProviderConfig[];
 }
 
 export interface AiProvider {
   readonly llmEnabled: boolean;
   readonly model: string;
+  /** Names of configured providers in call order (no keys). */
+  readonly providers: string[];
   readonly timeoutMs: number;
   suggestCategory(text: string, references: ReferenceData, log?: FastifyBaseLogger): Promise<CategorySuggestion>;
   summarize(facts: DigestFacts, log?: FastifyBaseLogger): Promise<DigestContent>;
@@ -36,6 +41,12 @@ export function aiConfigFromEnv(): { apiKey: string | undefined; model: string }
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   const model = process.env.AI_MODEL?.trim();
   return { apiKey: apiKey || undefined, model: model || DEFAULT_AI_MODEL };
+}
+
+/** Extra providers and timeout from the environment (GEMINI_API_KEY, XAI_API_KEY or GROQ_API_KEY, AI_TIMEOUT_MS). */
+export function aiChainConfigFromEnv(): Pick<AiProviderOptions, 'compat' | 'timeoutMs'> {
+  const timeoutMs = timeoutFromEnv();
+  return { compat: compatConfigsFromEnv(), ...(timeoutMs ? { timeoutMs } : {}) };
 }
 
 /** Local answer without any model: recorded demo examples first (#121), then keyword rules. */
@@ -55,35 +66,43 @@ export function createAiProvider(options: AiProviderOptions = {}): AiProvider {
   const apiKey = options.apiKey?.trim() || undefined;
   const model = options.model?.trim() || DEFAULT_AI_MODEL;
   const timeoutMs = options.timeoutMs ?? DEFAULT_AI_TIMEOUT_MS;
-  const classifier: CategoryClassifier | undefined = apiKey
+  const anthropic: CategoryClassifier | undefined = apiKey
     ? createAnthropicClassifier({ apiKey, model, timeoutMs, fetch: options.fetch })
     : undefined;
+  const compat: CompatClassifier[] = (options.compat ?? []).map(config => createCompatClassifier(config, timeoutMs, options.fetch));
+  const secrets = [apiKey, ...(options.compat ?? []).map(config => config.apiKey)].filter((value): value is string => Boolean(value));
+  const chain: { name: string; model: string; classifier: CategoryClassifier }[] = [
+    ...compat.map(item => ({ name: item.kind, model: item.model, classifier: item as CategoryClassifier })),
+    ...(anthropic ? [{ name: 'anthropic', model, classifier: anthropic }] : []),
+  ];
+  const describe = (error: unknown) => error instanceof CompatError ? error.message : describeFailure(error);
   return {
-    llmEnabled: classifier !== undefined,
-    model,
+    llmEnabled: chain.length > 0,
+    model: chain[0]?.model ?? model,
+    providers: chain.map(item => item.name),
     timeoutMs,
     async summarize(facts, log) {
       const fallback = templateDigest(facts);
-      if (classifier && facts.total > 0) {
+      if (facts.total > 0) for (const provider of chain) {
         try {
-          const text = await classifier.summarize(facts);
-          if ((apiKey && text.includes(apiKey)) || !hasDigestFacts(text, facts)) throw new Error('invalid digest content');
+          const text = await provider.classifier.summarize(facts);
+          if (secrets.some(secret => text.includes(secret)) || !hasDigestFacts(text, facts)) throw new Error('invalid digest content');
           return { ...fallback, text, source: 'llm' };
         } catch (error) {
-          log?.warn({ reason: describeFailure(error), model }, 'ИИ-сводка недоступна, используется запасной шаблон');
+          log?.warn({ reason: describe(error), provider: provider.name, model: provider.model }, 'ИИ-сводка недоступна, пробуем следующего провайдера или запасной шаблон');
         }
       }
       return fallback;
     },
     async suggestCategory(text, references, log) {
       if (text.trim().length < MIN_SUGGESTION_LENGTH) return { category: null, source: 'none' };
-      if (classifier) {
+      for (const provider of chain) {
         try {
-          const categoryId = await classifier.classify(text, references.categories.map(({ id, name }) => ({ id, name })));
+          const categoryId = await provider.classifier.classify(text, references.categories.map(({ id, name }) => ({ id, name })));
           const category = references.categories.find(candidate => candidate.id === categoryId);
           return category ? { category: { id: category.id, name: category.name }, source: 'llm' } : { category: null, source: 'none' };
         } catch (error) {
-          log?.warn({ reason: describeFailure(error), model }, 'ИИ-подсказка категории недоступна, используется запасной вариант без ИИ');
+          log?.warn({ reason: describe(error), provider: provider.name, model: provider.model }, 'ИИ-подсказка категории недоступна, пробуем следующего провайдера или запасной вариант без ИИ');
         }
       }
       return suggestLocally(text, references);
