@@ -114,7 +114,7 @@ export function NotificationBell({ role }: { role: string }) {
         ? !loading && !error && <p className="muted notification-empty">{t("Новых уведомлений нет")}</p>
         : <ul className="notification-list">{items.map(entry => <li key={entry.id}>
           <Link to={entry.href} onClick={() => close()}>{notificationText(locale, entry.message)}</Link>{entry.simulated && <> <ImitationBadge hint={t("создано демо-симулятором")} /></>}
-          <small className="muted">{entry.complaintNumber} · {formatTime(entry.createdAt, locale)}</small>
+          <small className="muted">{entry.kind === 'overdue' && <><span className="notification-kind-overdue">{t("Просрочено")}</span> · </>}{entry.complaintNumber} · {formatTime(entry.createdAt, locale)}</small>
         </li>)}</ul>}
       <p className="notification-note">{t(IMITATION_NOTE)}</p>
     </section>}
