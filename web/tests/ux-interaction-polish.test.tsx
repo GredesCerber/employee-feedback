@@ -62,7 +62,13 @@ describe('#312 interaction polish: states', () => {
   });
 
   it('highlights the current navigation item through aria-current', () => {
-    expect(shell).toMatch(/\.workspace nav a\[aria-current="page"\]\s*\{[^}]*background:\s*var\(--color-primary\)/);
+    expect(shell).toMatch(/\.workspace-sidebar nav a\[aria-current="page"\]\s*\{[^}]*background:\s*var\(--color-primary\)/);
+  });
+
+  it('keeps side-menu styles out of in-page navigation (dark-theme «Подать обращение» bar)', () => {
+    // Регрессия: «.workspace nav a» перекрашивал быстрые действия в «Моих обращениях»: тёмный текст на тёмном фоне.
+    expect(shell).not.toMatch(/\.workspace nav\b/);
+    expect(interaction).not.toMatch(/\.workspace nav\b/);
   });
 });
 
