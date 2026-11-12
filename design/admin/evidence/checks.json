@@ -1,0 +1,345 @@
+{
+  "generatedAt": "2026-11-12T13:06:24.744Z",
+  "url": "http://127.0.0.1:5195/mockup.html",
+  "scope": "Mockup only; no production auth or API exercised",
+  "checks": [
+    {
+      "name": "360: initial layout",
+      "status": "pass",
+      "detail": "Users active; mobile menu closed; document fits viewport"
+    },
+    {
+      "name": "360: mobile menu keyboard",
+      "status": "pass",
+      "detail": "Open focuses navigation; Escape closes and restores trigger"
+    },
+    {
+      "name": "360: keyboard focus",
+      "status": "pass",
+      "detail": {
+        "tag": "INPUT",
+        "outline": "solid",
+        "width": "3px"
+      }
+    },
+    {
+      "name": "360: state Загрузка",
+      "status": "pass",
+      "detail": "Загружаем данные\n\nДождитесь завершения или вернитесь к готовому состоянию.\n\nВернуться к готовому состоянию"
+    },
+    {
+      "name": "360: state Пусто",
+      "status": "pass",
+      "detail": "Пока нет данных\n\nДобавьте пользователя после возврата к готовому состоянию.\n\nВернуться к готовому состоянию"
+    },
+    {
+      "name": "360: state Ошибка",
+      "status": "pass",
+      "detail": "Не удалось загрузить данные\n\nПопробуйте ещё раз.\n\nПовторить"
+    },
+    {
+      "name": "360: state Частичные данные",
+      "status": "pass",
+      "detail": "Показана только часть данных\n\nВернитесь к готовому состоянию, чтобы увидеть полный пример.\n\nВернуться к готовому состоянию"
+    },
+    {
+      "name": "360: state Нет доступа",
+      "status": "pass",
+      "detail": "Нет доступа к разделу\n\nОбратитесь к администратору или вернитесь к готовому состоянию.\n\nВернуться к готовому состоянию"
+    },
+    {
+      "name": "360: state Успех",
+      "status": "pass",
+      "detail": "Изменение показано в макете\n\nДанные хранятся только до перезагрузки страницы.\n\nВернуться к готовому состоянию"
+    },
+    {
+      "name": "360: user card and read-only preview",
+      "status": "pass",
+      "detail": "Target identity shown; admin navigation hidden; mutation controls disabled; return works"
+    },
+    {
+      "name": "360: last administrator guard",
+      "status": "pass",
+      "detail": "Local example blocks disabling last administrator; not evidence of API protection"
+    },
+    {
+      "name": "360: long display name",
+      "status": "pass",
+      "detail": "81-character unbroken synthetic display name wraps without document overflow"
+    },
+    {
+      "name": "360: roles and overview",
+      "status": "pass",
+      "detail": {
+        "observation": "Create, rename with stable ID, permissions confirmation, clone, archive/restore, assign and blocked deletion; system rename preserves last-admin guard; overview switch works",
+        "confirmations": [
+          {
+            "type": "confirm",
+            "message": "Роль: Координатор обращений\nДобавлено разрешений: 1 (Просмотр пользователей)\nУдалено разрешений: 0\nЗатронуто пользователей: 0\nСохранить в макете?"
+          },
+          {
+            "type": "confirm",
+            "message": "Удалить роль \"Резервный координатор\" из макета?"
+          }
+        ]
+      }
+    },
+    {
+      "name": "360: accessibility sample",
+      "status": "pass",
+      "detail": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "name": "360: isolated mockup",
+      "status": "pass",
+      "detail": {
+        "runtimeErrors": 0,
+        "externalRequests": 0,
+        "reducedMotion": true
+      }
+    },
+    {
+      "name": "1280: initial layout",
+      "status": "pass",
+      "detail": "Users active; mobile menu closed; document fits viewport"
+    },
+    {
+      "name": "1280: keyboard focus",
+      "status": "pass",
+      "detail": {
+        "tag": "INPUT",
+        "outline": "solid",
+        "width": "3px"
+      }
+    },
+    {
+      "name": "1280: state Загрузка",
+      "status": "pass",
+      "detail": "Загружаем данные\n\nДождитесь завершения или вернитесь к готовому состоянию.\n\nВернуться к готовому состоянию"
+    },
+    {
+      "name": "1280: state Пусто",
+      "status": "pass",
+      "detail": "Пока нет данных\n\nДобавьте пользователя после возврата к готовому состоянию.\n\nВернуться к готовому состоянию"
+    },
+    {
+      "name": "1280: state Ошибка",
+      "status": "pass",
+      "detail": "Не удалось загрузить данные\n\nПопробуйте ещё раз.\n\nПовторить"
+    },
+    {
+      "name": "1280: state Частичные данные",
+      "status": "pass",
+      "detail": "Показана только часть данных\n\nВернитесь к готовому состоянию, чтобы увидеть полный пример.\n\nВернуться к готовому состоянию"
+    },
+    {
+      "name": "1280: state Нет доступа",
+      "status": "pass",
+      "detail": "Нет доступа к разделу\n\nОбратитесь к администратору или вернитесь к готовому состоянию.\n\nВернуться к готовому состоянию"
+    },
+    {
+      "name": "1280: state Успех",
+      "status": "pass",
+      "detail": "Изменение показано в макете\n\nДанные хранятся только до перезагрузки страницы.\n\nВернуться к готовому состоянию"
+    },
+    {
+      "name": "1280: user card and read-only preview",
+      "status": "pass",
+      "detail": "Target identity shown; admin navigation hidden; mutation controls disabled; return works"
+    },
+    {
+      "name": "1280: last administrator guard",
+      "status": "pass",
+      "detail": "Local example blocks disabling last administrator; not evidence of API protection"
+    },
+    {
+      "name": "1280: long display name",
+      "status": "pass",
+      "detail": "81-character unbroken synthetic display name wraps without document overflow"
+    },
+    {
+      "name": "1280: roles and overview",
+      "status": "pass",
+      "detail": {
+        "observation": "Create, rename with stable ID, permissions confirmation, clone, archive/restore, assign and blocked deletion; system rename preserves last-admin guard; overview switch works",
+        "confirmations": [
+          {
+            "type": "confirm",
+            "message": "Роль: Координатор обращений\nДобавлено разрешений: 1 (Просмотр пользователей)\nУдалено разрешений: 0\nЗатронуто пользователей: 0\nСохранить в макете?"
+          },
+          {
+            "type": "confirm",
+            "message": "Удалить роль \"Резервный координатор\" из макета?"
+          }
+        ]
+      }
+    },
+    {
+      "name": "1280: accessibility sample",
+      "status": "pass",
+      "detail": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "name": "1280: isolated mockup",
+      "status": "pass",
+      "detail": {
+        "runtimeErrors": 0,
+        "externalRequests": 0,
+        "reducedMotion": true
+      }
+    }
+  ],
+  "screenshots": [
+    {
+      "viewport": "360x800",
+      "artifact": "users-360.png",
+      "observation": "users"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "menu-open-360.png",
+      "observation": "menu-open"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "state-0-360.png",
+      "observation": "state-0"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "state-1-360.png",
+      "observation": "state-1"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "state-2-360.png",
+      "observation": "state-2"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "state-3-360.png",
+      "observation": "state-3"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "state-4-360.png",
+      "observation": "state-4"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "state-5-360.png",
+      "observation": "state-5"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "user-card-360.png",
+      "observation": "user-card"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "preview-360.png",
+      "observation": "preview"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "long-name-360.png",
+      "observation": "long-name"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "roles-360.png",
+      "observation": "roles"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "role-renamed-360.png",
+      "observation": "role-renamed"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "role-assigned-360.png",
+      "observation": "role-assigned"
+    },
+    {
+      "viewport": "360x800",
+      "artifact": "overview-360.png",
+      "observation": "overview"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "users-1280.png",
+      "observation": "users"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "state-0-1280.png",
+      "observation": "state-0"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "state-1-1280.png",
+      "observation": "state-1"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "state-2-1280.png",
+      "observation": "state-2"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "state-3-1280.png",
+      "observation": "state-3"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "state-4-1280.png",
+      "observation": "state-4"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "state-5-1280.png",
+      "observation": "state-5"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "user-card-1280.png",
+      "observation": "user-card"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "preview-1280.png",
+      "observation": "preview"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "long-name-1280.png",
+      "observation": "long-name"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "roles-1280.png",
+      "observation": "roles"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "role-renamed-1280.png",
+      "observation": "role-renamed"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "role-assigned-1280.png",
+      "observation": "role-assigned"
+    },
+    {
+      "viewport": "1280x900",
+      "artifact": "overview-1280.png",
+      "observation": "overview"
+    }
+  ]
+}

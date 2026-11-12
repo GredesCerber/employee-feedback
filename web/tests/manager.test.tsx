@@ -7,6 +7,9 @@ import { MemoryRouter } from 'react-router-dom';
 import App from '../src/App';
 import type { Complaint } from '../src/features/complaint';
 
+// Статус на карточке — бейдж в заголовке: те же слова есть и на шкале статуса (#312 A1).
+const cardStatus = (label: string) => waitFor(() => expect(document.querySelector('.detail-header .status-badge')?.textContent).toBe(label));
+
 const contractPath = existsSync(resolve('contracts/api.yaml')) ? resolve('contracts/api.yaml') : resolve('../contracts/api.yaml');
 const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
 const example: Complaint = contract.paths['/complaints'].post.responses['201'].content['application/json'].examples.routed.value;
@@ -122,7 +125,7 @@ describe('manager queue acceptance', () => {
     await user.click(screen.getByRole('button', { name: 'Отправить ответ' }));
     expect((screen.getByRole('button', { name: 'Отправка…' }) as HTMLButtonElement).disabled).toBe(true);
     finishReply();
-    expect(await screen.findByText('На рассмотрении')).toBeTruthy();
+    await cardStatus('На рассмотрении');
     expect(screen.getByText('Номер заявки 123.')).toBeTruthy();
     expect(screen.getByText('Ответ на уточнение отправлен.')).toBeTruthy();
     expect(screen.queryByLabelText('Ваш ответ на уточнение')).toBeNull();
@@ -158,9 +161,9 @@ describe('manager queue acceptance', () => {
     const user = await openManager(); await openCard(user);
     expect(screen.queryByRole('option', { name: 'Реализовано' })).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Начать рассмотрение' }));
-    await screen.findByText('На рассмотрении');
+    await cardStatus('На рассмотрении');
     await user.click(screen.getByRole('button', { name: 'Взять в работу' }));
-    expect(await screen.findByText('В работе')).toBeTruthy();
+    await cardStatus('В работе');
     expect(requests.filter(request => new URL(request.url).pathname.endsWith('/status'))).toHaveLength(2);
   });
 });

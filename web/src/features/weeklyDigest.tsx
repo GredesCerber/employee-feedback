@@ -1,5 +1,5 @@
 import { useI18n, digestTemplate } from '../i18n';
-import { useCallback, useId } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { useSession } from '../app/session';
 import { requireData, useResource } from './data';
 import { dateLabel, LoadError } from './complaint';
@@ -9,6 +9,8 @@ export function WeeklyDigest({ department }: { department: string }) {
   const { t, locale } = useI18n();
   const { api } = useSession();
   const heading = useId();
+  const content = useId();
+  const [open, setOpen] = useState(true);
   const load = useCallback(async () => {
     const data = requireData((await api.GET('/summary/digest', { params: { query: department ? { department } : {} } })).data);
     if (!data.text?.trim() || !Array.isArray(data.highlights) || !data.period
@@ -20,9 +22,9 @@ export function WeeklyDigest({ department }: { department: string }) {
   const result = useResource(load);
   const digest = result.data;
   return <section className="dashboard-panel weekly-digest" aria-labelledby={heading}>
-    <div className="digest-heading"><h2 id={heading}>{t("Сводка за неделю")}</h2>
-      {!result.loading && !result.error && <button type="button" aria-label={t("Обновить сводку за неделю")} onClick={result.reload}>{t("Обновить")}</button>}
-    </div>
+    <div className="digest-heading"><h2 id={heading}><button type="button" className="dashboard-section-toggle" aria-expanded={open} aria-controls={content} onClick={() => setOpen(value => !value)}>{t("Сводка за неделю")}<span aria-hidden="true">{open ? '⌃' : '⌄'}</span></button></h2></div>
+    <div id={content} hidden={!open}>
+    {!result.loading && !result.error && <button type="button" aria-label={t("Обновить сводку за неделю")} onClick={result.reload}>{t("Обновить")}</button>}
     {result.loading && <div className="digest-skeleton" aria-busy="true">
       <p role="status">{t("Загрузка сводки…")}</p>
       <span aria-hidden="true" /><span aria-hidden="true" /><span aria-hidden="true" />
@@ -40,5 +42,6 @@ export function WeeklyDigest({ department }: { department: string }) {
       <p className="field-hint">{t("Период:")} {dateLabel(digest.period.from, locale)} — {dateLabel(digest.period.to, locale)}.</p>
       <p className="field-hint">{t("Сводка рассчитана на")} <time dateTime={digest.generatedAt}>{dateLabel(digest.generatedAt, locale)}</time>{t(". Повторный запрос может использовать кэш до 60 секунд.")}</p>
     </>}
+    </div>
   </section>;
 }

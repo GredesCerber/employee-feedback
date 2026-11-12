@@ -1,5 +1,5 @@
 button, .primary-link { border: 1px solid var(--color-border-strong); border-radius: 7px; padding: 10px 16px; background: var(--color-surface); color: var(--color-text); cursor: pointer; }
-button:disabled { opacity: .55; cursor: default; }
+button:disabled { opacity: .55; cursor: not-allowed; }
 .primary-button, .primary-link { color: var(--color-on-primary); background: var(--color-primary); border-color: var(--color-primary); font-weight: 600; text-decoration: none; }
 .complaint-form { display: grid; gap: 10px; max-width: 680px; margin-top: 28px; }
 .complaint-form > label { margin-top: 12px; font-weight: 600; }

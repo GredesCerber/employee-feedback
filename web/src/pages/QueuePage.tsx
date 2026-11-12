@@ -14,8 +14,8 @@ import { PageCompletionSignal } from '../features/CompletionSignal';
 import '../styles/feedback-layout.css';
 
 type Query = NonNullable<paths['/complaints']['get']['parameters']['query']>;
-type Filters = { departmentId: string; categoryId: string; status: Complaint['status'] | ''; dueAfter: string; dueBefore: string; overdue: boolean; queue: 'assigned' | 'unassigned' | ''; q: string; hideSimulated: boolean };
-const emptyFilters: Filters = { departmentId: '', categoryId: '', status: '', dueAfter: '', dueBefore: '', overdue: false, queue: '', q: '', hideSimulated: false };
+type Filters = { statusGroup: boolean; assignee: 'me' | ''; departmentId: string; categoryId: string; status: Complaint['status'] | ''; dueAfter: string; dueBefore: string; overdue: boolean; queue: 'assigned' | 'unassigned' | ''; q: string; hideSimulated: boolean };
+const emptyFilters: Filters = { statusGroup: false, assignee: '', departmentId: '', categoryId: '', status: '', dueAfter: '', dueBefore: '', overdue: false, queue: '', q: '', hideSimulated: false };
 const quickFilters: { label: string; filters: Pick<Filters, 'status' | 'overdue' | 'queue'> }[] = [
   { label: 'Все', filters: { status: '', overdue: false, queue: '' } },
   { label: 'Новые', filters: { status: 'new', overdue: false, queue: '' } },
@@ -32,6 +32,9 @@ function filtersFromUrl(params: URLSearchParams, reference?: Reference): Filters
   const known = (value: string, items?: { id: string }[]) => (items?.some(item => item.id === value) ? value : '');
   const status = text('status'), queue = text('queue'), dueAfter = text('dueAfter'), dueBefore = text('dueBefore');
   const filters: Filters = {
+    statusGroup: text('status_group') === 'open',
+    assignee: text('assignee') === 'me' ? 'me' : '',
+
     departmentId: known(text('departmentId'), reference?.departments),
     categoryId: known(text('categoryId'), reference?.categories),
     status: status in statusLabels ? status as Filters['status'] : '',
@@ -48,6 +51,9 @@ function filtersFromUrl(params: URLSearchParams, reference?: Reference): Filters
 
 function filtersToUrl(filters: Filters) {
   const params = new URLSearchParams();
+  if (filters.statusGroup) params.set('status_group', 'open');
+  if (filters.assignee) params.set('assignee', filters.assignee);
+
   if (filters.departmentId) params.set('departmentId', filters.departmentId);
   if (filters.categoryId) params.set('categoryId', filters.categoryId);
   if (filters.status) params.set('status', filters.status);
@@ -66,6 +72,9 @@ function filtersToQuery(filters: Filters, offset: number): Query {
 
 function filterParams(filters: Filters) {
   return {
+    ...(filters.statusGroup ? { status_group: 'open' as const } : {}),
+    ...(filters.assignee ? { assignee: filters.assignee } : {}),
+
     ...(filters.departmentId ? { departmentId: filters.departmentId } : {}),
     ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
     ...(filters.status ? { status: filters.status } : {}),
@@ -201,11 +210,18 @@ export default function QueuePage() {
   return <section className="section queue-page">
     <div className="feedback-heading">
       <div><p className="eyebrow">{t("Рабочая область руководителя")}</p><h1 ref={heading} tabIndex={-1}>{t("Очередь обращений")}</h1></div>
-      {role !== 'employee' && <button type="button" className="export-button" onClick={download} disabled={exporting}>{exporting ? t("Готовим файл…") : t("Скачать CSV")}</button>}
+      {role !== 'employee' && <button type="button" className="export-button" onClick={download} disabled={exporting} aria-busy={exporting}>{exporting ? t("Готовим файл…") : t("Скачать CSV")}</button>}
     </div>
     {lastId && <p className="feedback-return"><Link to={lastComplaintPath(role, lastId)}>{t("Вернуться к последнему обращению")}</Link></p>}
     {reference.loading && <Loading label={t("Загрузка фильтров…")} />}
     {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
+    {role === 'manager' && <div className="queue-quick" role="group" aria-label={t("Назначение")}>
+      <span className="muted">{t("Назначение")}</span>
+      {(['', 'me'] as const).map(value => <button key={value} type="button" aria-pressed={applied.assignee === value} onClick={() => {
+        const next = filtersToUrl({ ...applied, assignee: value, q: search.trim().slice(0, 200) });
+        setPendingKey(next.toString()); setSearchParams(next);
+      }}>{value ? t("Мои") : t("Все")}</button>)}
+    </div>}
     <div className="queue-quick" role="group" aria-label={t("Быстрые фильтры")}>
       {quickFilters.map(({ label, filters: preset }) => <button key={label} type="button" aria-pressed={applied.status === preset.status && applied.overdue === preset.overdue && applied.queue === preset.queue} onClick={() => applyQuick(preset)}>{t(label)}</button>)}
     </div>
@@ -221,6 +237,7 @@ export default function QueuePage() {
       <label>{t("Очередь")}<select value={filters.queue} onChange={event => setFilters({ ...filters, queue: event.target.value as Filters['queue'] })}><option value="">{t("Все обращения")}</option><option value="unassigned">{t("Без ответственного")}</option><option value="assigned">{t("С ответственным")}</option></select></label>
       <label>{t("Срок от")}<input id="due-after" type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueAfter} onChange={event => setFilters({ ...filters, dueAfter: event.target.value })} /></label>
       <label>{t("Срок до")}<input type="date" aria-invalid={Boolean(filterError)} aria-describedby={filterError ? 'filter-error' : undefined} value={filters.dueBefore} onChange={event => setFilters({ ...filters, dueBefore: event.target.value })} /></label>
+      <label className="checkbox-label"><input type="checkbox" checked={filters.statusGroup} onChange={event => setFilters({ ...filters, statusGroup: event.target.checked })} />{t("Только открытые")}</label>
       <label className="checkbox-label"><input type="checkbox" checked={filters.overdue} onChange={event => setFilters({ ...filters, overdue: event.target.checked })} />{t("Только просроченные")}</label>
       <label className="checkbox-label"><input type="checkbox" checked={filters.hideSimulated} onChange={event => setFilters({ ...filters, hideSimulated: event.target.checked })} />{t("Скрыть имитацию")}</label>
       {filterError && <p id="filter-error" role="alert" className="field-error">{t(filterError)}</p>}
@@ -228,11 +245,11 @@ export default function QueuePage() {
     </form>}
     {(result.loading || stale) && <Loading label={t("Загрузка очереди…")} />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
-    {shown && !stale && <><p className="muted queue-counter" aria-live="polite"><span>{t("Найдено:")} {number.format(shown.total)}</span>{overall.data !== undefined && <> <span>{t("из")} {number.format(overall.data)}</span></>}</p>
+    {shown && !stale && <><p className="muted queue-counter" aria-live="polite"><span>{t("Найдено:")} {number.format(shown.total)}</span>{overall.data !== undefined && <> <span>{t("из")} {number.format(overall.data)}</span></>}{applied.statusGroup && <span> · {t("Только открытые")}</span>}</p>
       <PageCompletionSignal items={shown.items} />
       {shown.items.length === 0 ? <div className="empty-state"><p>{applied.q ? t('По запросу «{query}» обращений нет.', { query: applied.q }) : t("По выбранным фильтрам обращений нет.")}</p><p className="muted">{t("Измените условия или нажмите «Сбросить фильтры», чтобы увидеть всю очередь.")}</p><div className="actions"><button type="button" onClick={() => { reset(); heading.current?.focus(); }}>{t("Сбросить фильтры")}</button>{applied.q && <button type="button" onClick={clearSearch}>{t("Сбросить поиск")}</button>}</div></div> : <>
         <div className="queue-list-header" aria-hidden="true"><span>{t("Обращение")}</span><span>{t("Статус")}</span><span>{t("Ответственный")}</span><span>{t("Срок")}</span></div>
-        <ul className="complaint-list queue-list">{shown.items.map(item => <li className="complaint-item" key={item.id}>
+        <ul className="complaint-list queue-list">{shown.items.map(item => <li className={item.id === lastId ? "complaint-item is-last-opened" : "complaint-item"} key={item.id}>
           <div className="queue-record">
             <Link className="complaint-number" to={`/queue/${item.id}`} state={{ queueSearch: urlKey }}>{item.number}</Link>
             {item.simulated && <ImitationBadge hint={t("создано демо-симулятором")} />}

@@ -1,0 +1,30 @@
+/* «Мои обращения»: поиск и фильтр (#312 A7), пустое состояние (#312 A9). */
+.my-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px 12px;
+  margin: 4px 0 8px;
+}
+.my-filters label { display: grid; gap: 6px; min-width: 0; font-size: var(--font-size-sm); }
+.my-filter-search { flex: 1 1 240px; max-width: 420px; }
+.my-filter-status { flex: 0 1 220px; }
+.my-filters :is(input, select) { width: 100%; min-height: 44px; }
+.my-filters .my-filter-reset { min-height: 44px; }
+.my-counter { margin: 8px 0 2px; font-size: var(--font-size-sm); }
+
+.my-intro h2 { margin: 0 0 12px; font-size: 1.15rem; }
+.my-intro-facts { display: grid; gap: 10px; margin: 0 0 16px; }
+.my-intro-facts dt { font-weight: 700; color: var(--color-text-strong); }
+.my-intro-facts dd { margin: 2px 0 0; }
+@media (min-width: 760px) {
+  .my-intro-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+}
+
+/* #314: четыре быстрых действия на главной сотрудника. */
+.my-quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 8px 0 16px; }
+.my-quick-actions a { display: grid; gap: 4px; align-content: start; min-height: 44px; padding: 14px 16px; border: 1px solid var(--color-border, currentColor); border-radius: 12px; text-decoration: none; color: inherit; transition: transform .15s ease, box-shadow .15s ease; }
+.my-quick-actions a:hover, .my-quick-actions a:focus-visible { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+.my-quick-actions a span { font-size: var(--font-size-sm); opacity: .8; }
+.my-quick-actions .primary-link { border-color: transparent; }
+@media (prefers-reduced-motion: reduce) { .my-quick-actions a { transition: none; } .my-quick-actions a:hover { transform: none; } }

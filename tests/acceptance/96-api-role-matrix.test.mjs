@@ -12,7 +12,7 @@ const operations = Object.entries(contract.paths).flatMap(([path, value]) => Obj
   .filter(operation => !operation['x-implementation-issue']);
 const identities = { employee: 'employee-1', manager: 'manager-1', admin: 'admin-1', unauthenticated: null };
 const fixtures = {
-  getHealth: {}, getSession: {}, getReferenceData: {}, listComplaints: {}, getComplaint: {}, getSummary: {},
+  getHealth: {}, getHealthReady: {}, getSession: {}, getReferenceData: {}, listComplaints: {}, getComplaint: {}, getSummary: {},
   createComplaint: { payload: { type: 'problem', categoryId: 'cross_department', description: 'Синтетическое обращение.' } },
   assignComplaint: { payload: { assigneeId: 'manager-2' } },
   changeComplaintStatus: { payload: { status: 'in_review' } },
@@ -25,7 +25,7 @@ for (const operation of operations) for (const [role, user] of Object.entries(id
   test(`#96 ${role} / ${operation.method.toUpperCase()} ${operation.path} follows x-roles`, async t => {
     const app = buildApp({}, { translator: { enabled: true, translate: async () => 'translated fixture' } }); t.after(() => app.close());
     assert.ok(Object.hasOwn(fixtures, operation.operationId), `Missing role-matrix fixture: ${role}/${operation.operationId}`);
-    const publicHealth = operation.operationId === 'getHealth';
+    const publicHealth = ['getHealth', 'getHealthReady'].includes(operation.operationId);
     const allowed = publicHealth || operation['x-roles'].includes(role);
     const response = await app.inject({ method: operation.method.toUpperCase(),
       url: operation.path.replace('{complaintId}', 'complaint-1'),
@@ -45,7 +45,10 @@ test('#96 employee cannot read foreign detail, author data, list counts or filte
   const foreign = await read('/complaints/complaint-1');
   const missing = await read('/complaints/nonexistent');
   assert.equal(foreign.statusCode, 404);
-  assert.deepEqual(foreign.json(), missing.json());
+  const { requestId: foreignId, ...foreignBody } = foreign.json();
+  const { requestId: missingId, ...missingBody } = missing.json();
+  assert.deepEqual(foreignBody, missingBody);
+  assert.ok(foreignId && missingId);
   const list = (await read('/complaints?limit=100')).json();
   assert.equal(list.total, 4);
   assert.equal(list.items.length, 4);
