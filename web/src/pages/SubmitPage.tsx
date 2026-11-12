@@ -1,14 +1,15 @@
-import { referenceLabel, systemText, useI18n } from '../i18n';
+import { referenceLabel, useI18n } from '../i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { ApiError } from '../api/client';
 import { errorMessage, requireData, retryAfterOf, useCooldown, useResource } from '../features/data';
-import { dateLabel, Loading, LoadError } from '../features/complaint';
+import { Loading, LoadError } from '../features/complaint';
 import type { Complaint } from '../features/complaint';
 import { ImitationBadge } from '../features/demo';
 import { AnonymousBadge } from '../features/complaintMeta';
+import { CopyNumber, WhatNext } from '../features/complaintFollowUp';
 import { SimilarList, SuggestionNote, useSubmitAssist } from '../features/submitAssist';
 import { MapPicker, type LocationPoint } from '../features/MapPicker';
 
@@ -98,12 +99,8 @@ export default function SubmitPage() {
 
   if (created) return <><section className="section">
     <p className="eyebrow">{t("Отправлено")}</p><h1 ref={resultHeading} tabIndex={-1}>{t("Обращение зарегистрировано")}</h1>
-    <p className="registration-number">{created.number}</p>{(created.anonymous ?? anonymous) && <p><AnonymousBadge /></p>}
-    <dl className="metadata registration-meta">
-      <div><dt>{t("Ответственный")}</dt><dd>{created.assignee?.name ?? t("Ожидает назначения")}</dd></div>
-      <div><dt>{t("Срок")}</dt><dd>{Number.isFinite(Date.parse(created.dueAt)) ? dateLabel(created.dueAt, locale) : t("Срок не указан")}</dd></div>
-    </dl>
-    <div className="next-action"><h2>{t("Следующий шаг")}</h2><p>{systemText(locale, created.nextAction)}</p></div>
+    <div className="registration-row"><p className="registration-number" id="registration-number">{created.number}</p><CopyNumber number={created.number} targetId="registration-number" /></div>{(created.anonymous ?? anonymous) && <p><AnonymousBadge /></p>}
+    <WhatNext item={created} reference={reference.data} />
     <div className="actions"><Link className="primary-link" to={`/my/${created.id}`}>{t("Открыть обращение")}</Link><Link to="/my">{t("К моим обращениям")}</Link></div>
   </section>{announcement}</>;
 
