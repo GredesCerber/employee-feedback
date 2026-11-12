@@ -1,0 +1,69 @@
+/*
+ * #312: единые состояния элементов управления и мягкая анимация.
+ * Виды кнопок: основная (.primary-button, .primary-link), обычная (button без класса) и опасная (.danger-button).
+ * Состояния: наведение, нажатие, фокус с клавиатуры, недоступна (disabled), занята (aria-busy="true").
+ * Движение включается только при prefers-reduced-motion: no-preference и включённом переключателе «Анимации»
+ * (features/designMotion.ts ставит data-design-motion="off" на <html>).
+ */
+
+/* Обычная (вторичная) кнопка. :where() держит специфичность низкой, чтобы «плоские» кнопки страниц сохраняли свой вид. */
+button:where(:hover:not(:disabled):not([aria-busy="true"])) { background: var(--color-surface-hover); border-color: var(--color-text); }
+button:where(:active:not(:disabled):not([aria-busy="true"])) { background: var(--color-surface-pressed); }
+
+/* Основная кнопка и ссылка-кнопка */
+.primary-button:where(:hover:not(:disabled):not([aria-busy="true"])), .primary-link:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); color: var(--color-on-primary); }
+.primary-button:where(:active:not(:disabled)), .primary-link:active { background: var(--color-primary); box-shadow: inset 0 2px 0 var(--color-primary-hover); }
+
+/* Опасное действие: заметно отличается от основной и обычной кнопки */
+.danger-button { color: var(--color-danger); background: var(--color-danger-bg); border-color: var(--color-danger-border); font-weight: 600; }
+.danger-button:where(:hover:not(:disabled):not([aria-busy="true"])) { color: var(--color-danger); background: var(--color-danger-hover-bg); border-color: var(--color-danger); }
+.danger-button:where(:active:not(:disabled)) { background: var(--color-danger-bg); }
+
+.notification-button:hover { background: var(--color-surface-hover); border-color: var(--color-text); }
+
+/* Недоступно: приглушено и курсор «нельзя» */
+button:disabled, [aria-disabled="true"] { opacity: .55; cursor: not-allowed; box-shadow: none; }
+
+/* Занято: кнопка показывает индикатор вместо того, чтобы выглядеть просто выключенной */
+button[aria-busy="true"] { cursor: progress; }
+button[aria-busy="true"]:disabled { opacity: .8; cursor: progress; }
+button[aria-busy="true"]::before { content: ''; display: inline-block; width: .9em; height: .9em; margin-inline-end: var(--space-2); vertical-align: -.1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; }
+
+/* Фокус с клавиатуры: кольцо --color-focus и светлый/тёмный зазор, чтобы кольцо было видно и на тёмной кнопке, и на фоне */
+:where(button, .primary-link, .workspace nav a, .brand):focus-visible { outline-offset: 2px; box-shadow: 0 0 0 2px var(--color-focus-halo); }
+
+/* Ссылки в тексте */
+:where(main, .demo-controls, .notification-panel) a:not([class]) { text-underline-offset: 3px; text-decoration-thickness: 1px; }
+:where(main, .demo-controls, .notification-panel) a:not([class]):hover { color: var(--color-text-strong); text-decoration-thickness: 2px; }
+:where(main, .demo-controls, .notification-panel) a:not([class]):active { color: var(--color-text-muted); }
+
+/* Меню: текущий раздел (aria-current="page") залит, остальные подсвечиваются при наведении и нажатии */
+.workspace nav a:active:not([aria-current="page"]) { background: var(--color-surface-pressed); }
+.workspace nav a[aria-current="page"] { border-color: var(--color-primary); box-shadow: var(--shadow-card); }
+.workspace nav a[aria-current="page"]:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
+.workspace nav a[aria-current="page"] .navigation-icon { stroke-width: 2; }
+
+/* Карточки со ссылкой: рамка темнее при наведении */
+.complaint-list:not(.queue-list) > .complaint-item:is(:hover, :focus-within) { border-color: var(--color-border-strong); }
+
+/* Последнее открытое обращение в очереди отмечено полосой слева (без движения) */
+.queue-list .complaint-item.is-last-opened { box-shadow: inset 3px 0 var(--color-primary); }
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-design-motion='off']) :is(.primary-link, .danger-button) { transition: background-color var(--motion-fast) ease, color var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease; }
+  :root:not([data-design-motion='off']) .primary-link:active { transform: translateY(1px); }
+  :root:not([data-design-motion='off']) button[aria-busy="true"]::before { animation: spin .8s linear infinite; }
+
+  /* Подъём карточки при наведении */
+  :root:not([data-design-motion='off']) .complaint-list:not(.queue-list) > .complaint-item { transition: transform var(--motion-medium) var(--motion-ease), box-shadow var(--motion-medium) var(--motion-ease), border-color var(--motion-medium) ease; }
+  :root:not([data-design-motion='off']) .complaint-list:not(.queue-list) > .complaint-item:is(:hover, :focus-within) { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+
+  /* Появление сообщений и панелей */
+  :root:not([data-design-motion='off']) :is(.load-error, .demo-hint, .suggestion-note, .similar-box, .summary-reset-confirm, .translation-result, .notification-panel, .field-error, p.muted[aria-live]) { animation: notice-in var(--motion-medium) var(--motion-ease) both; }
+
+  /* Короткая подсветка строки, к которой вернулись из карточки */
+  :root:not([data-design-motion='off']) .queue-list .complaint-item.is-last-opened { animation: row-flash 1.6s ease-out both; }
+
+  @keyframes notice-in { from { opacity: 0; transform: translateY(-4px); } }
+  @keyframes row-flash { from { background-color: var(--color-flash-bg); } }
+}

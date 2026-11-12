@@ -10,6 +10,7 @@ const location = () => screen.getByTestId('location').textContent;
 const role = () => screen.getByLabelText('Демонстрационная роль');
 const notice = () => screen.queryByRole('status', { name: 'Ограничение доступа' });
 beforeEach(() => {
+  sessionStorage.clear(); // черновик формы подачи (#312 A2) не переходит между тестами
   localStorage.clear();
   vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:3000');
   vi.stubGlobal('fetch', vi.fn(async (request: Request) => {

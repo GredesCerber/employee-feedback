@@ -20,6 +20,7 @@ import { useDesignMotion } from './features/designMotion';
 import './styles/tokens.css';
 import './shell.css';
 import './pages.css';
+import './styles/interaction.css';
 
 const navigation: Record<Role, { path: string; label: string }[]> = {
   employee: [{ path: '/my', label: 'Мои обращения' }, { path: '/submit', label: 'Новое обращение' }],

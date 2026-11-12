@@ -85,6 +85,17 @@
   /* Тени */
   --shadow-active-nav: inset 3px 0 var(--color-primary);
   --shadow-card: 0 1px 2px rgb(16 32 48 / 6%);
+  /* #312: состояния кнопок, кольцо фокуса, подъём карточки */
+  --color-primary-hover: #0f0f0f;
+  --color-surface-hover: #e4e4e4;
+  --color-surface-pressed: #d4d4d4;
+  --color-focus-halo: #f2f2f2;
+  --color-danger-hover-bg: #f1d9d4;
+  --color-flash-bg: #f2e6d5;
+  --shadow-card-hover: 0 6px 16px rgb(16 32 48 / 12%);
+  --motion-fast: 120ms;
+  --motion-medium: 200ms;
+  --motion-ease: cubic-bezier(.2, .72, .2, 1);
 }
 
 /* Тёмная тема: значения подобраны так, чтобы текст на каждом фоне имел контраст ≥ 4.5:1 */
@@ -136,6 +147,13 @@
   --status-closed-bg: #173322;
   --status-closed-fg: #9fdcb0;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
+  --color-primary-hover: #f2f2f2;
+  --color-surface-hover: #343434;
+  --color-surface-pressed: #414141;
+  --color-focus-halo: #0f0f0f;
+  --color-danger-hover-bg: #4a2f2a;
+  --color-flash-bg: #372b1f;
+  --shadow-card-hover: 0 6px 18px rgb(0 0 0 / 55%);
 }
 
 /* Системная тёмная тема, если пользователь явно не выбрал светлую. Значения дублируют блок выше. */
@@ -188,5 +206,12 @@
     --status-closed-bg: #173322;
     --status-closed-fg: #9fdcb0;
     --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
+    --color-primary-hover: #f2f2f2;
+    --color-surface-hover: #343434;
+    --color-surface-pressed: #414141;
+    --color-focus-halo: #0f0f0f;
+    --color-danger-hover-bg: #4a2f2a;
+    --color-flash-bg: #372b1f;
+    --shadow-card-hover: 0 6px 18px rgb(0 0 0 / 55%);
   }
 }

@@ -17,6 +17,7 @@ let requests: { path: string; text: string | null }[];
 let created: unknown[];
 
 beforeEach(() => {
+  sessionStorage.clear(); // черновик формы подачи (#312 A2) не переходит между тестами
   mode = { similar: 'ok', suggest: 'ok' }; requests = []; created = [];
   vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:3000');
   vi.stubGlobal('fetch', vi.fn(async (request: Request) => {
