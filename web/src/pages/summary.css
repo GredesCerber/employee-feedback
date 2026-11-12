@@ -50,3 +50,22 @@
 .summary-reset { margin: 0 0 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .summary-reset p { margin: 0; font-size: 13px; }
 .summary-overdue a { margin-top: auto; font-size: var(--font-size-xs); }
+
+.summary-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.summary-export-message { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border: 1px dashed var(--color-border-dashed); border-radius: 10px; background: var(--color-surface-subtle); font-size: 13px; }
+
+/* Печать сводки (#346): только содержимое страницы, без шапки, меню и кнопок. Диаграммы — без анимации и в цвете. */
+@media print {
+  body:has(.summary-page) :is(.skip-link, .app-header, .demo-notice, .workspace-sidebar, .notification-bell, .demo-hint, .demo-controls) { display: none !important; }
+  .summary-page :is(button, .summary-actions, .summary-reset, .summary-export-message, .topic-list a, .summary-overdue a, .routing-rules) { display: none !important; }
+  body:has(.summary-page) .workspace { display: block; }
+  body:has(.summary-page) main { margin: 0; padding: 0; max-width: none; }
+  .summary-page { color: #000; background: #fff; }
+  .summary-page .reveal-panel { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .summary-page .bar-fill { animation: none !important; transform: none !important; }
+  .summary-page :is(.bar-fill, .bar-track, .metric-card) { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .summary-page .bar-chart text { fill: #000; }
+  .summary-metrics, .summary-metrics:has(.summary-overdue) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .summary-sections { grid-template-columns: minmax(0, 1fr); }
+  .summary-table-panel, .metric-card, .summary-chart { break-inside: avoid; }
+}
