@@ -133,7 +133,7 @@ describe('#114 empty states with a next step', () => {
     mode.list = 'empty';
     await open('/my');
     expect(await screen.findByText('У вас пока нет обращений.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Подать первое обращение' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Подать обращение' })).toBeTruthy();
   });
 
   it('empty queue explains what to do next', async () => {
