@@ -63,8 +63,9 @@ function CountTable({ label, head, rows }: { label: string; head: string; rows: 
     <tbody>{rows.map(row => <tr key={row.key}><th scope="row">{row.name}</th><td>{number.format(row.count)}</td></tr>)}</tbody></table>;
 }
 
-function Tile({ id, title, value, note }: { id: string; title: string; value: string; note: string }) {
-  return <section className="metric-card" aria-labelledby={id}><h2 id={id}>{title}</h2><p className="metric-value">{value}</p><p className="muted">{note}</p></section>;
+function Tile({ id, title, value, note, to }: { id: string; title: string; value: string; note: string; to?: string }) {
+  const content = <><h2 id={id}>{title}</h2><p className="metric-value">{value}</p><p className="muted">{note}</p></>;
+  return <section className="metric-card" aria-labelledby={id}>{to ? <Link className="metric-card-link" aria-label={title} to={to}>{content}</Link> : content}</section>;
 }
 
 export default function DashboardPage() {
@@ -117,7 +118,8 @@ export default function DashboardPage() {
       <CompletionSignal total={totals.total} closed={totals.closedCount} scope={department ? t("Выбранное подразделение") : undefined} />
       <div ref={revealPanel} className="dashboard-tiles reveal-panel">
         <Tile id="dash-total" title={t("Всего обращений")} value={number.format(totals.total)} note={t("С учётом закрытых")} />
-        <Tile id="dash-open" title={t("Открытых")} value={number.format(totals.openCount)} note={`${t("Закрыто")} ${number.format(totals.closedCount)}`} />
+        <Tile id="dash-open" title={t("Открытых")} value={number.format(totals.openCount)} note={`${t("Закрыто")} ${number.format(totals.closedCount)}`}
+          to={role === 'manager' ? `/queue?${new URLSearchParams({ status_group: 'open', ...(department ? { departmentId: department } : {}) })}` : undefined} />
         <Tile id="dash-overdue" title={t("Просрочено")} value={number.format(totals.overdueCount)} note={t("Срок прошёл, решения нет")} />
         <Tile id="dash-resolution" title={t("Среднее время решения")} value={totals.averageResolutionHours === null ? t("Нет закрытых") : `${number.format(totals.averageResolutionHours)} ${locale === 'en' ? 'h' : locale === 'kk' ? t("сағ") : t("ч")}`}
           note={t("От подачи до закрытия")} />

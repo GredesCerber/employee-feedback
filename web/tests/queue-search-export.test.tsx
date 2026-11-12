@@ -44,6 +44,7 @@ async function openQueue(entry = '/queue') {
   const user = userEvent.setup();
   render(<MemoryRouter initialEntries={[entry]}><App /><LocationProbe /></MemoryRouter>);
   await user.selectOptions(screen.getByLabelText('Демонстрационная роль'), 'manager');
+  await screen.findByRole('heading', { name: 'Очередь обращений', level: 1 });
   await screen.findByLabelText('Поиск по номеру или тексту');
   await waitFor(() => expect(listRequests().length).toBeGreaterThan(0));
   return user;
@@ -98,6 +99,7 @@ describe('queue search', () => {
   it('shows an empty state with «Сбросить поиск» that clears only the search', async () => {
     const user = await openQueue('/queue?status=in_review');
     await user.type(screen.getByLabelText('Поиск по номеру или тексту'), 'нетТакого');
+    await waitFor(() => expect(urlParams().get('q')).toBe('нетТакого'));
     expect(await screen.findByText(/обращений нет/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Сбросить поиск' }));
     expect(await screen.findByRole('link', { name: 'A-001' })).toBeTruthy();
