@@ -1404,6 +1404,8 @@ export interface operations {
                 categoryId?: string;
                 /** @description Exact status; unknown value is 422. */
                 status?: components["schemas"]["Status"];
+                /** @description open selects new, in_review, in_progress and awaiting_clarification only; implemented, rejected and closed are excluded. Apply the existing role visibility restriction first, then combine with all other filters using AND before totals and pagination. Employees can still see only their own complaints. CSV applies the same filter without pagination. Omitted means all statuses; unsupported values receive 422. */
+                status_group?: "open";
                 /** @description Exact type. */
                 type?: components["schemas"]["ComplaintType"];
                 /** @description Deadline greater than or equal to this timestamp. */
@@ -1843,6 +1845,8 @@ export interface operations {
                 categoryId?: string;
                 /** @description Exact status; unknown value is 422. */
                 status?: components["schemas"]["Status"];
+                /** @description open selects new, in_review, in_progress and awaiting_clarification only; implemented, rejected and closed are excluded. Apply the existing role visibility restriction first, then combine with all other filters using AND before totals and pagination. Employees can still see only their own complaints. CSV applies the same filter without pagination. Omitted means all statuses; unsupported values receive 422. */
+                status_group?: "open";
                 /** @description Exact type. */
                 type?: components["schemas"]["ComplaintType"];
                 /** @description Deadline greater than or equal to this timestamp. */
