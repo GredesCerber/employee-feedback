@@ -51,10 +51,17 @@ test('#8 у каждого экрана указаны роли; маршрут�
     assert.match(label, /Рол[ьи]: (employee|manager|admin)(?:, (employee|manager|admin))*(?:<br\/>|$)/, `${id}: нет роли`);
   }
   const routes = [...app.matchAll(/<Route path="([^"]+)" element={<RoleRoute role="([^"]+)"/g)];
+  const extraSection = text.split(/^## Дополнительные маршруты\r?$/m)[1]?.split(/^## /m)[0] ?? '';
+  const extraRoutes = new Map([...extraSection.matchAll(/^\| `([^`]+)` \| `(employee|manager|admin)` \| .+ \|\r?$/gm)]
+    .map(([, path, role]) => [path, role]));
   for (const [, path, role] of routes) {
     const matching = [...nodes().values()].filter((label) => label.includes(`<br/>${path}<br/>`));
-    assert.ok(matching.length > 0, `В карте отсутствует маршрут ${path}`);
+    assert.ok(matching.length > 0 || extraRoutes.has(path), `В карте отсутствует маршрут ${path}`);
     for (const label of matching) assert.ok(label.includes(`Роль: ${role}`), `Неверная роль маршрута ${path}`);
+  }
+  for (const [path, role] of extraRoutes) {
+    assert.ok(routes.some(([, route, requiredRole]) => route === path && requiredRole === role),
+      `Дополнительный маршрут ${path} и его роль должны совпадать с приложением`);
   }
   assert.match(text, /имитация входа/i);
   assert.match(text, /только свои/i);
