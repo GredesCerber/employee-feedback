@@ -14,8 +14,8 @@ import { PageCompletionSignal } from '../features/CompletionSignal';
 import '../styles/feedback-layout.css';
 
 type Query = NonNullable<paths['/complaints']['get']['parameters']['query']>;
-type Filters = { statusGroup: boolean; departmentId: string; categoryId: string; status: Complaint['status'] | ''; dueAfter: string; dueBefore: string; overdue: boolean; queue: 'assigned' | 'unassigned' | ''; q: string; hideSimulated: boolean };
-const emptyFilters: Filters = { statusGroup: false, departmentId: '', categoryId: '', status: '', dueAfter: '', dueBefore: '', overdue: false, queue: '', q: '', hideSimulated: false };
+type Filters = { statusGroup: boolean; assignee: 'me' | ''; departmentId: string; categoryId: string; status: Complaint['status'] | ''; dueAfter: string; dueBefore: string; overdue: boolean; queue: 'assigned' | 'unassigned' | ''; q: string; hideSimulated: boolean };
+const emptyFilters: Filters = { statusGroup: false, assignee: '', departmentId: '', categoryId: '', status: '', dueAfter: '', dueBefore: '', overdue: false, queue: '', q: '', hideSimulated: false };
 const quickFilters: { label: string; filters: Pick<Filters, 'status' | 'overdue' | 'queue'> }[] = [
   { label: 'Все', filters: { status: '', overdue: false, queue: '' } },
   { label: 'Новые', filters: { status: 'new', overdue: false, queue: '' } },
@@ -33,6 +33,8 @@ function filtersFromUrl(params: URLSearchParams, reference?: Reference): Filters
   const status = text('status'), queue = text('queue'), dueAfter = text('dueAfter'), dueBefore = text('dueBefore');
   const filters: Filters = {
     statusGroup: text('status_group') === 'open',
+    assignee: text('assignee') === 'me' ? 'me' : '',
+
     departmentId: known(text('departmentId'), reference?.departments),
     categoryId: known(text('categoryId'), reference?.categories),
     status: status in statusLabels ? status as Filters['status'] : '',
@@ -50,6 +52,8 @@ function filtersFromUrl(params: URLSearchParams, reference?: Reference): Filters
 function filtersToUrl(filters: Filters) {
   const params = new URLSearchParams();
   if (filters.statusGroup) params.set('status_group', 'open');
+  if (filters.assignee) params.set('assignee', filters.assignee);
+
   if (filters.departmentId) params.set('departmentId', filters.departmentId);
   if (filters.categoryId) params.set('categoryId', filters.categoryId);
   if (filters.status) params.set('status', filters.status);
@@ -69,6 +73,8 @@ function filtersToQuery(filters: Filters, offset: number): Query {
 function filterParams(filters: Filters) {
   return {
     ...(filters.statusGroup ? { status_group: 'open' as const } : {}),
+    ...(filters.assignee ? { assignee: filters.assignee } : {}),
+
     ...(filters.departmentId ? { departmentId: filters.departmentId } : {}),
     ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
     ...(filters.status ? { status: filters.status } : {}),
@@ -209,6 +215,13 @@ export default function QueuePage() {
     {lastId && <p className="feedback-return"><Link to={lastComplaintPath(role, lastId)}>{t("Вернуться к последнему обращению")}</Link></p>}
     {reference.loading && <Loading label={t("Загрузка фильтров…")} />}
     {reference.error && <LoadError message={reference.error} retry={reference.reload} retryAfter={reference.retryAfter} />}
+    {role === 'manager' && <div className="queue-quick" role="group" aria-label={t("Назначение")}>
+      <span className="muted">{t("Назначение")}</span>
+      {(['', 'me'] as const).map(value => <button key={value} type="button" aria-pressed={applied.assignee === value} onClick={() => {
+        const next = filtersToUrl({ ...applied, assignee: value, q: search.trim().slice(0, 200) });
+        setPendingKey(next.toString()); setSearchParams(next);
+      }}>{value ? t("Мои") : t("Все")}</button>)}
+    </div>}
     <div className="queue-quick" role="group" aria-label={t("Быстрые фильтры")}>
       {quickFilters.map(({ label, filters: preset }) => <button key={label} type="button" aria-pressed={applied.status === preset.status && applied.overdue === preset.overdue && applied.queue === preset.queue} onClick={() => applyQuick(preset)}>{t(label)}</button>)}
     </div>

@@ -6,6 +6,7 @@ import App from '../src/App';
 
 let submitted: unknown[];
 beforeEach(() => {
+  sessionStorage.clear(); // черновик формы подачи (#312 A2) не переходит между тестами
   submitted = [];
   vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:3000');
   vi.stubGlobal('fetch', vi.fn(async (request: Request) => {
@@ -54,7 +55,8 @@ describe('#249 recover required-field validation as the user corrects input', ()
     await user.type(description, 'Нужен шаблон заявки');
     expect(screen.queryByText('Опишите проблему или предложение.')).toBeNull();
     expect(description.getAttribute('aria-invalid')).toBe('false');
-    expect(description.hasAttribute('aria-describedby')).toBe(false);
+    // После #312 A3 поле всегда описано счётчиком символов, но ссылка на ошибку уходит вместе с ней.
+    expect(description.getAttribute('aria-describedby')).toBe('description-counter');
     expect(screen.getByText('Выберите категорию.')).toBeTruthy();
     await user.click(send);
     expect(document.activeElement).toBe(category);

@@ -616,6 +616,18 @@
             "description": "Filter routing queue; assignment state is independent of status."
           },
           {
+            "name": "assignee",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "me"
+              ]
+            },
+            "description": "Manager only. me resolves to the current authenticated server-side session user, including the demo identity in MVP; a client-supplied user ID is not accepted. Select complaints assigned to that manager, before totals and pagination, combined with other filters using AND. Other roles with assignee=me receive 403; unsupported values receive 422. Omitted means no assignee restriction. CSV applies the same filter without pagination."
+          },
+          {
             "name": "q",
             "in": "query",
             "required": false,
@@ -1595,6 +1607,18 @@
               ]
             },
             "description": "Filter routing queue; assignment state is independent of status."
+          },
+          {
+            "name": "assignee",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "me"
+              ]
+            },
+            "description": "Manager only. me resolves to the current authenticated server-side session user, including the demo identity in MVP; a client-supplied user ID is not accepted. Select complaints assigned to that manager, before totals and pagination, combined with other filters using AND. Other roles with assignee=me receive 403; unsupported values receive 422. Omitted means no assignee restriction. CSV applies the same filter without pagination."
           },
           {
             "name": "q",

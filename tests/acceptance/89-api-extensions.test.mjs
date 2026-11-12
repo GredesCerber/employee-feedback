@@ -72,7 +72,7 @@ test('#89 q ищет все слова, сохраняет ограничени�
   for (const pattern of [/AND/, /case.insensitive/i, /ё/, /comments/, /number/, /proposedSolution/]) {
     assert.match(`${q.description} ${list.description}`, pattern);
   }
-  assert.deepEqual(list.parameters.map((p) => p.name), ['departmentId', 'categoryId', 'status', 'status_group', 'type', 'dueAfter', 'dueBefore', 'overdue', 'queue', 'q', 'limit', 'offset']);
+  assert.deepEqual(list.parameters.map((p) => p.name), ['departmentId', 'categoryId', 'status', 'status_group', 'type', 'dueAfter', 'dueBefore', 'overdue', 'queue', 'assignee', 'q', 'limit', 'offset']);
   assert.deepEqual(list.parameters.find((p) => p.name === 'limit').schema, { type: 'integer', minimum: 1, maximum: 100, default: 20 });
   assert.deepEqual(list.parameters.find((p) => p.name === 'offset').schema, { type: 'integer', minimum: 0, default: 0 });
   const csv = api.paths['/complaints/export'].get;
