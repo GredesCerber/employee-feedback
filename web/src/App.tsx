@@ -43,9 +43,12 @@ function RoleRoute({ role, children }: { role: Role | Role[]; children: ReactNod
   // Если роль только что сменили и запрошенный ранее адрес ей доступен, идём на него, иначе на домашнюю страницу роли.
   if ((Array.isArray(role) ? role : [role]).includes(session.role)) return children;
   // Открытая карточка обращения сохраняется при смене роли: /queue/:id ↔ /my/:id (#203).
-  const target = cardPath(location.pathname, session.role) ?? returnPath(location.state, session.role) ?? home[session.role];
+  const cardTarget = cardPath(location.pathname, session.role);
+  const savedTarget = returnPath(location.state, session.role);
+  const target = cardTarget ?? savedTarget ?? home[session.role];
   const required = Array.isArray(role) ? role : [role];
-  return <Navigate to={target} replace state={{ from: `${location.pathname}${location.search}`, ...(target === home[session.role] ? { accessNotice: { required, forRole: session.role } } : {}) }} />;
+  const defaultLanding = (location.state as { defaultLanding?: unknown } | null)?.defaultLanding === true;
+  return <Navigate to={target} replace state={!cardTarget && !savedTarget && !defaultLanding ? { from: `${location.pathname}${location.search}`, accessNotice: { required, forRole: session.role } } : null} />;
 }
 
 /** Адрес, который запрашивали до редиректа, если новая роль имеет к нему доступ. */
@@ -84,7 +87,7 @@ function Shell() {
   const theme = useTheme();
   const motion = useDesignMotion();
   const [signalSlot, setSignalSlot] = useState<HTMLDivElement | null>(null);
-  const state = location.state as { from?: unknown; accessNotice?: { required?: unknown; forRole?: unknown } } | null;
+  const state = location.state as { from?: unknown; defaultLanding?: boolean; accessNotice?: { required?: unknown; forRole?: unknown } } | null;
   const required = state?.accessNotice?.required;
   const validRoles = Array.isArray(required) && (required.join(',') === 'employee' || required.join(',') === 'manager' || required.join(',') === 'admin' || required.join(',') === 'manager,admin') && !required.includes(role);
   const noticeRoles = validRoles && state?.accessNotice?.forRole === role && location.pathname === home[role] ? required as Role[] : [];
@@ -95,9 +98,11 @@ function Shell() {
 
   function switchRole(next: string) {
     if (next !== 'employee' && next !== 'manager' && next !== 'admin') return;
-    const target = cardPath(location.pathname, next) ?? returnPath(location.state, next) ?? home[next];
+    const cardTarget = cardPath(location.pathname, next);
+    const savedTarget = returnPath(location.state, next);
+    const target = cardTarget ?? savedTarget ?? home[next];
     const required = requiredForPath(location.pathname);
-    const accessNotice = target === home[next] && required && !required.includes(next) ? { required, forRole: next } : undefined;
+    const accessNotice = !cardTarget && !savedTarget && !state?.defaultLanding && required && !required.includes(next) ? { required, forRole: next } : undefined;
     setRole(next);
     navigate(target, { replace: true, state: accessNotice ? { accessNotice, from: `${location.pathname}${location.search}` } : null });
   }
@@ -125,7 +130,7 @@ function Shell() {
         </div>}
         {hints.enabled && <DemoHint />}
         <CompletionSlot.Provider value={signalSlot}><Routes>
-          <Route path="/" element={<Navigate to={home[role]} replace />} />
+          <Route path="/" element={<Navigate to={home[role]} replace state={{ defaultLanding: true }} />} />
           <Route path="/my" element={<RoleRoute role="employee"><MyComplaintsPage /></RoleRoute>} />
           <Route path="/my/:complaintId" element={<RoleRoute role="employee"><ComplaintPage /></RoleRoute>} />
           <Route path="/submit" element={<RoleRoute role="employee"><SubmitPage /></RoleRoute>} />

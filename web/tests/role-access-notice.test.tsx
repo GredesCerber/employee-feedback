@@ -40,6 +40,13 @@ describe('#283 access redirect notice', () => {
     await user.selectOptions(role(), 'manager');
     expect(location()).toBe('/queue?status=new'); expect(notice()).toBeNull();
   });
+  it.each([['/queue', 'manager'], ['/summary', 'admin']])('does not show a notice when returning to allowed home %s', async (path, nextRole) => {
+    const user = userEvent.setup(); open(path);
+    expect(await screen.findByRole('status', { name: 'Ограничение доступа' })).toBeTruthy();
+    await user.selectOptions(role(), nextRole);
+    expect(location()).toBe(path);
+    expect(notice()).toBeNull();
+  });
   it('clears the notice on ordinary navigation and does not show it on an accessible page', async () => {
     const user = userEvent.setup(); open('/queue');
     expect(await screen.findByRole('status', { name: 'Ограничение доступа' })).toBeTruthy();
