@@ -61,7 +61,7 @@ function TranslationPanel({ complaintId, field, commentId, text, locale }: Trans
     <div className="translation-controls">
       <label htmlFor={id}>{t.language}</label>
       <select id={id} value={target} onChange={event => reset(event.target.value as Locale)}><option value="ru">RU</option><option value="en">EN</option><option value="kk">KK</option></select>
-      <button type="button" disabled={busy || cooldown.active} onClick={() => void translate()}>{busy ? t.loading : error ? t.retry : t.translate}</button>
+      <button type="button" disabled={busy || cooldown.active} aria-busy={busy} onClick={() => void translate()}>{busy ? t.loading : error ? t.retry : t.translate}</button>
     </div>
     {busy && <p role="status">{t.loading}</p>}
     {error && <p role="alert">{cooldown.active ? cooldown.message : t.error}</p>}

@@ -135,10 +135,10 @@ export default function SummaryPage() {
       <div className="summary-toolbar"><p className="muted">{t("Сводка на")} <time dateTime={summary.generatedAt}>{dateLabel(summary.generatedAt, locale)}</time></p><button onClick={result.reload}>{t("Обновить сводку")}</button></div>
       <div className="summary-reset">
         {resetStep === 'unavailable' ? <p className="muted">{t("Недоступно в этой среде")}</p>
-          : resetStep === 'idle' ? <button type="button" onClick={() => setResetStep('confirm')}>{t("Сбросить демо")}</button>
+          : resetStep === 'idle' ? <button type="button" className="danger-button" onClick={() => setResetStep('confirm')}>{t("Сбросить демо")}</button>
           : <div role="group" aria-label={t("Подтверждение сброса демо")} className="summary-reset-confirm">
             <p>{t("Все изменения будут потеряны, данные вернутся к исходным. Продолжить?")}</p>
-            <button type="button" onClick={resetDemo} disabled={resetStep === 'busy'}>{t("Подтвердить сброс")}</button>{' '}
+            <button type="button" className="danger-button" onClick={resetDemo} disabled={resetStep === 'busy'} aria-busy={resetStep === 'busy'}>{t("Подтвердить сброс")}</button>{' '}
             <button type="button" onClick={() => setResetStep('idle')} disabled={resetStep === 'busy'}>{t("Отмена")}</button>
           </div>}
         {resetMessage && (resetMessage.error ? <p role="alert">{resetMessage.text}</p> : <p role="status" className="muted">{resetMessage.text}</p>)}
