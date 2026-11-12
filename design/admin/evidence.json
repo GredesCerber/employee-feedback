@@ -1,0 +1,27 @@
+{
+  "contract": "navigation.md: design-only admin mockup; 360x800 and 1280x900; synthetic local data; lifecycle of roles, users and read-only preview; no production API",
+  "targetViewports": ["360x800", "1280x900"],
+  "accessibility": {
+    "status": "pass",
+    "evidence": "The defined mockup checks passed: visible keyboard focus, mobile menu focus/Escape return, native modal card, preview focus and return; axe-core 4.14.0 on the users view reported 0 violations and 0 incomplete at both sizes. This is a limited mockup sample, not full product WCAG or screen-reader certification."
+  },
+  "responsive": {
+    "status": "pass",
+    "evidence": "Users, six content states and an 81-character display name fit 360x800 and 1280x900 without document overflow. Mobile menu begins closed. Visual inspection found and corrected a desktop preview grid sizing issue; rerun verifies preview uses full workspace."
+  },
+  "contentStates": {
+    "loading": {"status": "pass", "evidence": "State selector shows loading explanation, hides stale content and provides a return to the ready mockup."},
+    "empty": {"status": "pass", "evidence": "Empty example has an explanatory message and an explicit next step; recovery restores ready content."},
+    "error": {"status": "pass", "evidence": "Error state displays a retry action; recovery changes to ready without falsely implying a backend request succeeded."},
+    "partial": {"status": "pass", "evidence": "Partial-data state labels the missing portion, keeps a reduced synthetic user list and offers recovery."},
+    "success": {"status": "pass", "evidence": "Success states explicitly state local memory-only changes; the list remains available and recovery is visible."},
+    "permission": {"status": "pass", "evidence": "No-access state clears content, explains the boundary and permits safe return; preview hides admin navigation and its write controls are disabled. Real server permissions are not implemented."
+    }
+  },
+  "renderedEvidence": [
+    {"viewport": "360x800", "artifact": "evidence/users-360.png", "observation": "Readable mobile user cards and initially closed navigation."},
+    {"viewport": "1280x900", "artifact": "evidence/users-1280.png", "observation": "Desktop navigation, active users section and labelled search/actions."},
+    {"viewport": "360x800", "artifact": "evidence/role-assigned-360.png", "observation": "Created and renamed role, capability matrix and refusal to delete an assigned role."},
+    {"viewport": "1280x900", "artifact": "evidence/preview-1280.png", "observation": "Full-width read-only preview after admin navigation is hidden; clear target and return control."}
+  ]
+}
