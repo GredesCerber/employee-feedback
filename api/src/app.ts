@@ -1,3 +1,4 @@
+import { registerAdmin } from './admin.js';
 import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import Fastify, { LogController, type FastifyServerOptions } from 'fastify';
@@ -88,6 +89,7 @@ function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = f
   registerDiscovery(app);
   registerLifecycle(app);
   registerDemo(app);
+  registerAdmin(app);
   registerUndo(app);
   registerNotifications(app);
   registerDigest(app);

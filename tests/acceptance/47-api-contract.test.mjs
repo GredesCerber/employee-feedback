@@ -92,6 +92,11 @@ test('R5 and demo coverage: all six steps, role permissions and structured error
     assert.ok(op['x-roles'].length && op['x-roles'].every(role => ['employee', 'manager', 'admin'].includes(role)));
     assert.ok(op.description.length > 30, `access semantics: ${op.operationId}`);
     const publicHealth = ['getHealth', 'getHealthReady'].includes(op.operationId);
+    // Login screen has no identity yet: the list of selectable accounts is public (#375).
+    if (op.operationId === 'listDemoAccounts') {
+      assert.deepEqual(op.security, []);
+      continue;
+    }
     if (publicHealth) {
       assert.equal(op.path, op.operationId === 'getHealth' ? '/health' : '/health/ready');
       assert.equal(op.method, 'get');

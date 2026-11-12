@@ -20,7 +20,7 @@ describe('role navigation acceptance', () => {
     expect(menuLabels()).toEqual(['Очередь обращений', 'Дашборд']);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Очередь обращений');
     await user.selectOptions(screen.getByLabelText('Демонстрационная роль'), 'admin');
-    expect(menuLabels()).toEqual(['Сводка', 'Дашборд']);
+    expect(menuLabels()).toEqual(['Сводка', 'Дашборд', 'Пользователи и права']);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Сводка');
     await user.selectOptions(screen.getByLabelText('Демонстрационная роль'), 'employee');
     expect(menuLabels()).toEqual(['Мои обращения', 'Новое обращение']);

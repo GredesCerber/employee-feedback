@@ -18,7 +18,6 @@ export function registerRateLimit(app: FastifyInstance) {
   if (!Number.isSafeInteger(windowSeconds * 1000)) throw new Error('RATE_LIMIT_WINDOW_S is too large');
   const limit = process.env.NODE_ENV === 'test' ? 0 : configuredLimit;
   const windows = new Map<string, { count: number; expiresAt: number }>();
-  const knownUsers = new Set(app.store.users.map(user => user.id));
   app.addHook('onRequest', async (request, reply) => {
     if (request.method !== 'POST' && request.method !== 'PATCH') return;
     reply.header('X-RateLimit-Limit', limit);
@@ -28,7 +27,7 @@ export function registerRateLimit(app: FastifyInstance) {
     }
     const header = request.headers['x-demo-user'];
     // Unknown header values share one bucket; untrusted input cannot grow the map.
-    const key = typeof header === 'string' && knownUsers.has(header) ? header : 'unauthenticated';
+    const key = typeof header === 'string' && app.store.users.some(user => user.id === header) ? header : 'unauthenticated';
     const now = Date.now();
     let window = windows.get(key);
     if (!window || now >= window.expiresAt) {

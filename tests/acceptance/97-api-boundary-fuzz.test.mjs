@@ -29,6 +29,9 @@ const mutations = [
   { operationId: 'translateComplaintText', method: 'POST', path: '/complaints/complaint-1/translations', user: 'manager-1', body: { field: 'description', targetLocale: 'en' } },
   { operationId: 'recordDecision', method: 'POST', path: '/complaints/complaint-1/decision', user: 'manager-1', body: { outcome: 'rejected', explanation: 'Причина.' } },
   { operationId: 'recordFeedback', method: 'POST', path: '/complaints/complaint-4/feedback', user: 'employee-1', body: { understood: true, solved: true } },
+  { operationId: 'createAdminUser', method: 'POST', path: '/admin/users', user: 'admin-1', body: { name: 'Новый участник', role: 'employee', departmentId: 'sales' } },
+  { operationId: 'updateAdminUser', method: 'PATCH', path: '/admin/users/employee-2', user: 'admin-1', body: { role: 'manager', active: true } },
+  { operationId: 'updateAdminCategory', method: 'PATCH', path: '/admin/categories/training', user: 'admin-1', body: { assigneeId: 'manager-1', dueInDays: 5 } },
   { operationId: 'createProblem', method: 'POST', path: '/problems', user: 'manager-1', body: { title: 'Общая проблема', complaintIds: ['complaint-1', 'complaint-2'] } },
 ];
 async function invoke(operation, payload) {

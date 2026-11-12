@@ -1,4 +1,4 @@
-import type { Complaint } from './model.js';
+import type { Category, Complaint, ReferenceData, User } from './model.js';
 import { seedComplaints, seedReferenceData, seedUsers } from './seed.js';
 import { FilePersistence } from './persistence.js';
 import type { DatabasePersistence } from './pg-persistence.js';
@@ -71,8 +71,53 @@ export class ComplaintStore {
     void this.flush();
   }
 
-  get referenceData() { return structuredClone(seedReferenceData); }
-  get users() { return structuredClone(seedUsers); }
+  /** Demo directory: administrators add users, change roles and routing in memory; a demo reset restores the seed. */
+  private userList: User[] = structuredClone(seedUsers);
+  private readonly inactive = new Set<string>();
+  private categoryList: Category[] = structuredClone(seedReferenceData.categories);
+
+  /** Active users only: a deactivated user can no longer act (identity() answers 401). */
+  get users(): User[] { return structuredClone(this.userList.filter(user => !this.inactive.has(user.id))); }
+  get referenceData(): ReferenceData {
+    const active = this.users;
+    return { departments: structuredClone(seedReferenceData.departments), categories: structuredClone(this.categoryList),
+      assignees: active.filter(user => user.role === 'manager') };
+  }
+  /** Every user including deactivated ones, for the admin section. */
+  get allUsers(): (User & { active: boolean })[] {
+    return structuredClone(this.userList).map(user => ({ ...user, active: !this.inactive.has(user.id) }));
+  }
+  addUser(input: { name: string; role: User['role']; departmentId: string }): User & { active: boolean } {
+    let n = this.userList.length + 1;
+    while (this.userList.some(user => user.id === `${input.role}-${n}`)) n += 1;
+    const user: User = { id: `${input.role}-${n}`, name: input.name, role: input.role, departmentId: input.departmentId };
+    this.userList.push(user);
+    return { ...structuredClone(user), active: true };
+  }
+  updateUser(id: string, patch: { name?: string; role?: User['role']; departmentId?: string; active?: boolean }): (User & { active: boolean }) | undefined {
+    const user = this.userList.find(candidate => candidate.id === id);
+    if (!user) return undefined;
+    if (patch.name !== undefined) user.name = patch.name;
+    if (patch.role !== undefined) user.role = patch.role;
+    if (patch.departmentId !== undefined) user.departmentId = patch.departmentId;
+    if (patch.active === false) this.inactive.add(id); else if (patch.active === true) this.inactive.delete(id);
+    // A user who is no longer an active manager cannot stay responsible for a category: back to the fallback queue.
+    if (user.role !== 'manager' || this.inactive.has(id)) {
+      for (const category of this.categoryList) if (category.assigneeId === id) category.assigneeId = null;
+    }
+    return { ...structuredClone(user), active: !this.inactive.has(id) };
+  }
+  updateCategory(id: string, patch: { assigneeId?: string | null; dueInDays?: number; name?: string }): Category | undefined {
+    const category = this.categoryList.find(candidate => candidate.id === id);
+    if (!category) return undefined;
+    Object.assign(category, patch);
+    return structuredClone(category);
+  }
+  private resetDirectory(): void {
+    this.userList = structuredClone(seedUsers);
+    this.inactive.clear();
+    this.categoryList = structuredClone(seedReferenceData.categories);
+  }
 
   seed() {
     const snapshot = new Map(this.records);
@@ -118,6 +163,7 @@ export class ComplaintStore {
       if (this.retryTimer) clearTimeout(this.retryTimer);
       this.retryTimer = null;
       this.writeError = null;
+      this.resetDirectory();
       this.records.clear();
       for (const item of seed) this.records.set(item.id, structuredClone(item));
       return seed.length;

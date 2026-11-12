@@ -10,6 +10,7 @@ import ComplaintPage from './pages/ComplaintPage';
 import SummaryPage from './pages/SummaryPage';
 import QueuePage from './pages/QueuePage';
 import DashboardPage from './pages/DashboardPage';
+import AdminPage from './pages/AdminPage';
 import { AboutPage, DemoHint, ImitationBadge, useDemoHints } from './features/demo';
 import { ImprovementsPage } from './features/improvements';
 import { NotificationBell } from './features/notifications';
@@ -26,7 +27,7 @@ import './styles/interaction.css';
 const navigation: Record<Role, { path: string; label: string }[]> = {
   employee: [{ path: '/my', label: 'Мои обращения' }, { path: '/submit', label: 'Новое обращение' }],
   manager: [{ path: '/queue', label: 'Очередь обращений' }, { path: '/dashboard', label: 'Дашборд' }],
-  admin: [{ path: '/summary', label: 'Сводка' }, { path: '/dashboard', label: 'Дашборд' }],
+  admin: [{ path: '/summary', label: 'Сводка' }, { path: '/dashboard', label: 'Дашборд' }, { path: '/admin', label: 'Пользователи и права' }],
 };
 const home: Record<Role, string> = { employee: '/my', manager: '/queue', admin: '/summary' };
 
@@ -34,6 +35,7 @@ function NavigationIcon({ path }: { path: string }) {
   return <svg className="navigation-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     {path === '/dashboard' ? <path d="M4 20h16M6 16v-5m6 5V5m6 11V8" />
       : path === '/submit' ? <path d="M12 5v14M5 12h14" />
+        : path === '/admin' ? <><circle cx="9" cy="8" r="3" /><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1M17 11v6m-3-3h6" /></>
         : <><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 9h8m-8 3h8m-8 3h5" /></>}
   </svg>;
 }
@@ -66,7 +68,7 @@ function requiredForPath(path: string): Role[] | undefined {
   if (path === '/my' || /^\/my\/[^/]+\/?$/.test(path) || path === '/submit') return ['employee'];
   if (path === '/queue' || /^\/queue\/[^/]+\/?$/.test(path)) return ['manager'];
   if (path === '/dashboard') return ['manager', 'admin'];
-  if (path === '/summary') return ['admin'];
+  if (path === '/summary' || path === '/admin') return ['admin'];
   return undefined;
 }
 
@@ -82,7 +84,7 @@ function cardPath(pathname: string, next: Role): string | undefined {
 
 function Shell() {
   const { t, locale, setLocale } = useI18n();
-  const { role, setRole, userId, logout } = useSession();
+  const { role, setRole, userId, userName, logout } = useSession();
   const navigate = useNavigate();
   const location = useLocation();
   const hints = useDemoHints();
@@ -121,7 +123,7 @@ function Shell() {
       <aside className="workspace-sidebar">
         <p className="workspace-sidebar-title" aria-hidden="true">{t("Рабочее пространство")}</p>
         <nav aria-label={t("Основное меню")}>{navigation[role].map(item => <NavLink key={item.path} to={item.path}><NavigationIcon path={item.path} /><span>{t(item.label)}</span></NavLink>)}<LastComplaintButton key={role} /></nav>
-        <div className="session-box"><span className="session-user">{t(demoAccounts.find(account => account.id === userId)?.title ?? 'Сотрудник')}</span><button type="button" className="logout-button" onClick={logout}>{t('Выйти')}</button></div>
+        <div className="session-box"><span className="session-user">{demoAccounts.some(account => account.id === userId) ? t(demoAccounts.find(account => account.id === userId)!.title) : userName ?? t('Сотрудник')}</span><button type="button" className="logout-button" onClick={logout}>{t('Выйти')}</button></div>
         <div ref={setSignalSlot} className="completion-slot" />
       </aside>
       {/* Колокольчик стоит в DOM после меню (порядок Tab «шапка → меню» не меняется), а в шапку выводится стилями. */}
@@ -141,6 +143,7 @@ function Shell() {
           <Route path="/queue/:complaintId" element={<RoleRoute role="manager"><ComplaintPage /></RoleRoute>} />
           <Route path="/dashboard" element={<RoleRoute role={['manager', 'admin']}><DashboardPage /></RoleRoute>} />
           <Route path="/summary" element={<RoleRoute role="admin"><SummaryPage /></RoleRoute>} />
+          <Route path="/admin" element={<RoleRoute role="admin"><AdminPage /></RoleRoute>} />
           <Route path="/improvements" element={<ImprovementsPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="*" element={<section className="section"><h1>{t("Страница не найдена")}</h1><Link to={home[role]}>{t("Вернуться к обращениям")}</Link></section>} />
