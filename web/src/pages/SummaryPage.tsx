@@ -8,7 +8,7 @@ import { dateLabel, Loading, LoadError, typeLabels } from '../features/complaint
 import { CompletionSignal } from '../features/CompletionSignal';
 import { useRevealOnView } from '../features/designMotion';
 import { RoutingRules } from '../features/routingRules';
-import { ChartHeader, CollapsiblePanel } from '../features/collapsiblePanel';
+import { ChartHeader, CollapsiblePanel, ShowAllButton, useShowAll } from '../features/collapsiblePanel';
 import { DonutChart } from '../features/donutChart';
 import './summary.css';
 
@@ -56,9 +56,10 @@ function labelLines(label: string, width: number) {
  * поэтому текст всегда 14 px. Если подписи не помещаются слева от столбцов, они переносятся над столбцами.
  * Таблица-альтернатива выводится рядом.
  */
-export function BarChart({ title, bars }: { title: string; bars: Bar[] }) {
+export function BarChart({ title, bars, format }: { title: string; bars: Bar[]; format?: (value: number) => string }) {
   const { locale } = useI18n();
-  const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
+  const numberFormat = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
+  const number = { format: format ?? ((value: number) => numberFormat.format(value)) };
   const titleId = useId();
   const { ref, width } = useContainerWidth();
   const revealBar = useRevealOnView<SVGGElement>();
@@ -119,6 +120,12 @@ export default function SummaryPage() {
   };
   const typeSlices = summary?.byType.map(item => ({ key: item.type, label: t(typeLabels[item.type]), value: item.count })) ?? [];
   const topicBars = summary?.recurringTopics.map(topic => ({ label: referenceLabel(locale, 'category', topic.categoryId, topic.categoryName), value: topic.count })) ?? [];
+  const departmentBars = summary?.byDepartment?.map(item => ({ label: referenceLabel(locale, 'department', item.departmentId, item.departmentName), value: item.count })) ?? [];
+  const resolutionBars = (summary?.avgResolutionHoursByCategory ?? []).flatMap(item => item.closedCount > 0 && item.averageResolutionHours !== null
+    ? [{ label: referenceLabel(locale, 'category', item.categoryId, item.categoryName), value: item.averageResolutionHours }] : [])
+    .sort((a, b) => b.value - a.value);
+  const topics = useShowAll(topicBars), departments = useShowAll(departmentBars), resolution = useShowAll(resolutionBars);
+  const showLabel = { more: t("Показать все"), less: t("Свернуть") };
   return <section className="section summary-page"><p className="eyebrow">{t("Обзор обратной связи")}</p><h1>{t("Сводка")}</h1>
     <p className="muted">{t("Результаты рассмотрения и темы, к которым сотрудники возвращаются чаще.")}</p>
     {result.loading && <Loading label={t("Загрузка сводки…")} />}
@@ -146,13 +153,14 @@ export default function SummaryPage() {
       <div className="summary-sections">
         <div className="summary-column">
         <CollapsiblePanel id="summary-types" panelRef={revealPanel} className="summary-table-panel reveal-panel" title={t("Обращения по типам")}>
-          {summary.total > 0 && <figure className="summary-chart"><DonutChart title={t("Обращения по типам")} centerLabel={t("всего")} slices={typeSlices} /></figure>}
+          {summary.total > 0 && <figure className="summary-chart"><DonutChart title={t("Обращения по типам")} slices={typeSlices} /></figure>}
           {/* Те же числа, что в диаграмме: таблица только для экранных читалок. */}<div className="visually-hidden"><table aria-label={t("Обращения по типам")}><thead><tr><th scope="col">{t("Тип")}</th><th scope="col">{t("Количество")}</th></tr></thead><tbody>{summary.byType.map(item => <tr key={item.type}><th scope="row">{t(typeLabels[item.type])}</th><td>{number.format(item.count)}</td></tr>)}</tbody></table></div>
         </CollapsiblePanel>
         <CollapsiblePanel id="summary-topics" panelRef={revealPanel} className="summary-table-panel reveal-panel" title={t("Повторяющиеся темы")}>
           <p className="muted">{t("Категории, в которых есть минимум два обращения.")}</p>
           {summary.recurringTopics.length === 0 ? <p>{t("Повторяющихся тем пока нет.")}</p> : <>
-            <figure className="summary-chart"><ChartHeader label={t("Категория")} value={t("Количество")} /><BarChart title={t("Повторяющиеся темы по категориям")} bars={topicBars} /></figure>
+            <figure className="summary-chart"><ChartHeader label={t("Категория")} value={t("Количество")} /><BarChart title={t("Повторяющиеся темы по категориям")} bars={topics.visible} /></figure>
+            {topics.more && <ShowAllButton all={topics.all} toggle={topics.toggle} label={showLabel} />}
             {role === 'admin' ? <p className="muted topic-hint">{queueHint}</p>
               : <ul className="topic-links" aria-label={t("Открыть в очереди")}>{summary.recurringTopics.map(topic => <li key={topic.categoryId}>
                 <Link to={`/queue?categoryId=${encodeURIComponent(topic.categoryId)}`}>{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</Link>
@@ -160,13 +168,20 @@ export default function SummaryPage() {
             {/* Те же данные, что в диаграмме: таблица остаётся для экранных читалок и не дублирует диаграмму на экране. */}<div className="visually-hidden"><table aria-label={t("Повторяющиеся темы")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Количество")}</th></tr></thead><tbody>{summary.recurringTopics.map(topic => <tr key={topic.categoryId}><th scope="row">{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</th><td>{number.format(topic.count)}</td></tr>)}</tbody></table></div>
           </>}
         </CollapsiblePanel>
-        {summary.byDepartment && <CollapsiblePanel id="summary-departments" panelRef={revealPanel} className="summary-table-panel reveal-panel" title={t("Обращения по подразделениям")}>
-          <table aria-label={t("Обращения по подразделениям")}><thead><tr><th scope="col">{t("Подразделение")}</th><th scope="col">{t("Обращений")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Доля закрытых")}</th></tr></thead><tbody>{summary.byDepartment.map(item => <tr key={item.departmentId}><th scope="row">{referenceLabel(locale, 'department', item.departmentId, item.departmentName)}</th><td>{number.format(item.count)}</td><td>{number.format(item.closedCount)}</td><td>{percent.format(item.closedShare)}</td></tr>)}</tbody></table>
-        </CollapsiblePanel>}
         </div>
         <div className="summary-column">
         {summary.avgResolutionHoursByCategory && <CollapsiblePanel id="summary-resolution" panelRef={revealPanel} className="summary-table-panel reveal-panel" title={t("Время решения по категориям")}>
-          <table aria-label={t("Время решения по категориям")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Среднее время")}</th></tr></thead><tbody>{summary.avgResolutionHoursByCategory.map(item => <tr key={item.categoryId}><th scope="row">{referenceLabel(locale, 'category', item.categoryId, item.categoryName)}</th><td>{number.format(item.closedCount)}</td><td>{hours(item.averageResolutionHours, locale)}</td></tr>)}</tbody></table>
+          {resolutionBars.length === 0 ? <p>{t("Закрытых обращений пока нет.")}</p> : <>
+            <figure className="summary-chart"><ChartHeader label={t("Категория")} value={t("Среднее время")} /><BarChart title={t("Время решения по категориям")} bars={resolution.visible} format={value => hours(value, locale)} /></figure>
+            {resolution.more && <ShowAllButton all={resolution.all} toggle={resolution.toggle} label={showLabel} />}
+          </>}
+          {resolutionBars.length < summary.avgResolutionHoursByCategory.length && <p className="muted">{t("Остальные категории: закрытых обращений пока нет.")}</p>}
+          <div className="visually-hidden"><table aria-label={t("Время решения по категориям")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Среднее время")}</th></tr></thead><tbody>{summary.avgResolutionHoursByCategory.map(item => <tr key={item.categoryId}><th scope="row">{referenceLabel(locale, 'category', item.categoryId, item.categoryName)}</th><td>{number.format(item.closedCount)}</td><td>{hours(item.averageResolutionHours, locale)}</td></tr>)}</tbody></table></div>
+        </CollapsiblePanel>}
+        {summary.byDepartment && <CollapsiblePanel id="summary-departments" panelRef={revealPanel} className="summary-table-panel reveal-panel" title={t("Обращения по подразделениям")}>
+          <figure className="summary-chart"><ChartHeader label={t("Подразделение")} value={t("Количество")} /><BarChart title={t("Обращения по подразделениям")} bars={departments.visible} /></figure>
+          {departments.more && <ShowAllButton all={departments.all} toggle={departments.toggle} label={showLabel} />}
+          {/* Полные данные (закрыто, доля закрытых) — для экранных читалок. */}<div className="visually-hidden"><table aria-label={t("Обращения по подразделениям")}><thead><tr><th scope="col">{t("Подразделение")}</th><th scope="col">{t("Обращений")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Доля закрытых")}</th></tr></thead><tbody>{summary.byDepartment.map(item => <tr key={item.departmentId}><th scope="row">{referenceLabel(locale, 'department', item.departmentId, item.departmentName)}</th><td>{number.format(item.count)}</td><td>{number.format(item.closedCount)}</td><td>{percent.format(item.closedShare)}</td></tr>)}</tbody></table></div>
         </CollapsiblePanel>}
         </div>
         {role === 'admin' && <RoutingRules />}

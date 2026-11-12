@@ -13,7 +13,7 @@ const GAP = 0.9;
  * Кольцевая диаграмма на чистом SVG: доли в оттенках основного цвета темы, итог в центре, легенда рядом.
  * Для экранных читалок — заголовок SVG; легенда скрыта от них, чтобы не повторять те же числа.
  */
-export function DonutChart({ title, slices, centerLabel }: { title: string; slices: Slice[]; centerLabel: string }) {
+export function DonutChart({ title, slices }: { title: string; slices: Slice[] }) {
   const { locale } = useI18n();
   const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const percent = new Intl.NumberFormat(localeNames[locale], { style: 'percent', maximumFractionDigits: 0 });
@@ -29,6 +29,8 @@ export function DonutChart({ title, slices, centerLabel }: { title: string; slic
     offset += share;
     return arc;
   });
+  // В центре — доля самого частого типа: общее число уже стоит в карточке «Всего обращений» над диаграммой.
+  const top = visible.reduce<Slice | undefined>((best, slice) => !best || slice.value > best.value ? slice : best, undefined);
   const shade = (key: string) => Math.max(0, slices.findIndex(slice => slice.key === key));
   return <div ref={reveal} className="donut">
     <svg className="donut-chart" role="img" aria-labelledby={titleId} viewBox="0 0 42 42" width="168" height="168">
@@ -38,8 +40,8 @@ export function DonutChart({ title, slices, centerLabel }: { title: string; slic
         {arcs.map(arc => <circle key={arc.key} data-slice={arc.key} className={`donut-slice donut-shade-${shade(arc.key)}`} cx="21" cy="21" r={R}
           strokeDasharray={`${arc.length} ${100 - arc.length}`} strokeDashoffset={25 - arc.start - gap / 2} />)}
       </g>
-      <text className="donut-total" x="21" y="20.5" textAnchor="middle" dominantBaseline="middle">{number.format(total)}</text>
-      <text className="donut-caption" x="21" y="26.5" textAnchor="middle" dominantBaseline="middle">{centerLabel}</text>
+      {top && <text className="donut-total" x="21" y="20" textAnchor="middle" dominantBaseline="middle">{percent.format(top.value / total)}</text>}
+      {top && <text className="donut-caption" x="21" y="26.5" textAnchor="middle" dominantBaseline="middle">{top.label}</text>}
     </svg>
     <ul className="donut-legend" aria-hidden="true">{slices.map(slice => <li key={slice.key}>
       <span className={`donut-swatch donut-shade-${shade(slice.key)}`} />

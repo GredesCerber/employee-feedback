@@ -12,7 +12,7 @@ import { EscalationBadge, escalatedCount } from '../features/escalation';
 import { ImpactPanel } from '../features/ImpactPanel';
 import { ProblemsPanel } from '../features/sharedProblems';
 import { WeeklyDigest } from '../features/weeklyDigest';
-import { ChartHeader, CollapsiblePanel } from '../features/collapsiblePanel';
+import { ChartHeader, CollapsiblePanel, ShowAllButton, useShowAll } from '../features/collapsiblePanel';
 import './dashboard.css';
 
 type DayCount = components['schemas']['DayCount'];
@@ -101,6 +101,7 @@ export default function DashboardPage() {
   })).sort((a, b) => (categorySort === 'count' ? b.count - a.count : 0)
     || collator.compare(a.name, b.name) || a.key.localeCompare(b.key));
   const visibleCategories = showAllCategories ? categoryRows : categoryRows.slice(0, 8);
+  const departments = useShowAll((trends?.byDepartment ?? []).map(item => ({ label: referenceLabel(locale, 'department', item.departmentId, item.departmentName), value: item.count })));
   return <section className="section dashboard-page">
     <header className="dashboard-header">
       <div><p className="eyebrow">{t("Обзор обратной связи")}</p><h1>{t("Дашборд")}</h1>
@@ -163,7 +164,8 @@ export default function DashboardPage() {
           {role !== 'manager' && trends.overdue.length > 0 && <p className="muted">{t("Карточки открывает руководитель в очереди обращений.")}</p>}
         </CollapsiblePanel>}
         {trends && !empty && <CollapsiblePanel id="dashboard-departments" panelRef={revealPanel} className="dashboard-panel reveal-panel" title={t("По подразделениям")}>
-          <figure className="dashboard-chart"><ChartHeader label={t("Подразделение")} value={t("Количество")} /><BarChart title={t("Обращения по подразделениям")} bars={trends.byDepartment.map(item => ({ label: referenceLabel(locale, 'department', item.departmentId, item.departmentName), value: item.count }))} /></figure>
+          <figure className="dashboard-chart"><ChartHeader label={t("Подразделение")} value={t("Количество")} /><BarChart title={t("Обращения по подразделениям")} bars={departments.visible} /></figure>
+          {departments.more && <ShowAllButton all={departments.all} toggle={departments.toggle} label={{ more: t("Показать все"), less: t("Свернуть") }} />}
           <div className="visually-hidden"><CountTable label={t("Обращения по подразделениям")} head={t("Подразделение")} rows={trends.byDepartment.map(item => ({ key: item.departmentId, name: referenceLabel(locale, 'department', item.departmentId, item.departmentName), count: item.count }))} /></div>
         </CollapsiblePanel>}
       </div>

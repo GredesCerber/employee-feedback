@@ -3,6 +3,7 @@ import { useI18n, referenceLabel } from '../i18n';
 import { useSession } from '../app/session';
 import { requireData, useResource } from './data';
 import { Link } from 'react-router-dom';
+import { ShowAllButton, useShowAll } from './collapsiblePanel';
 
 /** Аудит Г5 (docs/research/final-tz-audit.md): администратор видит, куда уходит каждая категория и в какой срок. Только чтение. */
 export function RoutingRules() {
@@ -11,6 +12,7 @@ export function RoutingRules() {
   const load = useCallback(async () => requireData((await api.GET('/reference-data')).data), [api]);
   const { data, error, reload } = useResource(load);
   const [testId, setTestId] = useState('');
+  const rules = useShowAll(Array.isArray(data?.categories) ? data.categories : []);
   const owner = (id: string | null) => id ? data?.assignees?.find(user => user.id === id)?.name ?? id : null;
   return <section className="summary-table-panel routing-rules" aria-labelledby="routing-rules-title">
     <h2 id="routing-rules-title">{t("Категории и ответственные")}</h2>
@@ -19,12 +21,13 @@ export function RoutingRules() {
     {error && <p role="alert">{error} <button type="button" onClick={reload}>{t("Повторить")}</button></p>}
     {data && Array.isArray(data.categories) && <table aria-label={t("Категории и ответственные")}>
       <thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Ответственный")}</th><th scope="col">{t("Срок ответа, дней")}</th></tr></thead>
-      <tbody>{data.categories.map(category => <tr key={category.id}>
+      <tbody>{rules.visible.map(category => <tr key={category.id}>
         <th scope="row">{referenceLabel(locale, 'category', category.id, category.name)}</th>
         <td>{owner(category.assigneeId) ?? <span className="muted">{t("Запасная очередь руководителя")}</span>}</td>
         <td>{category.dueInDays}</td>
       </tr>)}</tbody>
     </table>}
+    {data && rules.more && <ShowAllButton all={rules.all} toggle={rules.toggle} label={{ more: t("Показать все"), less: t("Свернуть") }} />}
     {data && Array.isArray(data.categories) && <div className="route-check">
       <label htmlFor="route-check-category">{t("Проверить правило на тестовом обращении")}</label>
       <select id="route-check-category" value={testId} onChange={event => setTestId(event.target.value)}>

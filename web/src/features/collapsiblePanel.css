@@ -10,4 +10,5 @@
 .collapsible-heading .dashboard-panel-count { flex: none; }
 @media (prefers-reduced-motion: reduce) { .collapsible-chevron { transition: none; } }
 
+.show-all-button { margin-top: var(--space-3); }
 .chart-header { display: flex; justify-content: space-between; gap: var(--space-3); padding-bottom: 6px; margin-bottom: var(--space-2); border-bottom: 1px solid var(--color-border); font-size: 12px; font-weight: 500; color: var(--color-text-muted); }

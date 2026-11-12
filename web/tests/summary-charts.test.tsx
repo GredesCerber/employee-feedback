@@ -49,7 +49,8 @@ describe('#111 summary charts', () => {
     expect(lengths.every(Number.isFinite)).toBe(true);
     expect(Math.max(...lengths)).toBe(lengths[1]);
     expect(lengths.reduce((sum, value) => sum + value, 0)).toBeLessThanOrEqual(100);
-    expect(chart.textContent).toContain('20');
+    // В центре — доля самого частого типа, а не общее число (оно уже в карточке «Всего обращений»).
+    expect(chart.textContent).toMatch(/50\s*%Предложение/);
     const legend = chart.parentElement!.querySelector('.donut-legend')!;
     expect(legend.getAttribute('aria-hidden')).toBe('true');
     expect(legend.textContent).toMatch(/Предложение10\s*50\s*%/);

@@ -56,22 +56,40 @@ describe('summary layout', () => {
     await openSummary();
     const departments = await screen.findByRole('table', { name: 'Обращения по подразделениям' });
     const resolution = screen.getByRole('table', { name: 'Время решения по категориям' });
-    const left = departments.closest('.summary-column');
+    const left = screen.getByRole('table', { name: 'Обращения по типам' }).closest('.summary-column');
     const right = resolution.closest('.summary-column');
     expect(left).not.toBeNull();
     expect(right).not.toBeNull();
     expect(left).not.toBe(right);
-    expect(within(left as HTMLElement).getByRole('table', { name: 'Обращения по типам' })).toBeTruthy();
+    // Слева кольцо по типам и темы, справа время решения и подразделения: колонки примерно равной высоты.
+    expect(departments.closest('.summary-column')).toBe(right);
+    expect(within(left as HTMLElement).getByRole('table', { name: 'Повторяющиеся темы' })).toBeTruthy();
   });
 
   it('keeps chart data tables only for screen readers, so the screen shows each number once', async () => {
     await openSummary();
-    for (const name of ['Повторяющиеся темы', 'Обращения по типам']) {
+    for (const name of ['Повторяющиеся темы', 'Обращения по типам', 'Обращения по подразделениям', 'Время решения по категориям']) {
       expect((await screen.findByRole('table', { name })).closest('.visually-hidden')).not.toBeNull();
     }
     expect(screen.queryByRole('list', { name: 'Повторяющиеся темы' })).toBeNull();
-    // Таблицы без диаграммы остаются на экране.
-    expect(screen.getByRole('table', { name: 'Обращения по подразделениям' }).closest('.visually-hidden')).toBeNull();
+    // Время решения: столбцы только для категорий с закрытыми обращениями, значение в часах, подписи столбцов сверху.
+    const resolution = screen.getByRole('img', { name: /Время решения по категориям/ });
+    expect([...resolution.querySelectorAll('[data-bar]')].map(bar => bar.getAttribute('data-bar'))).toEqual(['Охрана труда']);
+    expect(resolution.textContent).toMatch(/30,5\s*ч/);
+    expect(resolution.closest('figure')?.querySelector('.chart-header')?.textContent).toBe('КатегорияСреднее время');
+    expect(screen.getByText('Остальные категории: закрытых обращений пока нет.')).toBeTruthy();
+  });
+
+  it('shows eight department bars, then all of them behind «Показать все»', async () => {
+    data.byDepartment = Array.from({ length: 10 }, (_, index) => ({ departmentId: `d${index}`, departmentName: `Отдел ${index}`, count: 10 - index, closedCount: 0, closedShare: 0 }));
+    const user = await openSummary();
+    const bars = () => screen.getByRole('img', { name: /Обращения по подразделениям/ }).querySelectorAll('[data-bar]');
+    await screen.findByRole('img', { name: /Обращения по подразделениям/ });
+    expect(bars()).toHaveLength(8);
+    const panel = screen.getByRole('region', { name: 'Обращения по подразделениям' });
+    await user.click(within(panel).getByRole('button', { name: 'Показать все' }));
+    expect(bars()).toHaveLength(10);
+    expect(within(screen.getByRole('table', { name: 'Обращения по подразделениям' })).getAllByRole('row')).toHaveLength(11);
   });
 
   it('collapses a panel with its heading button and remembers the choice', async () => {

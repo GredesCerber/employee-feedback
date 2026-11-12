@@ -3,7 +3,7 @@
 .donut-chart { flex: none; display: block; overflow: visible; }
 .donut-track { fill: none; stroke: var(--color-chart-track); stroke-width: 5; }
 .donut-slice { fill: none; stroke-width: 5; stroke: var(--color-primary); }
-.donut-total { font-size: 8.5px; font-weight: 600; fill: var(--color-text); font-variant-numeric: tabular-nums; }
+.donut-total { font-size: 7px; font-weight: 600; fill: var(--color-text); font-variant-numeric: tabular-nums; }
 .donut-caption { font-size: 3.5px; fill: var(--color-text-muted); }
 .donut-shade-1 { opacity: .58; }
 .donut-shade-2 { opacity: .28; }
