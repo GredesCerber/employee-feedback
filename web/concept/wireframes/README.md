@@ -14,6 +14,7 @@
 | [Очередь обращений](queue.md) | `/queue` | manager | 2, 5 |
 | [Карточка руководителя](handling.md) | `/queue/:complaintId` | manager | 2, 3, 4, 5 |
 | [Сводка](summary.md) | `/summary` | admin | 6 |
+| [Пользователи и права](admin.md) | `/admin` | admin | вне обязательных шагов |
 | [О прототипе](about.md) | `/about` | employee, manager, admin | вне шагов, для вопросов жюри (R12) |
 
 ## Путь по шагам демо
