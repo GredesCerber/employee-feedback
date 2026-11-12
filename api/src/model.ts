@@ -22,6 +22,8 @@ export interface Decision {
   outcome: 'implemented' | 'rejected' | 'closed'; explanation: string; actions: string | null;
   author: User; createdAt: string;
 }
+export interface Feedback { understood: boolean; solved: boolean; comment?: string; createdAt: string }
+export interface ProblemRef { id: string; title: string; plan: string | null; createdAt: string }
 export interface Complaint {
   id: string; number: string; type: ComplaintType; categoryId: string; departmentId: string;
   author: User; description: string; proposedSolution: string | null; priority: Priority;
@@ -34,6 +36,10 @@ export interface Complaint {
   simulated?: boolean;
   canUndo?: boolean; undoExpiresAt?: string | null;
   anonymous?: boolean;
+  /** Author's rating after the final decision. */
+  feedback?: Feedback;
+  /** Shared problem this complaint belongs to. */
+  problem?: ProblemRef;
   /** Optional author-chosen point; absent when not chosen. */
   location?: GeoPoint;
 }

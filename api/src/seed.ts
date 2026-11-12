@@ -58,6 +58,11 @@ function seedCreatedAt(index: number, relative: boolean, now: Date): number {
   return dayStart - daysAgo * DAY + 9 * HOUR + index * 60_000;
 }
 
+const seedFeedback: Record<string, { understood: boolean; solved: boolean; comment?: string }> = {
+  'A-008': { understood: true, solved: true, comment: 'Наставник назначен, всё понятно.' },
+  'A-017': { understood: true, solved: false },
+};
+
 /**
  * Synthetic demonstration timestamps, never real response metrics.
  * Called on every seeding (start, --seed-reset, demo reset), so relative dates follow the current day.
@@ -90,6 +95,8 @@ export function seedComplaints(): Complaint[] {
       decision: closedAt ? { outcome: row.status as 'implemented' | 'rejected' | 'closed',
         explanation: row.nextAction, actions: null, author: assignee, createdAt: closedAt } : null,
       nextAction: row.nextAction,
+      // Synthetic demo ratings so the pilot panel and the improvements feed are not empty (never real metrics).
+      ...(seedFeedback[row.number] && closedAt ? { feedback: { ...seedFeedback[row.number]!, createdAt: new Date(createdMs + DAY + HOUR).toISOString() } } : {}),
     };
   });
 }

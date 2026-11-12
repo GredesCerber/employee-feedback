@@ -28,6 +28,8 @@ const mutations = [
   { operationId: 'addComment', method: 'POST', path: '/complaints/complaint-1/comments', user: 'manager-1', body: { kind: 'comment', text: 'Комментарий.' } },
   { operationId: 'translateComplaintText', method: 'POST', path: '/complaints/complaint-1/translations', user: 'manager-1', body: { field: 'description', targetLocale: 'en' } },
   { operationId: 'recordDecision', method: 'POST', path: '/complaints/complaint-1/decision', user: 'manager-1', body: { outcome: 'rejected', explanation: 'Причина.' } },
+  { operationId: 'recordFeedback', method: 'POST', path: '/complaints/complaint-4/feedback', user: 'employee-1', body: { understood: true, solved: true } },
+  { operationId: 'createProblem', method: 'POST', path: '/problems', user: 'manager-1', body: { title: 'Общая проблема', complaintIds: ['complaint-1', 'complaint-2'] } },
 ];
 async function invoke(operation, payload) {
   const app = buildApp({}, { translator: { enabled: true, translate: async () => 'translated fixture' } });
