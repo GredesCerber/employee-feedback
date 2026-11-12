@@ -16,6 +16,12 @@ export async function createPgPersistence(connectionString: string): Promise<Dat
     connectionString,
     max: 3,
     // Neon and most hosted Postgres require TLS; local docker Postgres does not.
+    // rejectUnauthorized:false is a deliberate demo trade-off: traffic is still
+    // encrypted, but the server certificate is not checked against a CA, so the
+    // hosted demo works with any provider without shipping a CA bundle. This leaves
+    // room for a man-in-the-middle; for production pin the provider's CA
+    // (ssl: { ca }) or use sslmode=verify-full. See infra/ENV.md (DATABASE_URL).
+    // Covered by api/test/pg-persistence.test.mjs.
     ssl: /sslmode=disable|localhost|127\.0\.0\.1/.test(connectionString) ? false : { rejectUnauthorized: false },
     connectionTimeoutMillis: 15_000,
   });
