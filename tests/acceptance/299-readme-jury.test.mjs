@@ -81,7 +81,11 @@ test('#299 ссылки и безопасность: нет битых лока�
     assert.ok(existsSync(path), `локальная ссылка ${target} существует`);
   }
   assert.doesNotMatch(readme, /\]\(https?:\/\/(localhost|127\.0\.0\.1)/, 'localhost не подаётся как публичная ссылка');
-  assert.doesNotMatch(readme, /onrender\.com|vercel\.app|публичн\S* демо доступн/i, 'нет обещаний недоступного хостинга');
+  const demo = readme.split(/\r?\n\r?\n/)[1] ?? '';
+  assert.match(demo, /\]\(https:\/\/employee-feedback-x627\.onrender\.com\/\)/, 'публичное демо в первом блоке');
+  for (const role of ['Сотрудник закупок', 'Руководитель', 'Администратор']) {
+    assert.ok(demo.includes(role), `в первом блоке есть демо-учётка ${role}`);
+  }
   assert.doesNotMatch(readme, /sk-ant-|ghp_|github_pat_|@[\w.-]+\.(ru|com)\b/, 'нет токенов и почты');
   const validation = join(root, 'infra/readme-validation.md');
   assert.ok(existsSync(validation), 'есть infra/readme-validation.md');
