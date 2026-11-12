@@ -201,7 +201,7 @@ export default function QueuePage() {
   return <section className="section queue-page">
     <div className="feedback-heading">
       <div><p className="eyebrow">{t("Рабочая область руководителя")}</p><h1 ref={heading} tabIndex={-1}>{t("Очередь обращений")}</h1></div>
-      {role !== 'employee' && <button type="button" className="export-button" onClick={download} disabled={exporting}>{exporting ? t("Готовим файл…") : t("Скачать CSV")}</button>}
+      {role !== 'employee' && <button type="button" className="export-button" onClick={download} disabled={exporting} aria-busy={exporting}>{exporting ? t("Готовим файл…") : t("Скачать CSV")}</button>}
     </div>
     {lastId && <p className="feedback-return"><Link to={lastComplaintPath(role, lastId)}>{t("Вернуться к последнему обращению")}</Link></p>}
     {reference.loading && <Loading label={t("Загрузка фильтров…")} />}
@@ -232,7 +232,7 @@ export default function QueuePage() {
       <PageCompletionSignal items={shown.items} />
       {shown.items.length === 0 ? <div className="empty-state"><p>{applied.q ? t('По запросу «{query}» обращений нет.', { query: applied.q }) : t("По выбранным фильтрам обращений нет.")}</p><p className="muted">{t("Измените условия или нажмите «Сбросить фильтры», чтобы увидеть всю очередь.")}</p><div className="actions"><button type="button" onClick={() => { reset(); heading.current?.focus(); }}>{t("Сбросить фильтры")}</button>{applied.q && <button type="button" onClick={clearSearch}>{t("Сбросить поиск")}</button>}</div></div> : <>
         <div className="queue-list-header" aria-hidden="true"><span>{t("Обращение")}</span><span>{t("Статус")}</span><span>{t("Ответственный")}</span><span>{t("Срок")}</span></div>
-        <ul className="complaint-list queue-list">{shown.items.map(item => <li className="complaint-item" key={item.id}>
+        <ul className="complaint-list queue-list">{shown.items.map(item => <li className={item.id === lastId ? "complaint-item is-last-opened" : "complaint-item"} key={item.id}>
           <div className="queue-record">
             <Link className="complaint-number" to={`/queue/${item.id}`} state={{ queueSearch: urlKey }}>{item.number}</Link>
             {item.simulated && <ImitationBadge hint={t("создано демо-симулятором")} />}
