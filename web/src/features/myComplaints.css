@@ -27,5 +27,5 @@
 .my-quick-actions a { display: grid; gap: 4px; align-content: start; min-height: 44px; padding: 14px 16px; border: 1px solid var(--color-border, currentColor); border-radius: 12px; text-decoration: none; color: inherit; transition: transform .15s ease, box-shadow .15s ease; }
 .my-quick-actions a:hover, .my-quick-actions a:focus-visible { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
 .my-quick-actions a span { font-size: var(--font-size-sm); opacity: .8; }
-.my-quick-actions .primary-link { border-color: transparent; }
+.my-quick-actions .primary-link { border-color: transparent; color: var(--color-on-primary); }
 @media (prefers-reduced-motion: reduce) { .my-quick-actions a { transition: none; } .my-quick-actions a:hover { transform: none; } }
