@@ -6,7 +6,7 @@ import { forgetLastComplaint } from '../features/lastComplaint';
 import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, StatusBadge, typeLabels } from '../features/complaint';
-import { AuthorReply, ManagerActions } from '../features/ComplaintActions';
+import { AuthorReply, BitrixTaskStub, ManagerActions } from '../features/ComplaintActions';
 import { UndoAction } from '../features/UndoAction';
 import { ImitationBadge } from '../features/demo';
 import { MapPicker } from '../features/MapPicker';
@@ -102,6 +102,7 @@ export default function ComplaintPage() {
               <TranslatableText complaintId={item.id} field="decision" text={item.decision.explanation} />
               {item.decision.actions && <><h3>{t("Дальнейшие действия")}</h3><TranslatableText complaintId={item.id} field="actions" text={item.decision.actions} /></>}
               <p className="muted">{item.decision.author.name} · {dateLabel(item.decision.createdAt, locale)}</p>
+              <BitrixTaskStub item={item} />
             </div>}
           </div>
           <div className="detail-history">
