@@ -4,6 +4,9 @@
 // Пересечения с другими спеками описаны в final-regression.md.
 import { test, expect } from '@playwright/test';
 
+// Условный вход (#288): каждый переход в тесте начинается сотрудником, как раньше; экран входа проверяет login.spec.mjs.
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('demo-session', 'employee-1')); });
+
 const run = `fr-${Date.now().toString(36)}`;
 const authorName = 'Сотрудник закупок';
 const localHosts = new Set(['127.0.0.1', 'localhost', '[::1]']);

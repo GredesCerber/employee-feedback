@@ -9,3 +9,4 @@ web/dist
 !api/src/**
 !api/data/**
 !contracts/api.yaml
+!scripts/demo-sim/**

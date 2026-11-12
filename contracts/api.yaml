@@ -2015,6 +2015,38 @@
           4
         ]
       }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "getHealthReady",
+        "summary": "Check API readiness",
+        "description": "Public readiness endpoint available without X-Demo-User. Returns status=ready and the number of loaded complaints once the seed or stored data is loaded. It does not assert external integration readiness or authenticated user access.",
+        "tags": [
+          "Context"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthReady"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3114,6 +3146,13 @@
                 }
               }
             }
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "\\S",
+            "description": "Request correlation ID, equal to the X-Request-Id response header. Optional for backward compatibility."
           }
         }
       },
@@ -3240,8 +3279,11 @@
               "decision_recorded",
               "unassigned",
               "clarification_received",
-              "due_soon"
-            ]
+              "due_soon",
+              "status_changed",
+              "overdue"
+            ],
+            "description": "status_changed: the author's open complaint was taken into review or work by a manager; shown until a decision, which has its own kind, as do clarification transitions. overdue: an open complaint of the manager or without an assignee passed dueAt; createdAt equals dueAt."
           },
           "complaintId": {
             "type": "string",
@@ -4084,6 +4126,24 @@
           "source": {
             "type": "string",
             "const": "llm"
+          }
+        }
+      },
+      "HealthReady": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "complaints"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ready"
+          },
+          "complaints": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       }

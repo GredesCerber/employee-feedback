@@ -398,6 +398,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/health/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check API readiness
+         * @description Public readiness endpoint available without X-Demo-User. Returns status=ready and the number of loaded complaints once the seed or stored data is loaded. It does not assert external integration readiness or authenticated user access.
+         */
+        get: operations["getHealthReady"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -713,6 +733,8 @@ export interface components {
                 /** @description Reason */
                 message: string;
             }[];
+            /** @description Request correlation ID, equal to the X-Request-Id response header. Optional for backward compatibility. */
+            requestId?: string;
         };
         /** @description Public projection of an anonymous author. No id, departmentId, role or extra properties are allowed; no recoverable author identifier is embedded in another field. */
         AnonymousActor: {
@@ -742,8 +764,11 @@ export interface components {
         /** @description Deterministic stable id per event, without an author identifier. Simulated internal feed, not actual email or Bitrix delivery. */
         Notification: {
             id: string;
-            /** @enum {string} */
-            kind: "clarification_requested" | "decision_recorded" | "unassigned" | "clarification_received" | "due_soon";
+            /**
+             * @description status_changed: the author's open complaint was taken into review or work by a manager; shown until a decision, which has its own kind, as do clarification transitions. overdue: an open complaint of the manager or without an assignee passed dueAt; createdAt equals dueAt.
+             * @enum {string}
+             */
+            kind: "clarification_requested" | "decision_recorded" | "unassigned" | "clarification_received" | "due_soon" | "status_changed" | "overdue";
             complaintId: string;
             /** @description Unique human-readable registration number; synthetic seed uses A-001..A-020. */
             complaintNumber: string;
@@ -1182,6 +1207,11 @@ export interface components {
             targetLocale: "ru" | "en" | "kk";
             /** @constant */
             source: "llm";
+        };
+        HealthReady: {
+            /** @constant */
+            status: "ready";
+            complaints: number;
         };
     };
     responses: {
@@ -2104,6 +2134,27 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+        };
+    };
+    getHealthReady: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful response. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthReady"];
+                };
+            };
+            500: components["responses"]["Internal"];
         };
     };
 }
