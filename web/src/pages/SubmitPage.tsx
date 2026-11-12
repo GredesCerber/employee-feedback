@@ -14,6 +14,7 @@ import { SimilarList, SuggestionNote, useSubmitAssist } from '../features/submit
 import { MapPicker, type LocationPoint } from '../features/MapPicker';
 import { clearDraft, readDraft, writeDraft } from '../features/submitDraft';
 import { CategoryCards, CharCounter, SUBMIT_LIMITS } from '../features/submitForm';
+import { preSubmitDeadline } from '../features/submitGuide';
 
 const mapCopy = {
   ru: { title: 'Указать место на карте — необязательно', invalid: 'Проверьте широту и долготу или очистите координаты.', privacy: 'Точное место может косвенно указать на автора анонимного обращения.', selected: 'Точка выбрана' },
@@ -187,6 +188,11 @@ function SubmitForm({ role }: { role: string }) {
         <li><strong>{t("Рассмотрение.")}</strong> {t("Ответственный изучит обращение и при необходимости задаст вопрос.")}</li>
         <li><strong>{t("Решение.")}</strong> {t("Итог и пояснение появятся в «Моих обращениях».")}</li>
       </ol>
+      <p className="field-hint what-next-deadline" role="status">{(() => {
+        const deadline = preSubmitDeadline(reference.data.categories, categoryId);
+        if (!deadline) return t('Выберите категорию, чтобы увидеть срок рассмотрения.');
+        return <>{t('Срок рассмотрения: {count} календарных дней от подачи.', { count: deadline.days })} {deadline.hasOwner ? t('Ответственный назначается по категории.') : t('Ответственный будет назначен после регистрации.')}</>;
+      })()}</p>
     </aside></div>}
   </section>{announcement}</>;
 }
