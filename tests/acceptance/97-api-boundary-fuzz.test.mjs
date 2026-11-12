@@ -27,6 +27,7 @@ const mutations = [
   { operationId: 'changeComplaintStatus', method: 'PATCH', path: '/complaints/complaint-1/status', user: 'manager-1', body: { status: 'in_review' } },
   { operationId: 'addComment', method: 'POST', path: '/complaints/complaint-1/comments', user: 'manager-1', body: { kind: 'comment', text: 'Комментарий.' } },
   { operationId: 'translateComplaintText', method: 'POST', path: '/complaints/complaint-1/translations', user: 'manager-1', body: { field: 'description', targetLocale: 'en' } },
+  { operationId: 'getComplaintAdvice', method: 'POST', path: '/complaints/complaint-1/advice', user: 'manager-1', body: {} },
   { operationId: 'recordDecision', method: 'POST', path: '/complaints/complaint-1/decision', user: 'manager-1', body: { outcome: 'rejected', explanation: 'Причина.' } },
   { operationId: 'recordFeedback', method: 'POST', path: '/complaints/complaint-4/feedback', user: 'employee-1', body: { understood: true, solved: true } },
   { operationId: 'createAdminUser', method: 'POST', path: '/admin/users', user: 'admin-1', body: { name: 'Новый участник', role: 'employee', departmentId: 'sales' } },

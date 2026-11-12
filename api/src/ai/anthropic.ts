@@ -96,6 +96,22 @@ export function createAnthropicClassifier(options: AnthropicClassifierOptions): 
   };
 }
 
+/** One structured completion constrained by `schema`; throws on any failure (caller falls back). */
+export function createAnthropicJson(options: AnthropicClassifierOptions) {
+  const client = new Anthropic({ apiKey: options.apiKey, timeout: options.timeoutMs, maxRetries: 0, fetch: options.fetch });
+  return async (system: string, user: string, schema: Record<string, unknown>): Promise<unknown> => {
+    const response = await client.messages.create({
+      model: options.model, max_tokens: 4096, system,
+      output_config: { effort: 'low', format: { type: 'json_schema', schema } },
+      messages: [{ role: 'user', content: user }],
+    });
+    if (response.stop_reason !== 'end_turn') throw new UnusableModelResponse(`stop_reason=${response.stop_reason}`);
+    const block = response.content.find(item => item.type === 'text');
+    if (!block || block.type !== 'text') throw new UnusableModelResponse('no text block');
+    try { return JSON.parse(block.text); } catch { throw new UnusableModelResponse('answer is not JSON'); }
+  };
+}
+
 /** Short, credential-free description of a failure for the log. */
 export function describeFailure(error: unknown): string {
   if (error instanceof UnusableModelResponse) return `unusable response: ${error.message}`;

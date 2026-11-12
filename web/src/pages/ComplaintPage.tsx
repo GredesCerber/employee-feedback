@@ -11,6 +11,7 @@ import { UndoAction } from '../features/UndoAction';
 import { ImitationBadge } from '../features/demo';
 import { MapPicker } from '../features/MapPicker';
 import { TranslatableText } from '../features/TranslatableText';
+import { AiAdvice } from '../features/AiAdvice';
 import { useRememberComplaint } from '../features/lastComplaintStore';
 import { useRevealOnView } from '../features/designMotion';
 import { AnonymousBadge, authorLabel, CommentKindBadge, fallbackQueueHint, priorityLabels, referenceName, routingReasonLabels } from '../features/complaintMeta';
@@ -69,7 +70,7 @@ export default function ComplaintPage() {
     {item && <>
       <div className="detail-header"><h1 ref={heading} tabIndex={-1} id="complaint-heading">{t("Обращение")} <span id="complaint-number">{item.number}</span></h1>{item.simulated && <ImitationBadge hint={t("создано демо-симулятором")} />}{item.anonymous && <AnonymousBadge />}<StatusBadge status={item.status} /><CopyNumber number={item.number} targetId="complaint-number" /></div>
       <StatusProgress item={item} />
-      <div className="next-action"><h2>{t("Следующий шаг")}</h2><p>{systemText(locale, item.nextAction)}</p><DeadlineOwnerLine item={item} reference={reference.data} /></div>
+      <div className="next-action"><h2>{t("Следующий шаг")}</h2><p>{systemText(locale, item.nextAction)}</p><DeadlineOwnerLine item={item} reference={reference.data} /><AiAdvice complaintId={item.id} /></div>
       <UndoAction item={item} onUpdated={onUpdated} />
       {role === 'employee' && <AuthorReply item={item} onUpdated={onUpdated} />}
       <ProblemBanner item={item} />

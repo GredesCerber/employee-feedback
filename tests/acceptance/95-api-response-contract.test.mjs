@@ -98,6 +98,7 @@ const scenarios = {
   assignComplaint: async app => request(app, 'PATCH', '/complaints/complaint-1/assignment', { assigneeId: 'manager-2' }),
   changeComplaintStatus: async app => request(app, 'PATCH', '/complaints/complaint-1/status', { status: 'in_review' }),
   addComment: async app => request(app, 'POST', '/complaints/complaint-1/comments', { kind: 'comment', text: 'Синтетический комментарий.' }),
+  getComplaintAdvice: async app => request(app, 'POST', '/complaints/complaint-1/advice'),
   recordDecision: async app => request(app, 'POST', '/complaints/complaint-1/decision', { outcome: 'rejected', explanation: 'Синтетическое обоснование.' }),
   getSummary: async app => request(app, 'GET', '/summary', undefined, 'admin-1'),
   recordFeedback: async app => request(app, 'POST', '/complaints/complaint-4/feedback', { understood: true, solved: true, comment: 'Спасибо.' }, 'employee-1'),

@@ -85,7 +85,7 @@ const probes = {
   listProblems: () => ['/problems'],
 };
 /** Operations that change state; exercised in the mutation scenario (as manager) or by the author. */
-const mutations = ['createComplaint', 'assignComplaint', 'changeComplaintStatus', 'addComment', 'recordDecision', 'undoLastAction', 'resetDemo', 'translateComplaintText', 'recordFeedback', 'createProblem'];
+const mutations = ['createComplaint', 'assignComplaint', 'changeComplaintStatus', 'addComment', 'recordDecision', 'undoLastAction', 'resetDemo', 'translateComplaintText', 'recordFeedback', 'createProblem', 'getComplaintAdvice'];
 
 test('#132 every contract operation has an anonymity probe (new routes cannot dodge the sweep)', () => {
   assert.ok(operations.length >= 19, `contract lists ${operations.length} operations`);

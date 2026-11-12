@@ -24,8 +24,11 @@ export interface CompatClassifier extends CategoryClassifier {
   readonly kind: CompatKind;
   readonly model: string;
   /** One JSON-mode completion; throws CompatError on timeout, HTTP error or unusable answer. */
-  completeJson(system: string, user: string): Promise<Record<string, unknown>>;
+  completeJson(system: string, user: string, limits?: CompletionLimits): Promise<Record<string, unknown>>;
 }
+
+/** Per-call overrides for longer answers (e.g. «Помощь ИИ»). */
+export interface CompletionLimits { timeoutMs?: number; maxTokens?: number }
 
 const stripFence = (text: string) => text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
 
@@ -34,16 +37,16 @@ export function createCompatClassifier(config: CompatProviderConfig, timeoutMs: 
   const model = config.model?.trim() || defaults.model;
   const url = `${(config.baseUrl?.trim() || defaults.baseUrl).replace(/\/+$/, '')}/chat/completions`;
 
-  async function completeJson(system: string, user: string): Promise<Record<string, unknown>> {
+  async function completeJson(system: string, user: string, limits: CompletionLimits = {}): Promise<Record<string, unknown>> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), limits.timeoutMs ?? timeoutMs);
     try {
       let response: Response;
       try {
         response = await fetchImpl(url, {
           method: 'POST', signal: controller.signal,
           headers: { 'content-type': 'application/json', authorization: `Bearer ${config.apiKey}` },
-          body: JSON.stringify({ model, temperature: 0, max_tokens: 1024, response_format: { type: 'json_object' },
+          body: JSON.stringify({ model, temperature: 0, max_tokens: limits.maxTokens ?? 1024, response_format: { type: 'json_object' },
             messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
         });
       } catch (error) {
