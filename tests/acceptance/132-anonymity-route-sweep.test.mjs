@@ -1,7 +1,7 @@
 // #132 (R5): systematic anonymity sweep driven by contracts/api.yaml.
 // Complements 123-anonymous-submission.test.mjs (hand-picked scenarios): here EVERY operation of the contract
-// must be probed for manager and admin, and neither the author's id nor name may appear anywhere in the
-// response (body and headers). A new route without a probe fails the coverage test below.
+// must be probed for manager and admin. Complaint responses must hide the author, and account directories
+// must remain independent of complaint creation. A new route without a probe fails the coverage test below.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -86,12 +86,59 @@ const probes = {
 };
 /** Operations that change state; exercised in the mutation scenario (as manager) or by the author. */
 const mutations = ['createComplaint', 'assignComplaint', 'changeComplaintStatus', 'addComment', 'recordDecision', 'undoLastAction', 'resetDemo', 'translateComplaintText', 'recordFeedback', 'createProblem'];
+const directoryReads = [
+  { operationId: 'listDemoAccounts', url: '/demo-accounts', readers: [[null, 200], ['manager-1', 200], ['admin-1', 200]] },
+  { operationId: 'listAdminUsers', url: '/admin/users', readers: [['manager-1', 403], ['admin-1', 200]] },
+];
+const adminWrites = [
+  { operationId: 'createAdminUser', method: 'POST', url: '/admin/users', status: 201,
+    payload: { name: 'Синтетический участник проверки 132', role: 'employee', departmentId: 'sales' } },
+  { operationId: 'updateAdminUser', method: 'PATCH', url: '/admin/users/employee-2', status: 200, payload: { active: false } },
+  { operationId: 'updateAdminCategory', method: 'PATCH', url: '/admin/categories/training', status: 200, payload: { dueInDays: 5 } },
+];
+const directoryOperations = new Set([...directoryReads, ...adminWrites].map(({ operationId }) => operationId));
 
 test('#132 every contract operation has an anonymity probe (new routes cannot dodge the sweep)', () => {
   assert.ok(operations.length >= 19, `contract lists ${operations.length} operations`);
   for (const operation of operations) {
-    assert.ok(operation.operationId in probes || mutations.includes(operation.operationId),
+    assert.ok(operation.operationId in probes || mutations.includes(operation.operationId) || directoryOperations.has(operation.operationId),
       `no anonymity probe for ${operation.method.toUpperCase()} ${operation.path} (${operation.operationId})`);
+  }
+});
+
+test('#132 account and routing administration do not associate anonymous complaints with their authors', async t => {
+  const { req } = newApp(t);
+  const before = [];
+  for (const { url, readers } of directoryReads) {
+    for (const [user, status] of readers) {
+      const response = await req('GET', url, undefined, user);
+      assert.equal(response.statusCode, status, response.body);
+      before.push({ url, user, status, body: status === 200 ? response.json() : null });
+    }
+  }
+  const directory = before.find(({ url, user }) => url === '/admin/users' && user === 'admin-1');
+  assert.ok(directory.body.items.some(({ id, name }) => id === author.id && name === author.name),
+    'the administrator can already see the synthetic user before an anonymous complaint exists');
+
+  const complaint = await create(req, { anonymous: true });
+  for (const { url, user, status, body } of before) {
+    const response = await req('GET', url, undefined, user);
+    assert.equal(response.statusCode, status, response.body);
+    if (status === 200) {
+      assert.deepEqual(response.json(), body, `${url}: submitting anonymously must not change the directory`);
+      assert.ok(!text(response).includes(complaint.id) && !text(response).includes(MARK), `${url}: complaint data in directory`);
+      for (const needle of NEEDLES) assert.ok(!JSON.stringify(response.headers).toLowerCase().includes(needle.toLowerCase()));
+    } else {
+      noLeak(response, `denied ${user} GET ${url}`);
+    }
+  }
+  for (const { method, url, payload, status } of adminWrites) {
+    for (const [user, expected] of [['manager-1', 403], ['admin-1', status]]) {
+      const response = await req(method, url, payload, user);
+      assert.equal(response.statusCode, expected, response.body);
+      noLeak(response, `${user} ${method} ${url}`);
+      assert.ok(!text(response).includes(complaint.id) && !text(response).includes(MARK));
+    }
   }
 });
 
