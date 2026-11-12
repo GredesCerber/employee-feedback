@@ -84,15 +84,66 @@ const probes = {
   getImpact: () => ['/impact', '/impact?days=7'],
   listProblems: () => ['/problems'],
 };
+// Directory endpoints intentionally expose user names (including the author), so they are
+// covered in an isolated scenario that checks for complaint linkage instead of author-name leaks.
+const directoryOperations = new Set([
+  'listDemoAccounts', 'listAdminUsers', 'createAdminUser', 'updateAdminUser', 'updateAdminCategory',
+]);
 /** Operations that change state; exercised in the mutation scenario (as manager) or by the author. */
 const mutations = ['createComplaint', 'assignComplaint', 'changeComplaintStatus', 'addComment', 'recordDecision', 'undoLastAction', 'resetDemo', 'translateComplaintText', 'recordFeedback', 'createProblem'];
 
 test('#132 every contract operation has an anonymity probe (new routes cannot dodge the sweep)', () => {
   assert.ok(operations.length >= 19, `contract lists ${operations.length} operations`);
   for (const operation of operations) {
-    assert.ok(operation.operationId in probes || mutations.includes(operation.operationId),
+    assert.ok(operation.operationId in probes || mutations.includes(operation.operationId) || directoryOperations.has(operation.operationId),
       `no anonymity probe for ${operation.method.toUpperCase()} ${operation.path} (${operation.operationId})`);
   }
+});
+
+test('#132 directory and admin operations do not link users or categories to anonymous complaints', async (t) => {
+  const { req } = newApp(t);
+  const item = await create(req, { anonymous: true });
+  const managerComment = 'directory-sweep-manager-comment-132';
+  json(await req('POST', `/complaints/${item.id}/comments`, { kind: 'comment', text: managerComment }), 201);
+  json(await req('PATCH', `/complaints/${item.id}/status`, { status: 'in_review' }), 200);
+  const complaintOnly = [item.id, item.number, item.description, item.proposedSolution, managerComment];
+  const noComplaintLink = (response, label) => {
+    const body = text(response);
+    for (const value of complaintOnly) {
+      assert.ok(!body.includes(value), `${label}: directory response linked anonymous complaint via ${value}`);
+    }
+  };
+  const covered = new Set();
+  const probe = async (operationId, method, url, payload, user, status) => {
+    const response = await req(method, url, payload, user);
+    assert.equal(response.statusCode, status, `${operationId} as ${user}: ${response.body}`);
+    covered.add(operationId);
+    noComplaintLink(response, `${operationId} as ${user}`);
+    return response;
+  };
+
+  // The login directory is public, while management reads and writes are admin-only.
+  await probe('listDemoAccounts', 'GET', '/demo-accounts', undefined, null, 200);
+  await probe('listDemoAccounts', 'GET', '/demo-accounts', undefined, 'manager-1', 200);
+  await probe('listDemoAccounts', 'GET', '/demo-accounts', undefined, 'admin-1', 200);
+  await probe('listAdminUsers', 'GET', '/admin/users', undefined, 'manager-1', 403);
+  await probe('createAdminUser', 'POST', '/admin/users', {
+    name: 'Directory sweep user 132', role: 'employee', departmentId: 'sales',
+  }, 'manager-1', 403);
+  await probe('updateAdminUser', 'PATCH', '/admin/users/employee-2', { active: false }, 'manager-1', 403);
+  await probe('updateAdminCategory', 'PATCH', '/admin/categories/training', { dueInDays: 6 }, 'manager-1', 403);
+
+  const adminDirectory = await probe('listAdminUsers', 'GET', '/admin/users', undefined, 'admin-1', 200);
+  assert.ok(adminDirectory.body.includes(author.id), 'admin directory still lists the author account');
+  assert.ok(adminDirectory.body.includes(author.name), 'admin directory still lists the author name');
+  const created = json(await probe('createAdminUser', 'POST', '/admin/users', {
+    name: 'Directory sweep user 132', role: 'employee', departmentId: 'sales',
+  }, 'admin-1', 201), 201);
+  assert.ok(created.id, 'admin-created user has an id');
+  await probe('updateAdminUser', 'PATCH', `/admin/users/${created.id}`, { name: 'Directory sweep user 132 updated' }, 'admin-1', 200);
+  await probe('updateAdminCategory', 'PATCH', '/admin/categories/training', { dueInDays: 6 }, 'admin-1', 200);
+
+  for (const operationId of directoryOperations) assert.ok(covered.has(operationId), `${operationId} was exercised`);
 });
 
 test('#132 inherited synthetic API key cannot enable network access', async (t) => {
