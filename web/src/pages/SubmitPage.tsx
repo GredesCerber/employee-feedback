@@ -1,7 +1,7 @@
 import { referenceLabel, useI18n } from '../i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useSession } from '../app/session';
 import { ApiError } from '../api/client';
 import { errorMessage, requireData, retryAfterOf, useCooldown, useResource } from '../features/data';
@@ -46,11 +46,14 @@ function SubmitForm({ role }: { role: string }) {
   const [mapKey, setMapKey] = useState(0);
   const load = useCallback(async () => requireData((await api.GET('/reference-data')).data), [api]);
   const reference = useResource(load);
-  const [type, setType] = useState<Complaint['type']>(draft?.type ?? 'problem');
+  const [searchParams] = useSearchParams();
+  const urlType = searchParams.get('type');
+  const [type, setType] = useState<Complaint['type']>(urlType === 'suggestion' || urlType === 'praise' || urlType === 'problem' ? urlType : draft?.type ?? 'problem');
   const [categoryId, setCategory] = useState(draft?.categoryId ?? '');
   const [description, setDescription] = useState(draft?.description ?? '');
   const [solution, setSolution] = useState(draft?.solution ?? '');
   const [attachment, setAttachment] = useState(false);
+  const dueInDays = reference.data?.categories.find(item => item.id === categoryId)?.dueInDays;
   const [anonymous, setAnonymous] = useState(draft?.anonymous ?? false);
   const [point, setPoint] = useState<LocationPoint | undefined>(draft?.location);
   const [mapOpen, setMapOpen] = useState(false);
@@ -187,6 +190,9 @@ function SubmitForm({ role }: { role: string }) {
         <li><strong>{t("Рассмотрение.")}</strong> {t("Ответственный изучит обращение и при необходимости задаст вопрос.")}</li>
         <li><strong>{t("Решение.")}</strong> {t("Итог и пояснение появятся в «Моих обращениях».")}</li>
       </ol>
+      <p className="submit-guide-due" aria-live="polite">{dueInDays !== undefined
+        ? t("Срок первого ответа по выбранной категории: {count} календарных дней от подачи.", { count: dueInDays })
+        : t("Выберите категорию, чтобы увидеть срок")}</p>
     </aside></div>}
   </section>{announcement}</>;
 }
