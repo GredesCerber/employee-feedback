@@ -553,6 +553,18 @@
             "description": "Exact status; unknown value is 422."
           },
           {
+            "name": "status_group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open"
+              ]
+            },
+            "description": "open selects new, in_review, in_progress and awaiting_clarification only; implemented, rejected and closed are excluded. Apply the existing role visibility restriction first, then combine with all other filters using AND before totals and pagination. Employees can still see only their own complaints. CSV applies the same filter without pagination. Omitted means all statuses; unsupported values receive 422."
+          },
+          {
             "name": "type",
             "in": "query",
             "required": false,
@@ -602,6 +614,18 @@
               ]
             },
             "description": "Filter routing queue; assignment state is independent of status."
+          },
+          {
+            "name": "assignee",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "me"
+              ]
+            },
+            "description": "Manager only. me resolves to the current authenticated server-side session user, including the demo identity in MVP; a client-supplied user ID is not accepted. Select complaints assigned to that manager, before totals and pagination, combined with other filters using AND. Other roles with assignee=me receive 403; unsupported values receive 422. Omitted means no assignee restriction. CSV applies the same filter without pagination."
           },
           {
             "name": "q",
@@ -1522,6 +1546,18 @@
             "description": "Exact status; unknown value is 422."
           },
           {
+            "name": "status_group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open"
+              ]
+            },
+            "description": "open selects new, in_review, in_progress and awaiting_clarification only; implemented, rejected and closed are excluded. Apply the existing role visibility restriction first, then combine with all other filters using AND before totals and pagination. Employees can still see only their own complaints. CSV applies the same filter without pagination. Omitted means all statuses; unsupported values receive 422."
+          },
+          {
             "name": "type",
             "in": "query",
             "required": false,
@@ -1571,6 +1607,18 @@
               ]
             },
             "description": "Filter routing queue; assignment state is independent of status."
+          },
+          {
+            "name": "assignee",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "me"
+              ]
+            },
+            "description": "Manager only. me resolves to the current authenticated server-side session user, including the demo identity in MVP; a client-supplied user ID is not accepted. Select complaints assigned to that manager, before totals and pagination, combined with other filters using AND. Other roles with assignee=me receive 403; unsupported values receive 422. Omitted means no assignee restriction. CSV applies the same filter without pagination."
           },
           {
             "name": "q",
@@ -1966,6 +2014,38 @@
           3,
           4
         ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "getHealthReady",
+        "summary": "Check API readiness",
+        "description": "Public readiness endpoint available without X-Demo-User. Returns status=ready and the number of loaded complaints once the seed or stored data is loaded. It does not assert external integration readiness or authenticated user access.",
+        "tags": [
+          "Context"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthReady"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
       }
     }
   },
@@ -3066,6 +3146,13 @@
                 }
               }
             }
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "\\S",
+            "description": "Request correlation ID, equal to the X-Request-Id response header. Optional for backward compatibility."
           }
         }
       },
@@ -3192,8 +3279,11 @@
               "decision_recorded",
               "unassigned",
               "clarification_received",
-              "due_soon"
-            ]
+              "due_soon",
+              "status_changed",
+              "overdue"
+            ],
+            "description": "status_changed: the author's open complaint was taken into review or work by a manager; shown until a decision, which has its own kind, as do clarification transitions. overdue: an open complaint of the manager or without an assignee passed dueAt; createdAt equals dueAt."
           },
           "complaintId": {
             "type": "string",
@@ -4036,6 +4126,24 @@
           "source": {
             "type": "string",
             "const": "llm"
+          }
+        }
+      },
+      "HealthReady": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "complaints"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ready"
+          },
+          "complaints": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       }

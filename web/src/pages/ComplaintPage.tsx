@@ -14,6 +14,8 @@ import { TranslatableText } from '../features/TranslatableText';
 import { useRememberComplaint } from '../features/lastComplaintStore';
 import { useRevealOnView } from '../features/designMotion';
 import { AnonymousBadge, authorLabel, CommentKindBadge, fallbackQueueHint, priorityLabels, referenceName, routingReasonLabels } from '../features/complaintMeta';
+import { StatusProgress } from '../features/statusProgress';
+import { CopyNumber, DeadlineOwnerLine } from '../features/complaintFollowUp';
 import './complaint.css';
 
 export default function ComplaintPage() {
@@ -63,8 +65,9 @@ export default function ComplaintPage() {
     {result.loading && <><h1>{t("Обращение")}</h1><Loading label={t("Загрузка обращения…")} /></>}
     {result.error && <><h1>{t("Обращение недоступно")}</h1><LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} /></>}
     {item && <>
-      <div className="detail-header"><h1 ref={heading} tabIndex={-1}>{t("Обращение")} {item.number}</h1>{item.simulated && <ImitationBadge hint={t("создано демо-симулятором")} />}{item.anonymous && <AnonymousBadge />}<StatusBadge status={item.status} /></div>
-      <div className="next-action"><h2>{t("Следующий шаг")}</h2><p>{systemText(locale, item.nextAction)}</p></div>
+      <div className="detail-header"><h1 ref={heading} tabIndex={-1} id="complaint-heading">{t("Обращение")} <span id="complaint-number">{item.number}</span></h1>{item.simulated && <ImitationBadge hint={t("создано демо-симулятором")} />}{item.anonymous && <AnonymousBadge />}<StatusBadge status={item.status} /><CopyNumber number={item.number} targetId="complaint-number" /></div>
+      <StatusProgress item={item} />
+      <div className="next-action"><h2>{t("Следующий шаг")}</h2><p>{systemText(locale, item.nextAction)}</p><DeadlineOwnerLine item={item} reference={reference.data} /></div>
       <UndoAction item={item} onUpdated={onUpdated} />
       {role === 'employee' && <AuthorReply item={item} onUpdated={onUpdated} />}
       <div className={hasManagerActions ? 'detail-layout has-management' : 'detail-layout'}>

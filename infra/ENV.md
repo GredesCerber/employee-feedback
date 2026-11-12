@@ -18,6 +18,7 @@
 |---|---|---|---|---|
 | `PORT` | `api/src/server.ts` (порт API); `docker-compose.yml` и `infra/run-demo.mjs` задают его сами | `3000` | нет | используется |
 | `HOST` | `api/src/server.ts` (адрес, на котором слушает API); в Docker `0.0.0.0` | `127.0.0.1` | нет | используется |
+| `LOG_LEVEL` | `api/src/server.ts`: уровень журнала запросов (одна JSON-строка на запрос с `requestId`); `silent` отключает вывод | `info` | нет | используется |
 | `NODE_ENV` | `api/src/rate-limit.ts`: при `test` лимит частоты запросов отключён | не задана | нет | используется |
 | `RATE_LIMIT_MAX` | `api/src/rate-limit.ts`: сколько POST/PATCH на пользователя за окно, `0` отключает лимит | `30` | нет | используется |
 | `RATE_LIMIT_WINDOW_S` | `api/src/rate-limit.ts`: длина окна лимита в секундах, от 1 | `60` | нет | используется |
@@ -28,6 +29,9 @@
 | `DEMO_SIMULATION_ENABLED` | `api/src/http.ts`: `true` включает пометку «имитация» — заголовок `X-Demo-Source: simulator` ставит `simulated: true` у обращений и событий (#145); иначе заголовок игнорируется; ту же переменную должна получить команда `npm run demo:sim` (`scripts/demo-sim`), иначе она сразу выходит | выключено | нет | используется |
 | `DATABASE_URL` | `api/src/server.ts`: строка подключения Postgres (Neon и др.); включает хранение в БД и имеет приоритет над `PERSIST_FILE`; см. раздел «Выкладка на хостинг» в `infra/README.md` | пусто (данные в памяти или в `PERSIST_FILE`) | да, для единого сервиса на Render | используется |
 | `WEB_ROOT` | `api/src/server.ts`: папка со сборкой фронта, которую API отдаёт сам | `../../web/dist` от `dist/` API (пропускается, если папки нет) | нет | используется |
+| `DEMO_BOT_ENABLED` | `api/src/demo-bot.ts`: `true` запускает в процессе API фоновых ботов (подают, берут в работу, отвечают, закрывают; пометка «имитация»); см. `docs/demo-simulation.md` | выключено | нет | используется |
+| `DEMO_BOT_INTERVAL_S` | `api/src/demo-bot.ts`: пауза между ходами ботов, секунды | 25 | нет | используется |
+| `DEMO_BOT_MAX_SIMULATED` | `api/src/demo-bot.ts`: потолок имитированных обращений | 60 | нет | используется |
 | `SEED_RELATIVE_DATES` | `api/src/seed.ts`: при значении `1` даты 20 seed-обращений считаются от начала текущего дня (UTC): 4 открытых просрочены, у остальных срок в будущем; `infra/run-demo.mjs`, `infra/hosted.Dockerfile` и `infra/render.yaml` задают `1` | не задана (фиксированные даты от 1 ноября 2026) | нет | используется |
 | `ANTHROPIC_API_KEY` | `api/src/ai/provider.ts` (#149): ключ Anthropic для живой подсказки категории; при ошибке или таймауте (3 с) ответ строят правила слов; в журнал и ответы не попадает; `api/.env.example` | пусто (ИИ выключен, сети нет: записанные примеры и правила слов) | нет | используется |
 | `AI_MODEL` | `api/src/ai/provider.ts` (#149): модель Claude для подсказки категории; `api/.env.example` | `claude-haiku-5-5` | нет | используется |

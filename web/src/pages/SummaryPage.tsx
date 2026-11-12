@@ -7,6 +7,7 @@ import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, typeLabels } from '../features/complaint';
 import { CompletionSignal } from '../features/CompletionSignal';
 import { useRevealOnView } from '../features/designMotion';
+import { RoutingRules } from '../features/routingRules';
 import './summary.css';
 
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
@@ -135,10 +136,10 @@ export default function SummaryPage() {
       <div className="summary-toolbar"><p className="muted">{t("Сводка на")} <time dateTime={summary.generatedAt}>{dateLabel(summary.generatedAt, locale)}</time></p><button onClick={result.reload}>{t("Обновить сводку")}</button></div>
       <div className="summary-reset">
         {resetStep === 'unavailable' ? <p className="muted">{t("Недоступно в этой среде")}</p>
-          : resetStep === 'idle' ? <button type="button" onClick={() => setResetStep('confirm')}>{t("Сбросить демо")}</button>
+          : resetStep === 'idle' ? <button type="button" className="danger-button" onClick={() => setResetStep('confirm')}>{t("Сбросить демо")}</button>
           : <div role="group" aria-label={t("Подтверждение сброса демо")} className="summary-reset-confirm">
             <p>{t("Все изменения будут потеряны, данные вернутся к исходным. Продолжить?")}</p>
-            <button type="button" onClick={resetDemo} disabled={resetStep === 'busy'}>{t("Подтвердить сброс")}</button>{' '}
+            <button type="button" className="danger-button" onClick={resetDemo} disabled={resetStep === 'busy'} aria-busy={resetStep === 'busy'}>{t("Подтвердить сброс")}</button>{' '}
             <button type="button" onClick={() => setResetStep('idle')} disabled={resetStep === 'busy'}>{t("Отмена")}</button>
           </div>}
         {resetMessage && (resetMessage.error ? <p role="alert">{resetMessage.text}</p> : <p role="status" className="muted">{resetMessage.text}</p>)}
@@ -171,6 +172,7 @@ export default function SummaryPage() {
         {summary.avgResolutionHoursByCategory && <section ref={revealPanel} className="summary-table-panel reveal-panel"><h2>{t("Время решения по категориям")}</h2>
           <table aria-label={t("Время решения по категориям")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Среднее время")}</th></tr></thead><tbody>{summary.avgResolutionHoursByCategory.map(item => <tr key={item.categoryId}><th scope="row">{referenceLabel(locale, 'category', item.categoryId, item.categoryName)}</th><td>{number.format(item.closedCount)}</td><td>{hours(item.averageResolutionHours, locale)}</td></tr>)}</tbody></table>
         </section>}
+        {role === 'admin' && <RoutingRules />}
       </div>
     </>}
   </section>;

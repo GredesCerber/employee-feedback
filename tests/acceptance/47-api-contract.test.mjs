@@ -91,9 +91,9 @@ test('R5 and demo coverage: all six steps, role permissions and structured error
     for (const step of op['x-demo-steps']) covered.add(step);
     assert.ok(op['x-roles'].length && op['x-roles'].every(role => ['employee', 'manager', 'admin'].includes(role)));
     assert.ok(op.description.length > 30, `access semantics: ${op.operationId}`);
-    const publicHealth = op.operationId === 'getHealth';
+    const publicHealth = ['getHealth', 'getHealthReady'].includes(op.operationId);
     if (publicHealth) {
-      assert.equal(op.path, '/health');
+      assert.equal(op.path, op.operationId === 'getHealth' ? '/health' : '/health/ready');
       assert.equal(op.method, 'get');
       assert.deepEqual(op.security, []);
     } else assert.ok((op.security ?? api.security).length, `authentication: ${op.operationId}`);

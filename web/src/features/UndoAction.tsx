@@ -50,7 +50,7 @@ export function UndoAction({ item, onUpdated }: { item: Complaint; onUpdated: (m
   if (role !== 'manager' || ['implemented', 'rejected', 'closed'].includes(item.status)) return null;
   const available = item.canUndo && Number.isFinite(expires) && seconds > 0 && !unavailable;
   return <div className="undo-action">
-    {available && <div className="actions"><button type="button" disabled={busy || cooldown.active} onClick={() => void undo()}>{busy ? t("Отмена…") : t("Отменить действие")}</button>
+    {available && <div className="actions"><button type="button" disabled={busy || cooldown.active} aria-busy={busy} onClick={() => void undo()}>{busy ? t("Отмена…") : t("Отменить действие")}</button>
       <span className="muted">{t("Осталось для отмены:")} {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span>
     </div>}
     {(error || cooldown.active) && <p role="alert" className="field-error">{cooldown.active ? cooldown.message : t(error)}</p>}

@@ -2,6 +2,9 @@
 // Роль хранится в памяти SPA, поэтому после первого открытия ходим по ссылкам и переключателю роли.
 import { test, expect } from '@playwright/test';
 
+// Условный вход (#288): каждый переход в тесте начинается сотрудником, как раньше; экран входа проверяет login.spec.mjs.
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('demo-session', 'employee-1')); });
+
 const widths = [360, 768, 1280];
 const narrow = 360;
 

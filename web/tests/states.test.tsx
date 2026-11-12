@@ -26,6 +26,7 @@ function key(url: URL, method: string) {
 }
 
 beforeEach(() => {
+  sessionStorage.clear(); // черновик формы подачи (#312 A2) не переходит между тестами
   mode = {}; calls = {};
   vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:3000');
   vi.stubGlobal('fetch', vi.fn(async (request: Request) => {
@@ -133,7 +134,7 @@ describe('#114 empty states with a next step', () => {
     mode.list = 'empty';
     await open('/my');
     expect(await screen.findByText('У вас пока нет обращений.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Подать первое обращение' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Подать обращение' })).toBeTruthy();
   });
 
   it('empty queue explains what to do next', async () => {

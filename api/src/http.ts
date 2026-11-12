@@ -20,7 +20,7 @@ const listQueryValidator = ajv.compile({ type: 'object', additionalProperties: f
 export interface ListQuery {
   departmentId?: string; categoryId?: string; status?: string; type?: string;
   dueAfter?: string; dueBefore?: string; overdue?: boolean; queue?: string; q?: string;
-  limit?: number; offset?: number; simulated?: boolean;
+  limit?: number; offset?: number; simulated?: boolean; status_group?: 'open'; assignee?: 'me';
 }
 export function listQuery(request: FastifyRequest, paginated = true): ListQuery {
   const params = queryParameters(request, [...listParameters.map(parameter => parameter.name), ...extraListFilters]
@@ -117,13 +117,14 @@ export function configureErrors(app: FastifyInstance) {
     }
   });
   app.setErrorHandler((error, request, reply) => {
+    const requestId = request.id;
     if (error instanceof ApiError) return reply.code(error.statusCode).send({ code: error.code, message: error.message,
-      ...(error.details ? { details: error.details } : {}) });
+      ...(error.details ? { details: error.details } : {}), requestId });
     const status = (error as { statusCode?: number }).statusCode;
-    if (status === 400) return reply.code(400).send({ code: 'BAD_REQUEST', message: 'Некорректный JSON или запрос.' });
-    if (status === 413) return reply.code(413).send({ code: 'PAYLOAD_TOO_LARGE', message: 'Запрос слишком большой.' });
-    if (status === 415) return reply.code(415).send({ code: 'UNSUPPORTED_MEDIA_TYPE', message: 'Требуется application/json.' });
+    if (status === 400) return reply.code(400).send({ code: 'BAD_REQUEST', message: 'Некорректный JSON или запрос.', requestId });
+    if (status === 413) return reply.code(413).send({ code: 'PAYLOAD_TOO_LARGE', message: 'Запрос слишком большой.', requestId });
+    if (status === 415) return reply.code(415).send({ code: 'UNSUPPORTED_MEDIA_TYPE', message: 'Требуется application/json.', requestId });
     request.log.error(error);
-    return reply.code(500).send({ code: 'INTERNAL_ERROR', message: 'Внутренняя ошибка сервера.' });
+    return reply.code(500).send({ code: 'INTERNAL_ERROR', message: 'Внутренняя ошибка сервера.', requestId });
   });
 }

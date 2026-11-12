@@ -1,6 +1,6 @@
 import { I18nProvider, useI18n, type Locale } from './i18n';
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { SessionProvider, useSession } from './app/session';
+import { SessionProvider, demoAccounts, useSession } from './app/session';
 import type { Role } from './app/session';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
@@ -20,6 +20,7 @@ import { useDesignMotion } from './features/designMotion';
 import './styles/tokens.css';
 import './shell.css';
 import './pages.css';
+import './styles/interaction.css';
 
 const navigation: Record<Role, { path: string; label: string }[]> = {
   employee: [{ path: '/my', label: 'Мои обращения' }, { path: '/submit', label: 'Новое обращение' }],
@@ -80,7 +81,7 @@ function cardPath(pathname: string, next: Role): string | undefined {
 
 function Shell() {
   const { t, locale, setLocale } = useI18n();
-  const { role, setRole } = useSession();
+  const { role, setRole, userId, logout } = useSession();
   const navigate = useNavigate();
   const location = useLocation();
   const hints = useDemoHints();
@@ -119,6 +120,7 @@ function Shell() {
       <aside className="workspace-sidebar">
         <p className="workspace-sidebar-title" aria-hidden="true">{t("Рабочее пространство")}</p>
         <nav aria-label={t("Основное меню")}>{navigation[role].map(item => <NavLink key={item.path} to={item.path}><NavigationIcon path={item.path} /><span>{t(item.label)}</span></NavLink>)}<LastComplaintButton key={role} /></nav>
+        <div className="session-box"><span className="session-user">{t(demoAccounts.find(account => account.id === userId)?.title ?? 'Сотрудник')}</span><button type="button" className="logout-button" onClick={logout}>{t('Выйти')}</button></div>
         <div ref={setSignalSlot} className="completion-slot" />
       </aside>
       {/* Колокольчик стоит в DOM после меню (порядок Tab «шапка → меню» не меняется), а в шапку выводится стилями. */}
@@ -148,4 +150,6 @@ function Shell() {
   </div>;
 }
 
-export default function App() { return <I18nProvider><SessionProvider><Shell /></SessionProvider></I18nProvider>; }
+export default function App(props: { initialUserId?: string; onUserChange?: (userId: string) => void; onLogout?: () => void }) {
+  return <I18nProvider><SessionProvider {...props}><Shell /></SessionProvider></I18nProvider>;
+}

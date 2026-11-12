@@ -77,7 +77,10 @@ test('#51 access checks hide other employees records and constrain reference dat
   const hidden = await request(app, 'GET', `/complaints/${own.id}`, undefined, 'employee-2');
   const missing = await request(app, 'GET', '/complaints/missing', undefined, 'employee-2');
   assert.equal(hidden.statusCode, 404);
-  assert.deepEqual(hidden.json(), missing.json());
+  const { requestId: hiddenId, ...hiddenBody } = hidden.json();
+  const { requestId: missingId, ...missingBody } = missing.json();
+  assert.deepEqual(hiddenBody, missingBody);
+  assert.ok(hiddenId && missingId);
   const list = (await request(app, 'GET', '/complaints', undefined, 'employee-2')).json();
   assert.ok(list.items.every(item => item.author.id === 'employee-2'));
   assert.deepEqual((await request(app, 'GET', '/reference-data')).json().assignees, []);

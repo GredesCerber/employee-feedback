@@ -8,6 +8,7 @@ let finishSuggestion: (response: Response) => void;
 let suggestionStarted: boolean;
 
 beforeEach(() => {
+  sessionStorage.clear(); // черновик формы подачи (#312 A2) не переходит между тестами
   suggestionStarted = false;
   vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:3000');
   vi.stubGlobal('fetch', vi.fn(async (request: Request) => {
