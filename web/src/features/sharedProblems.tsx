@@ -70,7 +70,7 @@ export function MergeIntoProblem({ item, categoryName, onUpdated }: { item: Comp
 
 /** Общие проблемы: список для руководителя и администратора. */
 export function ProblemsPanel() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { api, role } = useSession();
   const load = useCallback(async () => requireData((await api.GET('/problems')).data), [api]);
   const result = useResource(load);

@@ -30,7 +30,7 @@ button[aria-busy="true"]:disabled { opacity: .8; cursor: progress; }
 button[aria-busy="true"]::before { content: ''; display: inline-block; width: .9em; height: .9em; margin-inline-end: var(--space-2); vertical-align: -.1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; }
 
 /* Фокус с клавиатуры: кольцо --color-focus и светлый/тёмный зазор, чтобы кольцо было видно и на тёмной кнопке, и на фоне */
-:where(button, .primary-link, .workspace nav a, .brand):focus-visible { outline-offset: 2px; box-shadow: 0 0 0 2px var(--color-focus-halo); }
+:where(button, .primary-link, .workspace-sidebar nav a, .brand):focus-visible { outline-offset: 2px; box-shadow: 0 0 0 2px var(--color-focus-halo); }
 
 /* Ссылки в тексте */
 :where(main, .demo-controls, .notification-panel) a:not([class]) { text-underline-offset: 3px; text-decoration-thickness: 1px; }
@@ -38,10 +38,10 @@ button[aria-busy="true"]::before { content: ''; display: inline-block; width: .9
 :where(main, .demo-controls, .notification-panel) a:not([class]):active { color: var(--color-text-muted); }
 
 /* Меню: текущий раздел (aria-current="page") залит, остальные подсвечиваются при наведении и нажатии */
-.workspace nav a:active:not([aria-current="page"]) { background: var(--color-surface-pressed); }
-.workspace nav a[aria-current="page"] { border-color: var(--color-primary); box-shadow: var(--shadow-card); }
-.workspace nav a[aria-current="page"]:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
-.workspace nav a[aria-current="page"] .navigation-icon { stroke-width: 2; }
+.workspace-sidebar nav a:active:not([aria-current="page"]) { background: var(--color-surface-pressed); }
+.workspace-sidebar nav a[aria-current="page"] { border-color: var(--color-primary); box-shadow: var(--shadow-card); }
+.workspace-sidebar nav a[aria-current="page"]:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
+.workspace-sidebar nav a[aria-current="page"] .navigation-icon { stroke-width: 2; }
 
 /* Карточки со ссылкой: рамка темнее при наведении */
 .complaint-list:not(.queue-list) > .complaint-item:is(:hover, :focus-within) { border-color: var(--color-border-strong); }
