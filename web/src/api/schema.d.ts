@@ -764,8 +764,11 @@ export interface components {
         /** @description Deterministic stable id per event, without an author identifier. Simulated internal feed, not actual email or Bitrix delivery. */
         Notification: {
             id: string;
-            /** @enum {string} */
-            kind: "clarification_requested" | "decision_recorded" | "unassigned" | "clarification_received" | "due_soon";
+            /**
+             * @description status_changed: the author's open complaint was taken into review or work by a manager; shown until a decision, which has its own kind, as do clarification transitions. overdue: an open complaint of the manager or without an assignee passed dueAt; createdAt equals dueAt.
+             * @enum {string}
+             */
+            kind: "clarification_requested" | "decision_recorded" | "unassigned" | "clarification_received" | "due_soon" | "status_changed" | "overdue";
             complaintId: string;
             /** @description Unique human-readable registration number; synthetic seed uses A-001..A-020. */
             complaintNumber: string;
