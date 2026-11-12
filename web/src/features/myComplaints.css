@@ -20,3 +20,11 @@
 @media (min-width: 760px) {
   .my-intro-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 }
+
+/* #314: четыре быстрых действия на главной сотрудника. */
+.my-quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 8px 0 16px; }
+.my-quick-actions a { display: grid; gap: 4px; align-content: start; min-height: 44px; padding: 14px 16px; border: 1px solid var(--color-border, currentColor); border-radius: 12px; text-decoration: none; color: inherit; transition: transform .15s ease, box-shadow .15s ease; }
+.my-quick-actions a:hover, .my-quick-actions a:focus-visible { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+.my-quick-actions a span { font-size: var(--font-size-sm); opacity: .8; }
+.my-quick-actions .primary-link { border-color: transparent; }
+@media (prefers-reduced-motion: reduce) { .my-quick-actions a { transition: none; } .my-quick-actions a:hover { transform: none; } }
