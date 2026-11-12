@@ -15,12 +15,12 @@ function assertTransition(item: Complaint, target: Status) {
 function timestamp(item: Complaint): string {
   return new Date(Math.max(Date.now(), Date.parse(item.updatedAt))).toISOString();
 }
-function appendHistory(item: Complaint, actor: User, createdAt: string, kind: HistoryEvent['kind'],
+export function appendHistory(item: Complaint, actor: User, createdAt: string, kind: HistoryEvent['kind'],
   text: string, fromStatus: Status | null = null, toStatus: Status | null = null, simulated = false) {
   item.history.push({ id: `${item.id}-event-${String(item.history.length + 1).padStart(6, '0')}`,
     kind, actor, createdAt, fromStatus, toStatus, text, simulated });
 }
-function update(item: Complaint, actor: User, now: string) {
+export function update(item: Complaint, actor: User, now: string) {
   item.updatedAt = now;
   if (actor.role === 'manager') item.firstResponseAt ??= now;
   item.nextAction = item.status === 'awaiting_clarification' ? 'Автору нужно ответить на запрос уточнения.'
@@ -94,6 +94,27 @@ export function registerLifecycle(app: FastifyInstance) {
     appendHistory(item, user, now, 'decided', item.decision.explanation, previous, item.status, isSimulated(request));
     update(item, user, now);
     app.store.save(item);
+    if (item.problem && (body.outcome === 'implemented' || body.outcome === 'rejected')) propagateDecision(app, item, user, now, isSimulated(request));
     return reply.code(201).send(presentFor(app, item, user));
   });
+}
+
+/** Shared problem: the same implemented or rejected decision applies to the other open complaints linked to it. */
+function propagateDecision(app: FastifyInstance, source: Complaint, user: User, now: string, simulated: boolean) {
+  const decision = source.decision!;
+  for (const other of app.store.list()) {
+    if (other.id === source.id || other.problem?.id !== source.problem!.id || terminalStatuses.includes(other.status)) continue;
+    if (!transitions[other.status].includes(decision.outcome)) {
+      if (other.status !== 'new') continue;
+      appendHistory(other, user, now, 'status_changed', 'Рассмотрение начато в рамках общей проблемы.', 'new', 'in_review', simulated);
+      other.status = 'in_review';
+    }
+    const previous = other.status;
+    other.decision = { outcome: decision.outcome, explanation: decision.explanation, actions: decision.actions, author: user, createdAt: now };
+    other.status = decision.outcome;
+    other.closedAt = now;
+    appendHistory(other, user, now, 'decided', `${decision.explanation} (Решено в рамках общей проблемы «${source.problem!.title}».)`, previous, other.status, simulated);
+    update(other, user, now);
+    app.store.save(other);
+  }
 }

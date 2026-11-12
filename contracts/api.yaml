@@ -2047,6 +2047,335 @@
           }
         }
       }
+    },
+    "/complaints/{complaintId}/feedback": {
+      "post": {
+        "operationId": "recordFeedback",
+        "summary": "Rate the result after the final decision",
+        "description": "Employee author only. Allowed once, only after the complaint is implemented, rejected or closed; otherwise 409. A second rating is 409. Another employee's complaint is 404 as everywhere. Saves feedback {understood, solved, comment?, createdAt} on the complaint; never changes status or decision. Managers and admins see the rating in the complaint.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          5
+        ],
+        "x-roles": [
+          "employee"
+        ],
+        "responses": {
+          "201": {
+            "description": "Rating saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Complaint"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackInput"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "name": "complaintId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "Opaque complaint ID (not its displayed registration number)."
+        }
+      ]
+    },
+    "/improvements": {
+      "get": {
+        "operationId": "listImprovements",
+        "summary": "Improvements feed: you suggested, we did",
+        "description": "All roles. Depersonalized list of implemented complaints, newest first: category, the decision text, date, how many authors gave feedback and how many confirmed the result. Complaints linked to one shared problem form one item (reportersCount). Never returns complaint text, author, number, comments or anonymous data; mine marks items the viewer authored.",
+        "tags": [
+          "Analytics"
+        ],
+        "x-demo-steps": [
+          5
+        ],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Improvements, possibly empty.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImprovementList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ]
+      }
+    },
+    "/impact": {
+      "get": {
+        "operationId": "getImpact",
+        "summary": "Pilot effect panel for a period",
+        "description": "Manager and admin only. Aggregates complaints created in the half-open UTC period [now-days, now) next to the previous equal period: reach of employees, reviewed share, implemented count, authors' feedback (understood and solved shares) and category changes. Shares are 0..1 or null when the denominator is 0. No complaint text or personal data.",
+        "tags": [
+          "Analytics"
+        ],
+        "x-demo-steps": [
+          6
+        ],
+        "x-roles": [
+          "manager",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Aggregates, zero-filled when empty.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Impact"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365,
+              "default": 30
+            },
+            "description": "Period length in days; default 30."
+          }
+        ],
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ]
+      }
+    },
+    "/problems": {
+      "get": {
+        "operationId": "listProblems",
+        "summary": "List shared problems",
+        "description": "Manager and admin only. Shared problems created from several complaints, newest first, with linked complaint numbers and statuses.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          3
+        ],
+        "x-roles": [
+          "manager",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Problems, possibly empty.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createProblem",
+        "summary": "Join complaints into a shared problem",
+        "description": "Manager only. Links 2..20 existing nonterminal complaints that are not yet in a problem into one problem with a title and optional plan; otherwise 404 for an unknown id, 409 when a complaint is terminal or already linked. Each complaint gets problem and a history entry; authors see the plan on their card. When any linked complaint later gets an implemented or rejected decision, the same decision is applied to the other open linked complaints.",
+        "tags": [
+          "Complaints"
+        ],
+        "x-demo-steps": [
+          3
+        ],
+        "x-roles": [
+          "manager"
+        ],
+        "responses": {
+          "201": {
+            "description": "Problem created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProblemInput"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -2866,6 +3195,14 @@
           "simulated": {
             "type": "boolean",
             "description": "true when created by the demo simulator (X-Demo-Source: simulator with DEMO_SIMULATION_ENABLED=true). Always false otherwise."
+          },
+          "feedback": {
+            "$ref": "#/components/schemas/Feedback",
+            "description": "Author's rating after the final decision. Absent until given; null is never used."
+          },
+          "problem": {
+            "$ref": "#/components/schemas/ProblemRef",
+            "description": "Shared problem the complaint is linked to. Absent when not linked."
           }
         }
       },
@@ -4146,6 +4483,502 @@
             "minimum": 0
           }
         }
+      },
+      "FeedbackInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "understood",
+          "solved"
+        ],
+        "properties": {
+          "understood": {
+            "type": "boolean",
+            "description": "Was the answer understandable?"
+          },
+          "solved": {
+            "type": "boolean",
+            "description": "Was the problem solved?"
+          },
+          "comment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "pattern": "\\S",
+            "description": "Optional free text."
+          }
+        },
+        "description": "Author's short rating after the review is finished."
+      },
+      "Feedback": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "understood",
+          "solved",
+          "createdAt"
+        ],
+        "properties": {
+          "understood": {
+            "type": "boolean"
+          },
+          "solved": {
+            "type": "boolean"
+          },
+          "comment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "pattern": "\\S"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProblemRef": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "plan",
+          "createdAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "\\S"
+          },
+          "plan": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Shared problem a complaint is linked to."
+      },
+      "ProblemInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "complaintIds"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 120,
+            "pattern": "\\S"
+          },
+          "plan": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "pattern": "\\S",
+            "description": "Optional action plan text."
+          },
+          "complaintIds": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 20,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          }
+        }
+      },
+      "ProblemMember": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "number",
+          "status",
+          "categoryId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "number": {
+            "type": "string",
+            "pattern": "^A-[0-9]{3,}$"
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          },
+          "categoryId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        }
+      },
+      "ProblemGroup": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "plan",
+          "createdAt",
+          "status",
+          "complaints"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "\\S"
+          },
+          "plan": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "resolved"
+            ],
+            "description": "resolved when every linked complaint is terminal."
+          },
+          "complaints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProblemMember"
+            }
+          }
+        }
+      },
+      "ProblemList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "total"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProblemGroup"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Improvement": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "categoryId",
+          "categoryName",
+          "result",
+          "implementedAt",
+          "problemTitle",
+          "reportersCount",
+          "answeredCount",
+          "confirmedCount",
+          "mine"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "categoryId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "categoryName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S"
+          },
+          "result": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "pattern": "\\S",
+            "description": "Decision explanation of the implemented complaint(s)."
+          },
+          "implementedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "problemTitle": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reportersCount": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Complaints behind the improvement: 1, or the size of the shared problem."
+          },
+          "answeredCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Authors who gave feedback."
+          },
+          "confirmedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Authors who confirmed the problem is solved."
+          },
+          "mine": {
+            "type": "boolean",
+            "description": "True when the viewer authored one of the complaints."
+          }
+        },
+        "description": "Depersonalized public item: no complaint text, author, number or comments."
+      },
+      "ImprovementList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "total",
+          "generatedAt"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Improvement"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ImpactPeriod": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "total",
+          "reachEmployees",
+          "employeesTotal",
+          "reviewedCount",
+          "reviewedShare",
+          "implementedCount",
+          "feedbackCount",
+          "solvedCount",
+          "solvedShare",
+          "understoodShare"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reachEmployees": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Distinct authors of complaints created in the period."
+          },
+          "employeesTotal": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reviewedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Status other than new."
+          },
+          "reviewedShare": {
+            "oneOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "implementedCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "feedbackCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "solvedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Feedback with solved=true."
+          },
+          "solvedShare": {
+            "oneOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "understoodShare": {
+            "oneOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "CategoryChange": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "categoryId",
+          "categoryName",
+          "current",
+          "previous"
+        ],
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "categoryName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S"
+          },
+          "current": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "previous": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Impact": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "generatedAt",
+          "days",
+          "current",
+          "previous",
+          "categories"
+        ],
+        "properties": {
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "current": {
+            "$ref": "#/components/schemas/ImpactPeriod"
+          },
+          "previous": {
+            "$ref": "#/components/schemas/ImpactPeriod"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryChange"
+            },
+            "description": "Categories with complaints in either period, by current count descending then categoryId."
+          }
+        },
+        "description": "Pilot effect panel: current period [now-days, now) against the previous equal period."
       }
     },
     "responses": {

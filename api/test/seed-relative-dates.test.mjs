@@ -73,6 +73,7 @@ test('SEED_RELATIVE_DATES=1: другое «сегодня» даёт те же 
     for (const event of item.history) event.createdAt = unshift(event.createdAt);
     for (const comment of item.comments) comment.createdAt = unshift(comment.createdAt);
     if (item.decision) item.decision.createdAt = unshift(item.decision.createdAt);
+    if (item.feedback) item.feedback.createdAt = unshift(item.feedback.createdAt);
   }
   assert.deepEqual(normalized, first);
   // Сброс демо в другой день пересчитывает даты от нового «сегодня».
