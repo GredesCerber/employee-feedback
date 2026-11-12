@@ -9,7 +9,8 @@
   "scripts": {
     "e2e": "playwright test",
     "e2e:install": "playwright install chromium",
-    "e2e:headed": "playwright test --headed"
+    "e2e:headed": "playwright test --headed",
+    "e2e:artifacts": "playwright test --trace on"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0"

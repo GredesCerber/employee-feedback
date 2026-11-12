@@ -35,8 +35,18 @@ Playwright сам собирает и запускает API на `http://127.0.
 E2E_BASE_URL=http://localhost:8080 npm --prefix tests/e2e run e2e
 ```
 
-Посмотреть прогон глазами: `npm --prefix tests/e2e run e2e:headed`. По умолчанию трейс и скриншоты выключены; при падении добавьте `--trace on` (`npx playwright test --trace on`):
-в `tests/e2e/test-results/` сохранятся скриншот и trace (`npx playwright show-trace <путь>`).
+Посмотреть прогон глазами: `npm --prefix tests/e2e run e2e:headed`. По умолчанию трейс и скриншоты выключены; чтобы при
+падении сохранить их в `tests/e2e/test-results/`, запустите `npm --prefix tests/e2e run e2e:artifacts` (= `--trace on`),
+затем `npx playwright show-trace <путь>/trace.zip`.
+
+Параллельно с другим стендом (порты 3000/5173 заняты) — свои порты; фронтенд тогда проксирует `/api` на `E2E_API_PORT`
+через `tests/e2e/vite.e2e.config.mjs`:
+
+```sh
+E2E_API_PORT=3301 E2E_WEB_PORT=5301 npm --prefix tests/e2e run e2e
+```
+
+API в e2e всегда запускается с пустым `ANTHROPIC_API_KEY`: платных вызовов LLM нет.
 
 ## Ограничения
 
@@ -47,3 +57,9 @@ E2E_BASE_URL=http://localhost:8080 npm --prefix tests/e2e run e2e
 ## Расширенный демо-путь
 
 `extended-demo.spec.mjs` (#133): подача анонимно → у руководителя «Аноним» → смена статуса и «Отменить действие» → поиск по слову → CSV без автора → колокольчик у автора. Запускается тем же `npm --prefix tests/e2e run e2e`, без Docker.
+
+## Финальная регрессия
+
+`final-regression.spec.mjs` (#301): итоговое состояние R1-R7 глазами трёх ролей, ошибки и восстановление
+(ошибочный ввод, нет API, 500, 429, двойной клик, пустой результат), ИИ без ключа и внешней сети, классификация
+console/network, дашборд и шапка на 360/768/1280. Отчёт о прогоне — [final-regression.md](final-regression.md).
