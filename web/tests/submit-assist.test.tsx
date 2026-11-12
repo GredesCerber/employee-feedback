@@ -95,7 +95,7 @@ describe('#128 category suggestion', () => {
   it('fills the category from the API with a «Демо ИИ» badge that says it is a recorded answer', async () => {
     const { user, description } = await openForm();
     expect((screen.getByRole('button', { name: 'Подсказать категорию' }) as HTMLButtonElement).disabled).toBe(true);
-    await user.type(description, text);
+    fireEvent.change(description, { target: { value: text } });
     await user.click(screen.getByRole('button', { name: 'Подсказать категорию' }));
     await waitFor(() => expect((screen.getByLabelText('Категория') as HTMLSelectElement).value).toBe('it_support'));
     const note = screen.getByRole('status', { name: 'Подсказка категории' });
@@ -109,7 +109,7 @@ describe('#128 category suggestion', () => {
   it('does not overwrite a category the user already chose; applies it only on click', async () => {
     const { user, description } = await openForm();
     await user.selectOptions(screen.getByLabelText('Категория'), 'cross_department');
-    await user.type(description, text);
+    fireEvent.change(description, { target: { value: text } });
     await user.click(screen.getByRole('button', { name: 'Подсказать категорию' }));
     const note = await screen.findByRole('status', { name: 'Подсказка категории' });
     expect((screen.getByLabelText('Категория') as HTMLSelectElement).value).toBe('cross_department');
@@ -120,7 +120,7 @@ describe('#128 category suggestion', () => {
   it('says so when there is no suggestion and keeps the category empty', async () => {
     mode.suggest = 'none';
     const { user, description } = await openForm();
-    await user.type(description, text);
+    fireEvent.change(description, { target: { value: text } });
     await user.click(screen.getByRole('button', { name: 'Подсказать категорию' }));
     expect((await screen.findByRole('status', { name: 'Подсказка категории' })).textContent).toMatch(/не нашлось/);
     expect((screen.getByLabelText('Категория') as HTMLSelectElement).value).toBe('');
@@ -132,7 +132,10 @@ describe('#128 errors never block submission', () => {
     it(`${failure} failure of both helpers: form still submits`, async () => {
       mode.similar = failure; mode.suggest = failure;
       const { user, description } = await openForm();
-      await user.type(description, text);
+      vi.useFakeTimers();
+      fireEvent.change(description, { target: { value: text } });
+      await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+      vi.useRealTimers();
       await user.click(screen.getByRole('button', { name: 'Подсказать категорию' }));
       expect((await screen.findByRole('status', { name: 'Подсказка категории' })).textContent).toMatch(/недоступна/);
       await waitFor(() => expect(similarCalls().length).toBeGreaterThan(0));
@@ -149,7 +152,7 @@ describe('#128 errors never block submission', () => {
   it('429 on helpers shows a wait message but leaves the submit button enabled', async () => {
     mode.similar = 'rate'; mode.suggest = 'rate';
     const { user, description } = await openForm();
-    await user.type(description, text);
+    fireEvent.change(description, { target: { value: text } });
     await user.click(screen.getByRole('button', { name: 'Подсказать категорию' }));
     expect((await screen.findByRole('status', { name: 'Подсказка категории' })).textContent).toMatch(/Слишком много запросов/);
     expect((screen.getByRole('button', { name: 'Отправить обращение' }) as HTMLButtonElement).disabled).toBe(false);

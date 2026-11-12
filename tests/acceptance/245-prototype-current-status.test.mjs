@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { runVitest } from './run-vitest.mjs';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-test('#245 capabilities stay honest and synchronized with the prototype concept', () => {
-  const result = spawnSync(process.execPath, ['web/node_modules/vitest/vitest.mjs', 'run', '--root', 'web', 'tests/prototype-current-status.test.tsx', 'tests/demo-honesty.test.tsx'], {
+test('#245 capabilities stay honest and synchronized with the prototype concept', async () => {
+  const result = await runVitest(['web/node_modules/vitest/vitest.mjs', 'run', '--root', 'web', 'tests/prototype-current-status.test.tsx', 'tests/demo-honesty.test.tsx'], {
     cwd: fileURLToPath(new URL('../../', import.meta.url)), encoding: 'utf8', timeout: 180_000,
   });
   assert.equal(result.status, 0, `${result.error ?? ''}\n${result.stdout}\n${result.stderr}`);
