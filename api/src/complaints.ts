@@ -18,9 +18,11 @@ const csvHeader = ['номер', 'тип', 'категория', 'подразд
   'просрочено', 'первый ответ', 'итог'];
 
 function filteredComplaints(app: FastifyInstance, user: User, query: ListQuery): ComplaintView[] {
+  if (query.assignee === 'me' && user.role !== 'manager') throw new ApiError(403, 'FORBIDDEN', 'Фильтр доступен только руководителю.');
   const words = searchWords(query.q);
   const now = Date.now();
-  return app.store.list().filter(item => user.role !== 'employee' || item.author.id === user.id)
+  return app.store.list().filter(item => (user.role !== 'employee' || item.author.id === user.id)
+    && (query.assignee !== 'me' || item.assignee?.id === user.id))
     .map(item => presentFor(app, item, user, now)).filter(item =>
       (query.departmentId === undefined || item.departmentId === query.departmentId)
       && (query.categoryId === undefined || item.categoryId === query.categoryId)
