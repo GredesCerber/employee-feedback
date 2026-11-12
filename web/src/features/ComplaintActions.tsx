@@ -1,4 +1,5 @@
 import { useI18n, localizeError } from '../i18n';
+import { AnswerQualityHints } from './qualityHints';
 import { useCallback, useRef, useState } from 'react';
 import { useSession } from '../app/session';
 import type { components } from '../api/client';
@@ -129,6 +130,7 @@ export function ManagerActions({ item, onUpdated }: { item: Complaint; onUpdated
       <label htmlFor="explanation">{outcome === 'rejected' ? t("Мотивированный отказ") : t("Обоснование решения")}</label><textarea id="explanation" aria-required="true" {...mutation.invalid('explanation', 'manager-action-error')} rows={4} maxLength={5000} value={explanation} onChange={event => setExplanation(event.target.value)} /><div className="actions"><button type="button" className="template-button" onClick={() => setExplanation(value => withTemplate(value, outcome === 'rejected'
         ? t("Спасибо за обращение. Мы внимательно его рассмотрели, но не можем реализовать это предложение сейчас. Причина: [укажите причину]. Если ситуация изменится, мы вернёмся к вопросу.")
         : t("Спасибо за обращение. Мы приняли решение: [что именно сделано или будет сделано]. Срок: [укажите срок].")))}>{t("Вставить шаблон решения")}</button></div>
+      <AnswerQualityHints explanation={explanation} outcome={outcome} actions={actions} />
       <label htmlFor="decision-actions">{t("Дальнейшие действия (необязательно)")}</label><textarea id="decision-actions" rows={2} maxLength={5000} value={actions} onChange={event => setActions(event.target.value)} />
       <button type="submit" className="primary-button">{t("Зафиксировать итог")}</button>
     </form></fieldset>}

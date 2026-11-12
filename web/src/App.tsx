@@ -12,6 +12,7 @@ import QueuePage from './pages/QueuePage';
 import DashboardPage from './pages/DashboardPage';
 import AdminPage from './pages/AdminPage';
 import { AboutPage, DemoHint, ImitationBadge, useDemoHints } from './features/demo';
+import { ImprovementsPage } from './features/improvements';
 import { NotificationBell } from './features/notifications';
 import { LastComplaintButton } from './features/ResumeComplaint';
 import { useTheme } from './features/theme';
@@ -117,7 +118,7 @@ function Shell() {
       <label className="role-selector">{t("Language / Язык / Тіл")}<select aria-label={t("Language / Язык / Тіл")} value={locale} onChange={event => setLocale(event.target.value as Locale)}><option value="ru">{t("Русский")}</option><option value="en">English</option><option value="kk">{t("Қазақша")}</option></select></label>
       <ImitationBadge hint={t("выбор роли — не настоящий вход, пароля и учётной записи нет")} />
     </header>
-    <p className="demo-notice">{t("Демонстрация · только синтетические данные. Выбор роли имитирует вход.")}</p>
+    <aside className="demo-notice" aria-label={t("Демонстрация")}>{t("Демонстрация · только синтетические данные. Выбор роли имитирует вход.")}</aside>
     <div className="workspace">
       <aside className="workspace-sidebar">
         <p className="workspace-sidebar-title" aria-hidden="true">{t("Рабочее пространство")}</p>
@@ -143,6 +144,7 @@ function Shell() {
           <Route path="/dashboard" element={<RoleRoute role={['manager', 'admin']}><DashboardPage /></RoleRoute>} />
           <Route path="/summary" element={<RoleRoute role="admin"><SummaryPage /></RoleRoute>} />
           <Route path="/admin" element={<RoleRoute role="admin"><AdminPage /></RoleRoute>} />
+          <Route path="/improvements" element={<ImprovementsPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="*" element={<section className="section"><h1>{t("Страница не найдена")}</h1><Link to={home[role]}>{t("Вернуться к обращениям")}</Link></section>} />
         </Routes></CompletionSlot.Provider>

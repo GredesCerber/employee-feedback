@@ -14,6 +14,8 @@ import { TranslatableText } from '../features/TranslatableText';
 import { useRememberComplaint } from '../features/lastComplaintStore';
 import { useRevealOnView } from '../features/designMotion';
 import { AnonymousBadge, authorLabel, CommentKindBadge, fallbackQueueHint, priorityLabels, referenceName, routingReasonLabels } from '../features/complaintMeta';
+import { ResultFeedback, ProblemBanner } from '../features/ResultFeedback';
+import { MergeIntoProblem } from '../features/sharedProblems';
 import { StatusProgress } from '../features/statusProgress';
 import { CopyNumber, DeadlineOwnerLine } from '../features/complaintFollowUp';
 import './complaint.css';
@@ -70,6 +72,7 @@ export default function ComplaintPage() {
       <div className="next-action"><h2>{t("Следующий шаг")}</h2><p>{systemText(locale, item.nextAction)}</p><DeadlineOwnerLine item={item} reference={reference.data} /></div>
       <UndoAction item={item} onUpdated={onUpdated} />
       {role === 'employee' && <AuthorReply item={item} onUpdated={onUpdated} />}
+      <ProblemBanner item={item} />
       <div className={hasManagerActions ? 'detail-layout has-management' : 'detail-layout'}>
         <div className="detail-record">
           <div className="detail-copy">
@@ -104,6 +107,7 @@ export default function ComplaintPage() {
               <p className="muted">{item.decision.author.name} · {dateLabel(item.decision.createdAt, locale)}</p>
               <BitrixTaskStub item={item} />
             </div>}
+            <ResultFeedback item={item} onUpdated={onUpdated} />
           </div>
           <div className="detail-history">
             <h2>{t("Комментарии")}</h2>
@@ -118,7 +122,8 @@ export default function ComplaintPage() {
             </li>)}</ol>
           </div>
         </div>
-        {hasManagerActions && <ManagerActions key={`${item.id}-${item.status}`} item={item} onUpdated={onUpdated} />}
+        {hasManagerActions && <div className="management-stack"><ManagerActions key={`${item.id}-${item.status}`} item={item} onUpdated={onUpdated} />
+          <MergeIntoProblem item={item} categoryName={referenceLabel(locale, 'category', item.categoryId, referenceName(reference.data?.categories, item.categoryId, reference.loading))} onUpdated={onUpdated} /></div>}
       </div>
     </>}
   </section>;

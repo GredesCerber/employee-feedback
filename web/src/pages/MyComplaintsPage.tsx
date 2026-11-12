@@ -14,6 +14,7 @@ import { IdeaQuick } from '../features/IdeaQuick';
 import { useRevealOnView } from '../features/designMotion';
 import { answerDaysLabel, hasMyFilters, MY_FETCH_LIMIT, MY_FETCH_MAX_PAGES, MY_PAGE_SIZE, MY_SEARCH_MAX, myFiltersFromUrl, myFiltersToQuery, mySortFromUrl, mySortLabels, myStateToUrl, sortMyComplaints } from '../features/myComplaintsFilters';
 import type { MyFilters, MySort } from '../features/myComplaintsFilters';
+import { ImprovementsTeaser } from '../features/improvements';
 import '../styles/feedback-layout.css';
 import '../features/myComplaints.css';
 
@@ -126,6 +127,7 @@ export default function MyComplaintsPage() {
       </select></label>
       {active && <button type="button" className="my-filter-reset" onClick={reset}>{t("Сбросить")}</button>}
     </form>}
+    <ImprovementsTeaser />
     {result.loading && <Loading label={t("Загрузка обращений…")} />}
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {result.data && <>

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useI18n, referenceLabel } from '../i18n';
 import { useSession } from '../app/session';
 import { requireData, useResource } from './data';
@@ -10,6 +10,7 @@ export function RoutingRules() {
   const { api } = useSession();
   const load = useCallback(async () => requireData((await api.GET('/reference-data')).data), [api]);
   const { data, error, reload } = useResource(load);
+  const [testId, setTestId] = useState('');
   const owner = (id: string | null) => id ? data?.assignees?.find(user => user.id === id)?.name ?? id : null;
   return <section className="summary-table-panel routing-rules" aria-labelledby="routing-rules-title">
     <h2 id="routing-rules-title">{t("Категории и ответственные")}</h2>
@@ -24,5 +25,20 @@ export function RoutingRules() {
         <td>{category.dueInDays}</td>
       </tr>)}</tbody>
     </table>}
+    {data && Array.isArray(data.categories) && <div className="route-check">
+      <label htmlFor="route-check-category">{t("Проверить правило на тестовом обращении")}</label>
+      <select id="route-check-category" value={testId} onChange={event => setTestId(event.target.value)}>
+        <option value="">{t("Выберите категорию")}</option>
+        {data.categories.map(category => <option key={category.id} value={category.id}>{referenceLabel(locale, 'category', category.id, category.name)}</option>)}
+      </select>
+      {testId && (() => {
+        const rule = data.categories.find(category => category.id === testId);
+        if (!rule) return null;
+        const who = owner(rule.assigneeId);
+        return <p role="status" className={who ? undefined : 'field-error'}>{who
+          ? t("Тестовое обращение попадёт к: {name}. Срок ответа: {days} дн.", { name: who, days: rule.dueInDays })
+          : t("Внимание: у категории нет ответственного. Обращение уйдёт в запасную очередь руководителя, срок ответа: {days} дн.", { days: rule.dueInDays })}</p>;
+      })()}
+    </div>}
   </section>;
 }

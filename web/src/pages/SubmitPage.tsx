@@ -13,6 +13,7 @@ import { CopyNumber, WhatNext } from '../features/complaintFollowUp';
 import { SimilarList, SuggestionNote, useSubmitAssist } from '../features/submitAssist';
 import { MapPicker, type LocationPoint } from '../features/MapPicker';
 import { clearDraft, readDraft, writeDraft } from '../features/submitDraft';
+import { CompletenessHints } from '../features/qualityHints';
 import { CategoryCards, CharCounter, SUBMIT_LIMITS } from '../features/submitForm';
 
 const mapCopy = {
@@ -157,6 +158,7 @@ function SubmitForm({ role }: { role: string }) {
         }} rows={5} maxLength={SUBMIT_LIMITS.description} required aria-invalid={Boolean(errors.description)} aria-describedby={describedBy('description-counter', errors.description && 'description-error')} />
         <CharCounter id="description-counter" length={description.length} max={SUBMIT_LIMITS.description} />
         {errors.description && <p id="description-error" role="alert" className="field-error">{t(errors.description)}</p>}
+        <CompletenessHints description={description} solution={solution} />
         <SimilarList items={assist.similar} />
       </fieldset>
       <fieldset className="form-block" data-block="proposal">

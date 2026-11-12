@@ -1,0 +1,8 @@
+.server-wake { min-height: 100vh; display: grid; place-items: center; padding: 16px; background: var(--color-bg, Canvas); color: var(--color-text, CanvasText); }
+.server-wake__panel { max-width: 440px; display: grid; justify-items: center; gap: 12px; text-align: center; }
+.server-wake__title { margin: 0; font-size: 1.125rem; font-weight: 600; }
+.server-wake__hint { margin: 0; opacity: 0.8; }
+.server-wake__spinner { width: 32px; height: 32px; border: 3px solid var(--color-border, GrayText); border-top-color: var(--color-primary, LinkText); border-radius: 50%; animation: server-wake-spin 0.8s linear infinite; }
+.server-wake__retry { min-height: 44px; padding: 0 20px; border-radius: 8px; border: 0; background: var(--color-primary, LinkText); color: var(--color-on-primary, Canvas); font: inherit; cursor: pointer; }
+@keyframes server-wake-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .server-wake__spinner { animation: none; } }
