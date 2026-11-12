@@ -1,0 +1,1429 @@
+{
+  "url": "http://127.0.0.1:5182",
+  "sha": "f7f2eb164713e4b3fcbe59a34c4baa7af5986d68",
+  "axe": "4.14.0",
+  "generatedAt": "2026-11-12T12:30:43.093Z",
+  "configs": [
+    {
+      "width": 360,
+      "locale": "ru",
+      "theme": "light"
+    },
+    {
+      "width": 768,
+      "locale": "ru",
+      "theme": "light"
+    },
+    {
+      "width": 1280,
+      "locale": "ru",
+      "theme": "light"
+    },
+    {
+      "width": 360,
+      "locale": "en",
+      "theme": "dark"
+    },
+    {
+      "width": 1280,
+      "locale": "en",
+      "theme": "light"
+    },
+    {
+      "width": 360,
+      "locale": "kk",
+      "theme": "light"
+    },
+    {
+      "width": 1280,
+      "locale": "kk",
+      "theme": "dark"
+    }
+  ],
+  "results": [
+    {
+      "width": 360,
+      "locale": "ru",
+      "theme": "light",
+      "name": "submit",
+      "role": "employee",
+      "path": "/submit",
+      "url": "http://127.0.0.1:5182/submit",
+      "heading": "Новое обращение",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "ru",
+      "theme": "light",
+      "name": "my",
+      "role": "employee",
+      "path": "/my",
+      "url": "http://127.0.0.1:5182/my",
+      "heading": "Мои обращения",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "ru",
+      "theme": "light",
+      "name": "employee-detail",
+      "role": "employee",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/my/complaint-21",
+      "heading": "Обращение A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "ru",
+      "theme": "light",
+      "name": "queue",
+      "role": "manager",
+      "path": "/queue",
+      "url": "http://127.0.0.1:5182/queue",
+      "heading": "Очередь обращений",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "ru",
+      "theme": "light",
+      "name": "manager-detail",
+      "role": "manager",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/queue/complaint-21",
+      "heading": "Обращение A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "ru",
+      "theme": "light",
+      "name": "summary",
+      "role": "admin",
+      "path": "/summary",
+      "url": "http://127.0.0.1:5182/summary",
+      "heading": "Сводка",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 10
+        }
+      ],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "ru",
+      "theme": "light",
+      "name": "dashboard",
+      "role": "admin",
+      "path": "/dashboard",
+      "url": "http://127.0.0.1:5182/dashboard",
+      "heading": "Дашборд",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 55
+        }
+      ],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "ru",
+      "theme": "light",
+      "name": "about",
+      "role": "employee",
+      "path": "/about",
+      "url": "http://127.0.0.1:5182/about",
+      "heading": "О прототипе",
+      "violations": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "description": "Ensure elements that have scrollable content are accessible by keyboard in Safari",
+          "help": "Scrollable region must have keyboard access",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/scrollable-region-focusable?application=axeAPI",
+          "nodes": [
+            {
+              "target": [
+                ".about-table-wrap"
+              ],
+              "html": "<div class=\"about-table-wrap reveal-panel is-revealed\">",
+              "failureSummary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+            }
+          ]
+        }
+      ],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 19
+        }
+      ],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": [
+          {
+            "tag": "TABLE",
+            "cls": "about-table",
+            "text": "ТребованиеФункцияРеализованоИмитацияПланR1Форма подачи: тип, категория",
+            "right": 613
+          },
+          {
+            "tag": "THEAD",
+            "cls": "",
+            "text": "ТребованиеФункцияРеализованоИмитацияПлан",
+            "right": 613
+          },
+          {
+            "tag": "TR",
+            "cls": "",
+            "text": "ТребованиеФункцияРеализованоИмитацияПлан",
+            "right": 613
+          },
+          {
+            "tag": "TH",
+            "cls": "",
+            "text": "Имитация",
+            "right": 458
+          },
+          {
+            "tag": "TH",
+            "cls": "",
+            "text": "План",
+            "right": 613
+          },
+          {
+            "tag": "TBODY",
+            "cls": "",
+            "text": "R1Форма подачи: тип, категория, описание, предполагаемое решение✓ сохр",
+            "right": 613
+          },
+          {
+            "tag": "TR",
+            "cls": "",
+            "text": "R1Форма подачи: тип, категория, описание, предполагаемое решение✓ сохр",
+            "right": 613
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "—",
+            "right": 458
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "—",
+            "right": 613
+          },
+          {
+            "tag": "TR",
+            "cls": "",
+            "text": "R1Вложение к обращению✓ небольшой файл-заглушка—большие архивы, загруз",
+            "right": 613
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "—",
+            "right": 458
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "большие архивы, загрузка по частям, объектное хранилище",
+            "right": 613
+          }
+        ]
+      }
+    },
+    {
+      "width": 768,
+      "locale": "ru",
+      "theme": "light",
+      "name": "submit",
+      "role": "employee",
+      "path": "/submit",
+      "url": "http://127.0.0.1:5182/submit",
+      "heading": "Новое обращение",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 768,
+        "scrollWidth": 768,
+        "overflow": []
+      }
+    },
+    {
+      "width": 768,
+      "locale": "ru",
+      "theme": "light",
+      "name": "my",
+      "role": "employee",
+      "path": "/my",
+      "url": "http://127.0.0.1:5182/my",
+      "heading": "Мои обращения",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 768,
+        "scrollWidth": 768,
+        "overflow": []
+      }
+    },
+    {
+      "width": 768,
+      "locale": "ru",
+      "theme": "light",
+      "name": "employee-detail",
+      "role": "employee",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/my/complaint-21",
+      "heading": "Обращение A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 768,
+        "scrollWidth": 768,
+        "overflow": []
+      }
+    },
+    {
+      "width": 768,
+      "locale": "ru",
+      "theme": "light",
+      "name": "queue",
+      "role": "manager",
+      "path": "/queue",
+      "url": "http://127.0.0.1:5182/queue",
+      "heading": "Очередь обращений",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 768,
+        "scrollWidth": 768,
+        "overflow": []
+      }
+    },
+    {
+      "width": 768,
+      "locale": "ru",
+      "theme": "light",
+      "name": "manager-detail",
+      "role": "manager",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/queue/complaint-21",
+      "heading": "Обращение A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 768,
+        "scrollWidth": 768,
+        "overflow": []
+      }
+    },
+    {
+      "width": 768,
+      "locale": "ru",
+      "theme": "light",
+      "name": "summary",
+      "role": "admin",
+      "path": "/summary",
+      "url": "http://127.0.0.1:5182/summary",
+      "heading": "Сводка",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 10
+        }
+      ],
+      "layout": {
+        "viewport": 768,
+        "scrollWidth": 768,
+        "overflow": []
+      }
+    },
+    {
+      "width": 768,
+      "locale": "ru",
+      "theme": "light",
+      "name": "dashboard",
+      "role": "admin",
+      "path": "/dashboard",
+      "url": "http://127.0.0.1:5182/dashboard",
+      "heading": "Дашборд",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 60
+        }
+      ],
+      "layout": {
+        "viewport": 768,
+        "scrollWidth": 768,
+        "overflow": []
+      }
+    },
+    {
+      "width": 768,
+      "locale": "ru",
+      "theme": "light",
+      "name": "about",
+      "role": "employee",
+      "path": "/about",
+      "url": "http://127.0.0.1:5182/about",
+      "heading": "О прототипе",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ],
+      "layout": {
+        "viewport": 768,
+        "scrollWidth": 768,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "ru",
+      "theme": "light",
+      "name": "submit",
+      "role": "employee",
+      "path": "/submit",
+      "url": "http://127.0.0.1:5182/submit",
+      "heading": "Новое обращение",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "ru",
+      "theme": "light",
+      "name": "my",
+      "role": "employee",
+      "path": "/my",
+      "url": "http://127.0.0.1:5182/my",
+      "heading": "Мои обращения",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "ru",
+      "theme": "light",
+      "name": "employee-detail",
+      "role": "employee",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/my/complaint-21",
+      "heading": "Обращение A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "ru",
+      "theme": "light",
+      "name": "queue",
+      "role": "manager",
+      "path": "/queue",
+      "url": "http://127.0.0.1:5182/queue",
+      "heading": "Очередь обращений",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "ru",
+      "theme": "light",
+      "name": "manager-detail",
+      "role": "manager",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/queue/complaint-21",
+      "heading": "Обращение A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "ru",
+      "theme": "light",
+      "name": "summary",
+      "role": "admin",
+      "path": "/summary",
+      "url": "http://127.0.0.1:5182/summary",
+      "heading": "Сводка",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 11
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "ru",
+      "theme": "light",
+      "name": "dashboard",
+      "role": "admin",
+      "path": "/dashboard",
+      "url": "http://127.0.0.1:5182/dashboard",
+      "heading": "Дашборд",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 59
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "ru",
+      "theme": "light",
+      "name": "about",
+      "role": "employee",
+      "path": "/about",
+      "url": "http://127.0.0.1:5182/about",
+      "heading": "О прототипе",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "en",
+      "theme": "dark",
+      "name": "submit",
+      "role": "employee",
+      "path": "/submit",
+      "url": "http://127.0.0.1:5182/submit",
+      "heading": "New request",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "en",
+      "theme": "dark",
+      "name": "my",
+      "role": "employee",
+      "path": "/my",
+      "url": "http://127.0.0.1:5182/my",
+      "heading": "My requests",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "en",
+      "theme": "dark",
+      "name": "employee-detail",
+      "role": "employee",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/my/complaint-21",
+      "heading": "Request A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "en",
+      "theme": "dark",
+      "name": "queue",
+      "role": "manager",
+      "path": "/queue",
+      "url": "http://127.0.0.1:5182/queue",
+      "heading": "Request queue",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "en",
+      "theme": "dark",
+      "name": "manager-detail",
+      "role": "manager",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/queue/complaint-21",
+      "heading": "Request A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "en",
+      "theme": "dark",
+      "name": "summary",
+      "role": "admin",
+      "path": "/summary",
+      "url": "http://127.0.0.1:5182/summary",
+      "heading": "Summary",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 10
+        }
+      ],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "en",
+      "theme": "dark",
+      "name": "dashboard",
+      "role": "admin",
+      "path": "/dashboard",
+      "url": "http://127.0.0.1:5182/dashboard",
+      "heading": "Dashboard",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 55
+        }
+      ],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "en",
+      "theme": "dark",
+      "name": "about",
+      "role": "employee",
+      "path": "/about",
+      "url": "http://127.0.0.1:5182/about",
+      "heading": "About the prototype",
+      "violations": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "description": "Ensure elements that have scrollable content are accessible by keyboard in Safari",
+          "help": "Scrollable region must have keyboard access",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/scrollable-region-focusable?application=axeAPI",
+          "nodes": [
+            {
+              "target": [
+                ".about-table-wrap"
+              ],
+              "html": "<div class=\"about-table-wrap reveal-panel is-revealed\">",
+              "failureSummary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+            }
+          ]
+        }
+      ],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 19
+        }
+      ],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": [
+          {
+            "tag": "TABLE",
+            "cls": "about-table",
+            "text": "RequirementFunctionImplementedImitationPlanR1Submission form: type, ca",
+            "right": 529
+          },
+          {
+            "tag": "THEAD",
+            "cls": "",
+            "text": "RequirementFunctionImplementedImitationPlan",
+            "right": 529
+          },
+          {
+            "tag": "TR",
+            "cls": "",
+            "text": "RequirementFunctionImplementedImitationPlan",
+            "right": 529
+          },
+          {
+            "tag": "TH",
+            "cls": "",
+            "text": "Imitation",
+            "right": 415
+          },
+          {
+            "tag": "TH",
+            "cls": "",
+            "text": "Plan",
+            "right": 529
+          },
+          {
+            "tag": "TBODY",
+            "cls": "",
+            "text": "R1Submission form: type, category, description, proposed solution✓ sav",
+            "right": 529
+          },
+          {
+            "tag": "TR",
+            "cls": "",
+            "text": "R1Submission form: type, category, description, proposed solution✓ sav",
+            "right": 529
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "—",
+            "right": 415
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "—",
+            "right": 529
+          },
+          {
+            "tag": "TR",
+            "cls": "",
+            "text": "R1Attachment to appeal✓ small stub file—large archives, downloading in",
+            "right": 529
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "—",
+            "right": 415
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "large archives, downloading in parts, object storage",
+            "right": 529
+          }
+        ]
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "en",
+      "theme": "light",
+      "name": "submit",
+      "role": "employee",
+      "path": "/submit",
+      "url": "http://127.0.0.1:5182/submit",
+      "heading": "New request",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "en",
+      "theme": "light",
+      "name": "my",
+      "role": "employee",
+      "path": "/my",
+      "url": "http://127.0.0.1:5182/my",
+      "heading": "My requests",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "en",
+      "theme": "light",
+      "name": "employee-detail",
+      "role": "employee",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/my/complaint-21",
+      "heading": "Request A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "en",
+      "theme": "light",
+      "name": "queue",
+      "role": "manager",
+      "path": "/queue",
+      "url": "http://127.0.0.1:5182/queue",
+      "heading": "Request queue",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "en",
+      "theme": "light",
+      "name": "manager-detail",
+      "role": "manager",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/queue/complaint-21",
+      "heading": "Request A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "en",
+      "theme": "light",
+      "name": "summary",
+      "role": "admin",
+      "path": "/summary",
+      "url": "http://127.0.0.1:5182/summary",
+      "heading": "Summary",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 11
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "en",
+      "theme": "light",
+      "name": "dashboard",
+      "role": "admin",
+      "path": "/dashboard",
+      "url": "http://127.0.0.1:5182/dashboard",
+      "heading": "Dashboard",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 59
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "en",
+      "theme": "light",
+      "name": "about",
+      "role": "employee",
+      "path": "/about",
+      "url": "http://127.0.0.1:5182/about",
+      "heading": "About the prototype",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "kk",
+      "theme": "light",
+      "name": "submit",
+      "role": "employee",
+      "path": "/submit",
+      "url": "http://127.0.0.1:5182/submit",
+      "heading": "Жаңа өтініш",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "kk",
+      "theme": "light",
+      "name": "my",
+      "role": "employee",
+      "path": "/my",
+      "url": "http://127.0.0.1:5182/my",
+      "heading": "Менің өтініштерім",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "kk",
+      "theme": "light",
+      "name": "employee-detail",
+      "role": "employee",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/my/complaint-21",
+      "heading": "Өтініш A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "kk",
+      "theme": "light",
+      "name": "queue",
+      "role": "manager",
+      "path": "/queue",
+      "url": "http://127.0.0.1:5182/queue",
+      "heading": "Өтініштер кезегі",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "kk",
+      "theme": "light",
+      "name": "manager-detail",
+      "role": "manager",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/queue/complaint-21",
+      "heading": "Өтініш A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "kk",
+      "theme": "light",
+      "name": "summary",
+      "role": "admin",
+      "path": "/summary",
+      "url": "http://127.0.0.1:5182/summary",
+      "heading": "Түйіндеме",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 10
+        }
+      ],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "kk",
+      "theme": "light",
+      "name": "dashboard",
+      "role": "admin",
+      "path": "/dashboard",
+      "url": "http://127.0.0.1:5182/dashboard",
+      "heading": "Бақылау тақтасы",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 56
+        }
+      ],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": []
+      }
+    },
+    {
+      "width": 360,
+      "locale": "kk",
+      "theme": "light",
+      "name": "about",
+      "role": "employee",
+      "path": "/about",
+      "url": "http://127.0.0.1:5182/about",
+      "heading": "Прототип туралы",
+      "violations": [
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "description": "Ensure elements that have scrollable content are accessible by keyboard in Safari",
+          "help": "Scrollable region must have keyboard access",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/scrollable-region-focusable?application=axeAPI",
+          "nodes": [
+            {
+              "target": [
+                ".about-table-wrap"
+              ],
+              "html": "<div class=\"about-table-wrap reveal-panel is-revealed\">",
+              "failureSummary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+            }
+          ]
+        }
+      ],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 19
+        }
+      ],
+      "layout": {
+        "viewport": 360,
+        "scrollWidth": 360,
+        "overflow": [
+          {
+            "tag": "TABLE",
+            "cls": "about-table",
+            "text": "ТалапФункцияОрындалдыЕліктеуЖоспарR1Өтініш нысаны: түрі, категориясы, ",
+            "right": 545
+          },
+          {
+            "tag": "THEAD",
+            "cls": "",
+            "text": "ТалапФункцияОрындалдыЕліктеуЖоспар",
+            "right": 545
+          },
+          {
+            "tag": "TR",
+            "cls": "",
+            "text": "ТалапФункцияОрындалдыЕліктеуЖоспар",
+            "right": 545
+          },
+          {
+            "tag": "TH",
+            "cls": "",
+            "text": "Еліктеу",
+            "right": 422
+          },
+          {
+            "tag": "TH",
+            "cls": "",
+            "text": "Жоспар",
+            "right": 545
+          },
+          {
+            "tag": "TBODY",
+            "cls": "",
+            "text": "R1Өтініш нысаны: түрі, категориясы, сипаттамасы, ұсынылған шешім✓ API ",
+            "right": 545
+          },
+          {
+            "tag": "TR",
+            "cls": "",
+            "text": "R1Өтініш нысаны: түрі, категориясы, сипаттамасы, ұсынылған шешім✓ API ",
+            "right": 545
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "—",
+            "right": 422
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "—",
+            "right": 545
+          },
+          {
+            "tag": "TR",
+            "cls": "",
+            "text": "R1Шағымға қосымша✓ кішігірім файл—үлкен мұрағаттар, бөліктерге жүктеу,",
+            "right": 545
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "—",
+            "right": 422
+          },
+          {
+            "tag": "TD",
+            "cls": "",
+            "text": "үлкен мұрағаттар, бөліктерге жүктеу, нысанды сақтау",
+            "right": 545
+          }
+        ]
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "kk",
+      "theme": "dark",
+      "name": "submit",
+      "role": "employee",
+      "path": "/submit",
+      "url": "http://127.0.0.1:5182/submit",
+      "heading": "Жаңа өтініш",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "kk",
+      "theme": "dark",
+      "name": "my",
+      "role": "employee",
+      "path": "/my",
+      "url": "http://127.0.0.1:5182/my",
+      "heading": "Менің өтініштерім",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "kk",
+      "theme": "dark",
+      "name": "employee-detail",
+      "role": "employee",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/my/complaint-21",
+      "heading": "Өтініш A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "kk",
+      "theme": "dark",
+      "name": "queue",
+      "role": "manager",
+      "path": "/queue",
+      "url": "http://127.0.0.1:5182/queue",
+      "heading": "Өтініштер кезегі",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 1
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "kk",
+      "theme": "dark",
+      "name": "manager-detail",
+      "role": "manager",
+      "path": "DETAIL",
+      "url": "http://127.0.0.1:5182/queue/complaint-21",
+      "heading": "Өтініш A-021",
+      "violations": [],
+      "incomplete": [],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "kk",
+      "theme": "dark",
+      "name": "summary",
+      "role": "admin",
+      "path": "/summary",
+      "url": "http://127.0.0.1:5182/summary",
+      "heading": "Түйіндеме",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 11
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "kk",
+      "theme": "dark",
+      "name": "dashboard",
+      "role": "admin",
+      "path": "/dashboard",
+      "url": "http://127.0.0.1:5182/dashboard",
+      "heading": "Бақылау тақтасы",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 59
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    },
+    {
+      "width": 1280,
+      "locale": "kk",
+      "theme": "dark",
+      "name": "about",
+      "role": "employee",
+      "path": "/about",
+      "url": "http://127.0.0.1:5182/about",
+      "heading": "Прототип туралы",
+      "violations": [],
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3
+        }
+      ],
+      "layout": {
+        "viewport": 1280,
+        "scrollWidth": 1280,
+        "overflow": []
+      }
+    }
+  ]
+}
