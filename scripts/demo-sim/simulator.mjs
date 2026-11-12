@@ -77,11 +77,12 @@ function createClient({ baseUrl, fetchImpl, sleep, signal, onRetry }) {
 const pick = (rng, list) => list[Math.floor(rng() * list.length)];
 
 /**
- * Прогон симуляции. Параметры: baseUrl, seed, maxEvents, intervalMs, sleep, log, signal, fetch.
+ * Прогон симуляции. Параметры: baseUrl, seed, maxEvents, intervalMs, sleep, log, signal, fetch,
+ * maxSimulated (потолок числа имитированных обращений: сверх него новые не подаются, по умолчанию без потолка).
  * Возвращает { events, actions, counters, errors, stopped }.
  */
 export async function runSimulation(options) {
-  const { baseUrl, maxEvents = Infinity, intervalMs = 8000, log = () => {}, signal } = options;
+  const { baseUrl, maxEvents = Infinity, intervalMs = 8000, log = () => {}, signal, maxSimulated = Infinity } = options;
   const sleep = options.sleep ?? abortableSleep;
   const seed = options.seed ?? Math.floor(Math.random() * 2 ** 31);
   const rng = createRng(seed);
@@ -111,12 +112,14 @@ export async function runSimulation(options) {
   const nameOf = id => (managerById.get(id) ?? employees.get(id))?.name ?? id;
   let last = null; // последнее действие руководителя над статусом: кандидат на откат
 
+  let simulatedTotal = 0;
   async function simulatedOpen() {
     const items = [];
     for (let offset = 0, total = 1; offset < total; offset += PAGE) {
       const page = await request('GET', `/complaints?simulated=true&limit=${PAGE}&offset=${offset}`, ADMIN);
       if (page.status !== 200) throw new SimulatorError(`Не удалось прочитать список обращений (статус ${page.status}).`);
       total = page.body.total;
+      simulatedTotal = total;
       items.push(...page.body.items);
     }
     return items.filter(item => !TERMINAL.includes(item.status));
@@ -212,8 +215,9 @@ export async function runSimulation(options) {
         if (view.status === 200 && view.body.canUndo === true) groups.undo = [{ ...target, undoManager: last.managerId }];
       }
     }
-    const weights = { submit: open.length >= OPEN_QUEUE_SOFT_CAP ? 1 : 4, take: 3, progress: 2, comment: 2, clarify: 1, answer: 3, resolve: 2, reject: 1, undo: 1 };
-    const choices = Object.entries(weights).filter(([type]) => type === 'submit' || groups[type].length > 0);
+    const weights = { submit: simulatedTotal >= maxSimulated ? 0 : open.length >= OPEN_QUEUE_SOFT_CAP ? 1 : 4, take: 3, progress: 2, comment: 2, clarify: 1, answer: 3, resolve: 2, reject: 1, undo: 1 };
+    const choices = Object.entries(weights).filter(([type, weight]) => weight > 0 && (type === 'submit' || groups[type].length > 0));
+    if (choices.length === 0) { result.actions.push({ type: 'idle', ok: true, complaint: null }); return; }
     let roll = rng() * choices.reduce((sum, [, weight]) => sum + weight, 0);
     const [type] = choices.find(([, weight]) => (roll -= weight) < 0) ?? choices.at(-1);
     const item = type === 'submit' ? null : pick(rng, groups[type]);
