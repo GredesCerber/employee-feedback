@@ -5,9 +5,10 @@ import ServerWakeGate from '../src/app/ServerWakeGate';
 // #351: бесплатный Render засыпает. Пока API не отвечает, показываем «Сервер просыпается»
 // с повтором каждые 3 с; ответил — экран исчезает сам; дольше 90 с — ошибка с «Повторить».
 const WAKING = 'Сервер просыпается, подождите до минуты';
-const ok = () => Promise.resolve(new Response(JSON.stringify({ status: 'ok', version: '1' }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
-const asleep = () => Promise.reject(new TypeError('Failed to fetch'));
-const proxy503 = () => Promise.resolve(new Response('Service Unavailable', { status: 503 }));
+type Health = () => Promise<Response>;
+const ok: Health = () => Promise.resolve(new Response(JSON.stringify({ status: 'ok', version: '1' }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+const asleep: Health = () => Promise.reject(new TypeError('Failed to fetch'));
+const proxy503: Health = () => Promise.resolve(new Response('Service Unavailable', { status: 503 }));
 
 async function flush() {
   await act(async () => { await Promise.resolve(); await Promise.resolve(); });
