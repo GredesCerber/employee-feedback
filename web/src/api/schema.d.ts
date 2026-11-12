@@ -1414,6 +1414,8 @@ export interface operations {
                 overdue?: boolean;
                 /** @description Filter routing queue; assignment state is independent of status. */
                 queue?: "assigned" | "unassigned";
+                /** @description Manager only. me resolves to the current authenticated server-side session user, including the demo identity in MVP; a client-supplied user ID is not accepted. Select complaints assigned to that manager, before totals and pagination, combined with other filters using AND. Other roles with assignee=me receive 403; unsupported values receive 422. Omitted means no assignee restriction. CSV applies the same filter without pagination. */
+                assignee?: "me";
                 /** @description Trimmed case-insensitive search words separated by whitespace, AND across words in number, description, proposedSolution and comments.text. Normalize ё and е to the same letter. Blank-only or more than 200 characters returns 422. Authorization, other filters and stable date/id ordering still apply. */
                 q?: string;
                 /** @description Page size. */
@@ -1853,6 +1855,8 @@ export interface operations {
                 overdue?: boolean;
                 /** @description Filter routing queue; assignment state is independent of status. */
                 queue?: "assigned" | "unassigned";
+                /** @description Manager only. me resolves to the current authenticated server-side session user, including the demo identity in MVP; a client-supplied user ID is not accepted. Select complaints assigned to that manager, before totals and pagination, combined with other filters using AND. Other roles with assignee=me receive 403; unsupported values receive 422. Omitted means no assignee restriction. CSV applies the same filter without pagination. */
+                assignee?: "me";
                 /** @description Trimmed case-insensitive search words separated by whitespace, AND across words in number, description, proposedSolution and comments.text. Normalize ё and е to the same letter. Blank-only or more than 200 characters returns 422. Authorization, other filters and stable date/id ordering still apply. */
                 q?: string;
             };
