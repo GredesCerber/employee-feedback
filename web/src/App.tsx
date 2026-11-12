@@ -1,4 +1,5 @@
-import { I18nProvider, useI18n, type Locale } from './i18n';
+import { I18nProvider, useI18n } from './i18n';
+import LanguageSelect from './i18n/LanguageSelect';
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { SessionProvider, demoAccounts, useSession } from './app/session';
 import type { Role } from './app/session';
@@ -83,7 +84,7 @@ function cardPath(pathname: string, next: Role): string | undefined {
 }
 
 function Shell() {
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
   const { role, setRole, userId, userName, logout } = useSession();
   const navigate = useNavigate();
   const location = useLocation();
@@ -115,7 +116,7 @@ function Shell() {
     <header className="app-header">
       <Link className="brand" to={home[role]}><span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><path d="M7 24V8l9 9 9-9v16M7 8l9 16 9-16" /></svg></span><span>{t("Модус Трейд")}<small>{t("Обратная связь сотрудников")}</small></span></Link>
       <label className="role-selector">{t("Демонстрационная роль")}<select value={role} onChange={event => switchRole(event.target.value)}><option value="employee">{t("Сотрудник")}</option><option value="manager">{t("Руководитель")}</option><option value="admin">{t("Администратор")}</option></select></label>
-      <label className="role-selector">{t("Language / Язык / Тіл")}<select aria-label={t("Language / Язык / Тіл")} value={locale} onChange={event => setLocale(event.target.value as Locale)}><option value="ru">{t("Русский")}</option><option value="en">English</option><option value="kk">{t("Қазақша")}</option></select></label>
+      <LanguageSelect />
       <ImitationBadge hint={t("выбор роли — не настоящий вход, пароля и учётной записи нет")} />
     </header>
     <aside className="demo-notice" aria-label={t("Демонстрация")}>{t("Демонстрация · только синтетические данные. Выбор роли имитирует вход.")}</aside>

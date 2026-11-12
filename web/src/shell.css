@@ -135,6 +135,8 @@ body, .section, .app-header { transition: background-color .2s ease, color .2s e
 .session-user { font-weight: 600; }
 .login-page { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; background: var(--color-shell-strip); }
 .login-card { width: min(100%, 720px); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 28px 24px; }
+.login-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
+.login-language { min-width: 0; max-width: 100%; }
 .login-brand { margin: 0; font-size: 13px; font-weight: 700; color: var(--color-text-muted); }
 .login-card h1 { margin: 4px 0 8px; font-size: 26px; }
 .login-lead, .login-note { margin: 0 0 16px; color: var(--color-text-muted); }
