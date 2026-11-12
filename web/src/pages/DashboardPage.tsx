@@ -8,6 +8,8 @@ import { dateLabel, Loading, LoadError } from '../features/complaint';
 import { BarChart, useContainerWidth } from './SummaryPage';
 import { CompletionSignal } from '../features/CompletionSignal';
 import { useRevealOnView } from '../features/designMotion';
+import { ImpactPanel } from '../features/ImpactPanel';
+import { ProblemsPanel } from '../features/sharedProblems';
 import { WeeklyDigest } from '../features/weeklyDigest';
 import './dashboard.css';
 
@@ -164,6 +166,7 @@ export default function DashboardPage() {
         </section>
       </div>}
     </>}
+    <div className="dashboard-grid"><ImpactPanel /><ProblemsPanel /></div>
     <WeeklyDigest department={department} />
   </section>;
 }

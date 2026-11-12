@@ -11,6 +11,7 @@ import SummaryPage from './pages/SummaryPage';
 import QueuePage from './pages/QueuePage';
 import DashboardPage from './pages/DashboardPage';
 import { AboutPage, DemoHint, ImitationBadge, useDemoHints } from './features/demo';
+import { ImprovementsPage } from './features/improvements';
 import { NotificationBell } from './features/notifications';
 import { LastComplaintButton } from './features/ResumeComplaint';
 import { useTheme } from './features/theme';
@@ -140,6 +141,7 @@ function Shell() {
           <Route path="/queue/:complaintId" element={<RoleRoute role="manager"><ComplaintPage /></RoleRoute>} />
           <Route path="/dashboard" element={<RoleRoute role={['manager', 'admin']}><DashboardPage /></RoleRoute>} />
           <Route path="/summary" element={<RoleRoute role="admin"><SummaryPage /></RoleRoute>} />
+          <Route path="/improvements" element={<ImprovementsPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="*" element={<section className="section"><h1>{t("Страница не найдена")}</h1><Link to={home[role]}>{t("Вернуться к обращениям")}</Link></section>} />
         </Routes></CompletionSlot.Provider>
