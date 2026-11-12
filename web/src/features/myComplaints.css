@@ -9,6 +9,7 @@
 .my-filters label { display: grid; gap: 6px; min-width: 0; font-size: var(--font-size-sm); }
 .my-filter-search { flex: 1 1 240px; max-width: 420px; }
 .my-filter-status { flex: 0 1 220px; }
+.my-filter-sort { flex: 0 1 200px; } /* #312 B3 */
 .my-filters :is(input, select) { width: 100%; min-height: 44px; }
 .my-filters .my-filter-reset { min-height: 44px; }
 .my-counter { margin: 8px 0 2px; font-size: var(--font-size-sm); }
