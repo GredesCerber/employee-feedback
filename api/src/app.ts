@@ -17,7 +17,7 @@ import { registerTranslations } from './translations.js';
 import type { TextTranslator } from './ai/translate.js';
 import { registerRateLimit } from './rate-limit.js';
 import { registerSecurity } from './security.js';
-import { aiConfigFromEnv, createAiProvider, type AiProvider } from './ai/provider.js';
+import { aiChainConfigFromEnv, aiConfigFromEnv, createAiProvider, type AiProvider } from './ai/provider.js';
 
 declare module 'fastify' {
   interface FastifyInstance { store: ComplaintStore; ai: AiProvider }
@@ -69,7 +69,7 @@ function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = f
   store.seed();
   app.decorate('store', store);
   // Without ANTHROPIC_API_KEY the provider never touches the network (recorded examples and keyword rules only).
-  app.decorate('ai', createAiProvider(aiConfigFromEnv()));
+  app.decorate('ai', createAiProvider({ ...aiConfigFromEnv(), ...aiChainConfigFromEnv() }));
   registerSecurity(app);
   app.addHook('onSend', async (request, reply, payload) => {
     reply.header('X-Request-Id', request.id);

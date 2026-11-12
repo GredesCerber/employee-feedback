@@ -17,3 +17,13 @@ services:
       # Фоновые боты: подают обращения, берут в работу, отвечают и закрывают (помечены «Имитация»).
       - key: DEMO_BOT_ENABLED
         value: "true"
+      # ИИ-цепочка: Gemini, затем второй провайдер (xAI или Groq), затем правила без ИИ. Ключи задаются только в панели Render.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      # Таймаут одного обращения к провайдеру, мс (500..30000).
+      - key: AI_TIMEOUT_MS
+        value: "5000"
