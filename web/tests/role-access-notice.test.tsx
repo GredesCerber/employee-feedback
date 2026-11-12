@@ -46,6 +46,27 @@ describe('#283 access redirect notice', () => {
     await user.click(screen.getByRole('link', { name: 'Новое обращение' }));
     expect(location()).toBe('/submit'); expect(notice()).toBeNull();
   });
+  it('explains when a role switch leaves a protected page', async () => {
+    const user = userEvent.setup(); open('/submit');
+    expect(notice()).toBeNull();
+    await user.selectOptions(role(), 'manager');
+    expect(location()).toBe('/queue');
+    const panel = await screen.findByRole('status', { name: 'Ограничение доступа' });
+    expect(within(panel).getByText('Эта страница доступна сотруднику.')).toBeTruthy();
+    await user.click(within(panel).getByRole('button', { name: 'Перейти к очереди обращений' }));
+    expect(notice()).toBeNull();
+  });
+  it('returns to the filtered queue after switching manager to employee and back', async () => {
+    const user = userEvent.setup(); open('/queue?status=new');
+    await user.selectOptions(role(), 'manager');
+    expect(location()).toBe('/queue?status=new');
+    await user.selectOptions(role(), 'employee');
+    expect(location()).toBe('/my');
+    expect(await screen.findByRole('status', { name: 'Ограничение доступа' })).toBeTruthy();
+    await user.selectOptions(role(), 'manager');
+    expect(location()).toBe('/queue?status=new');
+    expect(notice()).toBeNull();
+  });
   it('preserves the complaint card on role switch', async () => {
     const user = userEvent.setup(); open('/my/complaint-1');
     expect(location()).toBe('/my/complaint-1'); expect(notice()).toBeNull();
