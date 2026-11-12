@@ -7,6 +7,7 @@ import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, typeLabels } from '../features/complaint';
 import { CompletionSignal } from '../features/CompletionSignal';
 import { useRevealOnView } from '../features/designMotion';
+import { RoutingRules } from '../features/routingRules';
 import './summary.css';
 
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
@@ -171,6 +172,7 @@ export default function SummaryPage() {
         {summary.avgResolutionHoursByCategory && <section ref={revealPanel} className="summary-table-panel reveal-panel"><h2>{t("Время решения по категориям")}</h2>
           <table aria-label={t("Время решения по категориям")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Среднее время")}</th></tr></thead><tbody>{summary.avgResolutionHoursByCategory.map(item => <tr key={item.categoryId}><th scope="row">{referenceLabel(locale, 'category', item.categoryId, item.categoryName)}</th><td>{number.format(item.closedCount)}</td><td>{hours(item.averageResolutionHours, locale)}</td></tr>)}</tbody></table>
         </section>}
+        {role === 'admin' && <RoutingRules />}
       </div>
     </>}
   </section>;
