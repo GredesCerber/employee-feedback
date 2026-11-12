@@ -7,7 +7,8 @@ test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorag
 const matrix = [
   { role: 'employee', links: [ ['Мои обращения', '/my'], ['Новое обращение', '/submit'] ] },
   { role: 'manager', links: [ ['Очередь обращений', '/queue'], ['Дашборд', '/dashboard'] ] },
-  { role: 'admin', links: [ ['Сводка', '/summary'], ['Дашборд', '/dashboard'] ] },
+  // «Пользователи и права» добавлены в меню администратора в #375.
+  { role: 'admin', links: [ ['Сводка', '/summary'], ['Дашборд', '/dashboard'], ['Пользователи и права', '/admin'] ] },
 ];
 
 async function openAs(page, role) {
