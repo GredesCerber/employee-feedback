@@ -44,11 +44,9 @@
   @keyframes fill-chart-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 }
 
-.topic-list { list-style: none; margin: 12px 0 20px; padding: 0; display: grid; gap: 8px; }
-.topic-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; }
-.topic-name { font-weight: 600; }
-.topic-count { color: var(--color-text-muted); font-size: 13px; }
-.topic-list a { margin-left: auto; font-size: 13px; }
+/* Повторяющиеся темы: диаграмма + одна строка ссылок в очередь (без второго списка с теми же числами). */
+.topic-hint { margin: 0; }
+.topic-links { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); font-size: 13px; }
 @media (max-width: 1050px) { .summary-metrics, .summary-metrics:has(.summary-overdue) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .summary-sections { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 600px) { .metric-card, .summary-table-panel { padding: var(--space-3); } }
 

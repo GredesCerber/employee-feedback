@@ -42,7 +42,8 @@ async function charts() {
   render(<MemoryRouter><App /></MemoryRouter>);
   await user.selectOptions(screen.getByLabelText('Демонстрационная роль'), 'admin');
   await screen.findByRole('heading', { name: 'Сводка', level: 1 });
-  return (await screen.findAllByRole('img')).filter(element => element.tagName.toLowerCase() === 'svg');
+  // Столбчатые диаграммы; кольцо по типам проверяется в summary-charts.test.tsx.
+  return (await screen.findAllByRole('img')).filter(element => element.classList.contains('bar-chart'));
 }
 
 /** Масштаб: сколько экранных пикселей на одну единицу viewBox. */
@@ -57,7 +58,7 @@ describe('#197 readable summary charts', () => {
     expect(Number(font![1])).toBeGreaterThanOrEqual(14);
     containerWidth(1100);
     const svgs = await charts();
-    expect(svgs).toHaveLength(2);
+    expect(svgs).toHaveLength(1);
     for (const svg of svgs) {
       expect(scale(svg)).toBe(1);
       expect(Number(svg.getAttribute('width'))).toBe(1100);
@@ -68,7 +69,7 @@ describe('#197 readable summary charts', () => {
 
   it('on a wide container long labels fit inside the chart (no text before x=0)', async () => {
     containerWidth(1100);
-    const [, topics] = await charts();
+    const [topics] = await charts();
     const label = within(topics as unknown as HTMLElement).getByText('Категория без ответственного (демо)');
     const x = Number(label.getAttribute('x'));
     expect(label.getAttribute('text-anchor')).toBe('end');
@@ -98,7 +99,7 @@ describe('#197 readable summary charts', () => {
       }
     }
     // Длинные названия категорий на узком экране переносятся над столбцами.
-    expect(svgs[1]!.querySelector('[data-bar="Категория без ответственного (демо)"] .bar-label')!.getAttribute('text-anchor')).toBe('start');
+    expect(svgs[0]!.querySelector('[data-bar="Категория без ответственного (демо)"] .bar-label')!.getAttribute('text-anchor')).toBe('start');
   });
 
   it('the chart never sets a percentage width or a horizontal scroller', () => {

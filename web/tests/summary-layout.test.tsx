@@ -64,10 +64,32 @@ describe('summary layout', () => {
     expect(within(left as HTMLElement).getByRole('table', { name: 'Обращения по типам' })).toBeTruthy();
   });
 
-  it('keeps the recurring topics table only for screen readers', async () => {
+  it('keeps chart data tables only for screen readers, so the screen shows each number once', async () => {
     await openSummary();
-    const table = await screen.findByRole('table', { name: 'Повторяющиеся темы' });
-    expect(table.closest('.visually-hidden')).not.toBeNull();
-    expect(screen.getByRole('list', { name: 'Повторяющиеся темы' }).closest('.visually-hidden')).toBeNull();
+    for (const name of ['Повторяющиеся темы', 'Обращения по типам']) {
+      expect((await screen.findByRole('table', { name })).closest('.visually-hidden')).not.toBeNull();
+    }
+    expect(screen.queryByRole('list', { name: 'Повторяющиеся темы' })).toBeNull();
+    // Таблицы без диаграммы остаются на экране.
+    expect(screen.getByRole('table', { name: 'Обращения по подразделениям' }).closest('.visually-hidden')).toBeNull();
+  });
+
+  it('collapses a panel with its heading button and remembers the choice', async () => {
+    localStorage.clear();
+    const user = await openSummary();
+    const button = within(await screen.findByRole('heading', { name: 'Повторяющиеся темы', level: 2 })).getByRole('button', { name: 'Повторяющиеся темы' });
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    const body = document.getElementById(button.getAttribute('aria-controls')!)!;
+    expect(body.hidden).toBe(false);
+    await user.click(button);
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(body.hidden).toBe(true);
+    cleanup();
+    await openSummary();
+    const again = within(await screen.findByRole('heading', { name: 'Повторяющиеся темы', level: 2 })).getByRole('button');
+    expect(again.getAttribute('aria-expanded')).toBe('false');
+    await user.click(again);
+    expect(again.getAttribute('aria-expanded')).toBe('true');
+    localStorage.clear();
   });
 });

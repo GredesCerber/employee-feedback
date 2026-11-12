@@ -38,20 +38,21 @@ async function openSummary() {
 }
 
 describe('#111 summary charts', () => {
-  it('draws an SVG bar chart by type with a label and number on every bar', async () => {
+  it('draws an SVG donut by type: one arc per type, proportional, total in the centre', async () => {
     await openSummary();
     const chart = await screen.findByRole('img', { name: /Обращения по типам/ });
     expect(chart.tagName.toLowerCase()).toBe('svg');
-    const bars = chart.querySelectorAll('[data-bar]');
-    expect(bars).toHaveLength(3);
-    for (const [label, value] of [['Проблема', '9'], ['Предложение', '10'], ['Благодарность', '1']]) {
-      const bar = chart.querySelector(`[data-bar="${label}"]`);
-      expect(bar?.textContent).toContain(label);
-      expect(bar?.textContent).toContain(value);
-    }
-    const heights = [...bars].map(bar => Number(bar.querySelector('rect')?.getAttribute('width')));
-    expect(heights.every(Number.isFinite)).toBe(true);
-    expect(Math.max(...heights)).toBe(heights[1]);
+    expect(chart.querySelector('title')?.textContent).toBe('Обращения по типам: Проблема 9, Предложение 10, Благодарность 1');
+    const arcs = [...chart.querySelectorAll('[data-slice]')];
+    expect(arcs.map(arc => arc.getAttribute('data-slice'))).toEqual(['problem', 'suggestion', 'praise']);
+    const lengths = arcs.map(arc => Number(arc.getAttribute('stroke-dasharray')?.split(' ')[0]));
+    expect(lengths.every(Number.isFinite)).toBe(true);
+    expect(Math.max(...lengths)).toBe(lengths[1]);
+    expect(lengths.reduce((sum, value) => sum + value, 0)).toBeLessThanOrEqual(100);
+    expect(chart.textContent).toContain('20');
+    const legend = chart.parentElement!.querySelector('.donut-legend')!;
+    expect(legend.getAttribute('aria-hidden')).toBe('true');
+    expect(legend.textContent).toMatch(/Предложение10\s*50\s*%/);
   });
 
   it('draws an SVG bar chart by category for recurring topics', async () => {
@@ -75,14 +76,14 @@ describe('#111 summary charts', () => {
     expect(within(screen.getByRole('region', { name: 'Среднее время первого ответа' })).getByText(/9,6\s*ч/)).toBeTruthy();
   });
 
-  it('lists recurring topics and explains queue access to the administrator', async () => {
+  it('shows recurring topics only as a chart with column labels and one queue hint for the administrator', async () => {
     await openSummary();
-    const list = await screen.findByRole('list', { name: 'Повторяющиеся темы' });
-    const item = within(list).getByText(/Межотдельное взаимодействие/).closest('li')!;
-    expect(item.textContent).toMatch(/повторяется 3 раза/);
-    expect(within(item).queryByRole('link')).toBeNull();
-    expect(within(item).getByText('Очередь доступна руководителю')).toBeTruthy();
-    expect(within(list).getByText(/Обучение/).closest('li')!.textContent).toMatch(/повторяется 2 раза/);
+    const panel = await screen.findByRole('region', { name: 'Повторяющиеся темы' });
+    expect(within(panel).queryByRole('list')).toBeNull();
+    expect(within(panel).getAllByText('Очередь доступна руководителю')).toHaveLength(1);
+    const header = panel.querySelector('.chart-header')!;
+    expect(header.textContent).toBe('КатегорияКоличество');
+    expect(header.nextElementSibling?.querySelector('svg[role="img"]')).toBeTruthy();
   });
 
   it('shows an empty state without charts and without division by zero', async () => {
