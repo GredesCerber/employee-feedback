@@ -89,6 +89,7 @@ function prepareFixtureEnvironment(operationId, t) {
 const scenarios = {
   translateComplaintText: async app => request(app, 'POST', '/complaints/complaint-1/translations', { field: 'description', targetLocale: 'en' }),
   getHealth: async app => app.inject({ url: '/health' }),
+  getHealthReady: async app => app.inject({ url: '/health/ready' }),
   getSession: async app => request(app, 'GET', '/session', undefined, 'employee-1'),
   getReferenceData: async app => request(app, 'GET', '/reference-data'),
   createComplaint: async app => request(app, 'POST', '/complaints', payload, 'employee-1'),

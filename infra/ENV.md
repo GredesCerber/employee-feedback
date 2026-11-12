@@ -18,6 +18,7 @@
 |---|---|---|---|---|
 | `PORT` | `api/src/server.ts` (порт API); `docker-compose.yml` и `infra/run-demo.mjs` задают его сами | `3000` | нет | используется |
 | `HOST` | `api/src/server.ts` (адрес, на котором слушает API); в Docker `0.0.0.0` | `127.0.0.1` | нет | используется |
+| `LOG_LEVEL` | `api/src/server.ts`: уровень журнала запросов (одна JSON-строка на запрос с `requestId`); `silent` отключает вывод | `info` | нет | используется |
 | `NODE_ENV` | `api/src/rate-limit.ts`: при `test` лимит частоты запросов отключён | не задана | нет | используется |
 | `RATE_LIMIT_MAX` | `api/src/rate-limit.ts`: сколько POST/PATCH на пользователя за окно, `0` отключает лимит | `30` | нет | используется |
 | `RATE_LIMIT_WINDOW_S` | `api/src/rate-limit.ts`: длина окна лимита в секундах, от 1 | `60` | нет | используется |
