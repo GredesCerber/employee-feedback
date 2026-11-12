@@ -77,6 +77,7 @@ const probes = {
   suggestCategory: () => [`/complaints/suggest-category?text=${encodeURIComponent(MARK + ' склад вентиляция')}`],
   exportComplaints: () => ['/complaints/export', `/complaints/export?q=${encodeURIComponent(MARK)}`],
   getHealth: () => ['/health'],
+  getHealthReady: () => ['/health/ready'],
   getSummaryDigest: () => ['/summary/digest'],
   getAnalyticsTrends: () => ['/analytics/trends'],
 };
