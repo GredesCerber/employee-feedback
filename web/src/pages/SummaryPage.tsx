@@ -152,6 +152,7 @@ export default function SummaryPage() {
       </div>
       {summary.total === 0 && <p className="summary-empty" role="status">{t("Обращений пока нет — диаграммы появятся после первой подачи.")}</p>}
       <div className="summary-sections">
+        <div className="summary-column">
         <section ref={revealPanel} className="summary-table-panel reveal-panel"><h2>{t("Обращения по типам")}</h2>
           {summary.total > 0 && <figure className="summary-chart"><BarChart title={t("Обращения по типам")} bars={typeBars} /></figure>}
           <table aria-label={t("Обращения по типам")}><thead><tr><th scope="col">{t("Тип")}</th><th scope="col">{t("Количество")}</th></tr></thead><tbody>{summary.byType.map(item => <tr key={item.type}><th scope="row">{t(typeLabels[item.type])}</th><td>{number.format(item.count)}</td></tr>)}</tbody></table>
@@ -163,15 +164,18 @@ export default function SummaryPage() {
               <span className="topic-name">{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</span> <span className="topic-count">{timesLabel(topic.count, locale)}</span>{' '}
               {role === 'admin' ? <span className="muted">{queueHint}</span> : <Link to={`/queue?categoryId=${encodeURIComponent(topic.categoryId)}`}>{t("Открыть в очереди")}</Link>}
             </li>)}</ul>
-            <table aria-label={t("Повторяющиеся темы")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Количество")}</th></tr></thead><tbody>{summary.recurringTopics.map(topic => <tr key={topic.categoryId}><th scope="row">{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</th><td>{number.format(topic.count)}</td></tr>)}</tbody></table>
+            {/* Те же данные, что в диаграмме и списке выше: таблица остаётся для экранных читалок, на экране не дублирует список. */}<div className="visually-hidden"><table aria-label={t("Повторяющиеся темы")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Количество")}</th></tr></thead><tbody>{summary.recurringTopics.map(topic => <tr key={topic.categoryId}><th scope="row">{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</th><td>{number.format(topic.count)}</td></tr>)}</tbody></table></div>
           </>}
         </section>
         {summary.byDepartment && <section ref={revealPanel} className="summary-table-panel reveal-panel"><h2>{t("Обращения по подразделениям")}</h2>
           <table aria-label={t("Обращения по подразделениям")}><thead><tr><th scope="col">{t("Подразделение")}</th><th scope="col">{t("Обращений")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Доля закрытых")}</th></tr></thead><tbody>{summary.byDepartment.map(item => <tr key={item.departmentId}><th scope="row">{referenceLabel(locale, 'department', item.departmentId, item.departmentName)}</th><td>{number.format(item.count)}</td><td>{number.format(item.closedCount)}</td><td>{percent.format(item.closedShare)}</td></tr>)}</tbody></table>
         </section>}
+        </div>
+        <div className="summary-column">
         {summary.avgResolutionHoursByCategory && <section ref={revealPanel} className="summary-table-panel reveal-panel"><h2>{t("Время решения по категориям")}</h2>
           <table aria-label={t("Время решения по категориям")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Закрыто")}</th><th scope="col">{t("Среднее время")}</th></tr></thead><tbody>{summary.avgResolutionHoursByCategory.map(item => <tr key={item.categoryId}><th scope="row">{referenceLabel(locale, 'category', item.categoryId, item.categoryName)}</th><td>{number.format(item.closedCount)}</td><td>{hours(item.averageResolutionHours, locale)}</td></tr>)}</tbody></table>
         </section>}
+        </div>
         {role === 'admin' && <RoutingRules />}
       </div>
     </>}
