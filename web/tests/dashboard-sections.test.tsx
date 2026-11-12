@@ -89,7 +89,7 @@ it('sorts by count with deterministic ties and by name while preserving URL filt
   expect(screen.getByTestId('location').textContent).toContain('department=engineering');
   await user.selectOptions(screen.getByLabelText('Подразделение'), '');
   expect(screen.getByTestId('location').textContent).toContain('categorySort=name');
-  await user.selectOptions(sort, 'count');
+  await user.selectOptions(await screen.findByLabelText('Сортировка категорий'), 'count');
   expect(rows().slice(0, 3)).toEqual(['Zulu', 'Alpha', 'Bravo']);
   expect(screen.getByTestId('location').textContent).toContain('categorySort=count');
 });

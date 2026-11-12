@@ -1,5 +1,5 @@
 import { useI18n, localeNames, referenceLabel } from '../i18n';
-import { useCallback, useId } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSession } from '../app/session';
 import type { components } from '../api/client';
@@ -69,11 +69,15 @@ function Tile({ id, title, value, note }: { id: string; title: string; value: st
 
 export default function DashboardPage() {
   const revealPanel = useRevealOnView<HTMLElement>();
+  const [categoriesOpen, setCategoriesOpen] = useState(true);
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const categoriesId = useId();
   const { t, locale } = useI18n();
   const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const { api, role } = useSession();
   const [params, setParams] = useSearchParams();
   const department = params.get('department')?.trim() ?? '';
+  const categorySort = params.get('categorySort') === 'name' ? 'name' : 'count';
   const loadReference = useCallback(async () => requireData((await api.GET('/reference-data')).data), [api]);
   const reference = useResource(loadReference);
   const loadTrends = useCallback(async () => requireData((await api.GET('/analytics/trends', {
@@ -83,14 +87,22 @@ export default function DashboardPage() {
   const trends = result.data;
   const totals = trends?.totals;
   const empty = totals?.total === 0;
-  function selectDepartment(value: string) {
-    setParams(value ? { department: value } : {}, { replace: true });
+  function updateParam(key: string, value: string) {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value); else next.delete(key);
+    setParams(next, { replace: true });
   }
+  const collator = new Intl.Collator(localeNames[locale]);
+  const categoryRows = (trends?.byCategory ?? []).map(item => ({
+    key: item.categoryId, name: referenceLabel(locale, 'category', item.categoryId, item.categoryName), count: item.count,
+  })).sort((a, b) => (categorySort === 'count' ? b.count - a.count : 0)
+    || collator.compare(a.name, b.name) || a.key.localeCompare(b.key));
+  const visibleCategories = showAllCategories ? categoryRows : categoryRows.slice(0, 8);
   return <section className="section dashboard-page">
     <header className="dashboard-header">
       <div><p className="eyebrow">{t("Обзор обратной связи")}</p><h1>{t("Дашборд")}</h1>
         <p className="muted">{t("Как меняется нагрузка и какие обращения требуют внимания.")}</p></div>
-      {reference.data && <label className="dashboard-department">{t("Подразделение")}<select value={department} onChange={event => selectDepartment(event.target.value)}>
+      {reference.data && <label className="dashboard-department">{t("Подразделение")}<select value={department} onChange={event => updateParam('department', event.target.value)}>
         <option value="">{t("Все подразделения")}</option>
         {reference.data.departments.map(item => <option key={item.id} value={item.id}>{referenceLabel(locale, 'department', item.id, item.name)}</option>)}
       </select></label>}
@@ -132,10 +144,16 @@ export default function DashboardPage() {
         </section>
       </div>
       {!empty && <div className="dashboard-grid">
-        <section ref={revealPanel} className="dashboard-panel reveal-panel"><h2>{t("По категориям")}</h2>
-          <figure className="dashboard-chart"><BarChart title={t("Обращения по категориям")} bars={trends.byCategory.map(item => ({ label: referenceLabel(locale, 'category', item.categoryId, item.categoryName), value: item.count }))} />
-            <figcaption className="chart-axis-note">{t("По горизонтали — число обращений")}</figcaption></figure>
-          <CountTable label={t("Обращения по категориям")} head={t("Категория")} rows={trends.byCategory.map(item => ({ key: item.categoryId, name: referenceLabel(locale, 'category', item.categoryId, item.categoryName), count: item.count }))} />
+        <section ref={revealPanel} className="dashboard-panel reveal-panel"><h2><button type="button" className="dashboard-section-toggle" aria-expanded={categoriesOpen} aria-controls={categoriesId} onClick={() => setCategoriesOpen(open => !open)}>{t("По категориям")}<span aria-hidden="true">{categoriesOpen ? '⌃' : '⌄'}</span></button></h2>
+          <div id={categoriesId} hidden={!categoriesOpen}>
+            <label className="dashboard-category-sort">{t("Сортировка категорий")}<select value={categorySort} onChange={event => updateParam('categorySort', event.target.value)}>
+              <option value="count">{t("По числу обращений")}</option><option value="name">{t("По алфавиту")}</option>
+            </select></label>
+            <figure className="dashboard-chart"><BarChart title={t("Обращения по категориям")} bars={visibleCategories.map(item => ({ label: item.name, value: item.count }))} />
+              <figcaption className="chart-axis-note">{t("По горизонтали — число обращений")}</figcaption></figure>
+            <CountTable label={t("Обращения по категориям")} head={t("Категория")} rows={visibleCategories} />
+            {categoryRows.length > 8 && <button type="button" className="dashboard-show-categories" onClick={() => setShowAllCategories(all => !all)}>{showAllCategories ? t("Свернуть") : t("Показать все")}</button>}
+          </div>
         </section>
         <section ref={revealPanel} className="dashboard-panel reveal-panel"><h2>{t("По подразделениям")}</h2>
           <figure className="dashboard-chart"><BarChart title={t("Обращения по подразделениям")} bars={trends.byDepartment.map(item => ({ label: referenceLabel(locale, 'department', item.departmentId, item.departmentName), value: item.count }))} />

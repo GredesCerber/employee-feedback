@@ -46,3 +46,8 @@
 
 @media (max-width: 1050px) { .dashboard-grid { grid-template-columns: minmax(0, 1fr); } .dashboard-grid.dashboard-overview:has(> :nth-child(2)) { grid-template-columns: minmax(0, 1fr); } .dashboard-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .dashboard-panel { padding: var(--space-4); } }
+
+.dashboard-panel h2 .dashboard-section-toggle { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.dashboard-section-toggle span { color: var(--color-text-muted); }
+.dashboard-category-sort { display: grid; gap: var(--space-1); max-width: 260px; margin-top: var(--space-3); font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.dashboard-show-categories { margin-top: var(--space-3); }
