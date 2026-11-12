@@ -8,6 +8,7 @@ import { dateLabel, Loading, LoadError } from '../features/complaint';
 import { BarChart, useContainerWidth } from './SummaryPage';
 import { CompletionSignal } from '../features/CompletionSignal';
 import { useRevealOnView } from '../features/designMotion';
+import { EscalationBadge, escalatedCount } from '../features/escalation';
 import { ImpactPanel } from '../features/ImpactPanel';
 import { ProblemsPanel } from '../features/sharedProblems';
 import { WeeklyDigest } from '../features/weeklyDigest';
@@ -142,8 +143,10 @@ export default function DashboardPage() {
                 {role === 'manager' ? <Link to={`/queue/${encodeURIComponent(item.id)}`}>{item.number}</Link> : <span className="overdue-number">{item.number}</span>}
                 <span className="muted">{referenceLabel(locale, 'category', item.categoryId, item.categoryName)}</span>
               </div>
+              <EscalationBadge overdueHours={item.overdueHours} />
               <span className="overdue-hours"><span className="visually-hidden">{t("просрочено на")} </span>{number.format(Math.round(item.overdueHours))} {t("ч")}</span>
             </li>)}</ul>}
+          {escalatedCount(trends.overdue) > 0 && <p role="status" className="escalation-summary"><strong>{t("Требуют эскалации: {count}", { count: number.format(escalatedCount(trends.overdue)) })}</strong> {t("Просрочка больше двух суток: вопрос передаётся руководителю направления, больше пяти суток — администратору.")}</p>}
           {role !== 'manager' && trends.overdue.length > 0 && <p className="muted">{t("Карточки открывает руководитель в очереди обращений.")}</p>}
         </section>
       </div>

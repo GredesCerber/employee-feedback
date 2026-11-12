@@ -23,3 +23,8 @@
 .problem-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
 .problem-list li { padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
 .management-stack { display: grid; gap: var(--space-3); align-content: start; min-width: 0; }
+.quality-hints ul { margin: var(--space-1) 0 var(--space-3); padding-left: var(--space-5); font-size: var(--font-size-sm); }
+.quality-hints p { margin: var(--space-1) 0; font-size: var(--font-size-sm); }
+.escalation-badge { display: inline-block; padding: 2px var(--space-2); border-radius: var(--radius-pill); font-size: var(--font-size-xs); font-weight: 700; border: 1px solid var(--color-warning-border); background: var(--color-warning-bg); color: var(--color-warning-text); }
+.escalation-badge.escalation-3 { border-color: var(--color-danger-border); background: var(--color-danger-bg); color: var(--color-danger-strong); }
+.route-check { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
