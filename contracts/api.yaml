@@ -3279,8 +3279,11 @@
               "decision_recorded",
               "unassigned",
               "clarification_received",
-              "due_soon"
-            ]
+              "due_soon",
+              "status_changed",
+              "overdue"
+            ],
+            "description": "status_changed: the author's open complaint was taken into review or work by a manager; shown until a decision, which has its own kind, as do clarification transitions. overdue: an open complaint of the manager or without an assignee passed dueAt; createdAt equals dueAt."
           },
           "complaintId": {
             "type": "string",
