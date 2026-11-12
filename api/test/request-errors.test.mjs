@@ -15,7 +15,7 @@ test('malformed JSON, unsupported media and oversized body return safe contract 
       headers: { 'content-type': contentType, 'x-demo-user': 'employee-1' } });
     assert.equal(response.statusCode, status);
     assert.equal(response.json().code, code);
-    assert.deepEqual(Object.keys(response.json()).sort(), ['code', 'message']);
+    assert.deepEqual(Object.keys(response.json()).sort(), ['code', 'message', 'requestId']);
   }
   assert.deepEqual(app.store.list(), before);
 });
