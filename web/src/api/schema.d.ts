@@ -505,6 +505,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/demo-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Accounts offered on the login screen
+         * @description Public (no identity yet: this feeds the login screen). Active built-in demo accounts plus users added by an administrator; synthetic data, no secrets. Deactivated users are not listed.
+         */
+        get: operations["listDemoAccounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all users
+         * @description Admin only. All users including deactivated ones, for the administration section.
+         */
+        get: operations["listAdminUsers"];
+        put?: never;
+        /**
+         * Register a new user
+         * @description Admin only. Adds a user (name, department, role); id is generated. 409 when a user with the same name exists, 422 for an unknown department or invalid fields. The user appears on the login screen. In-memory demo directory: a demo reset restores the seed.
+         */
+        post: operations["createAdminUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description User id. */
+                userId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change a user's role, department, name or activity
+         * @description Admin only. Partial update. An administrator cannot demote or deactivate themselves, and the last active administrator cannot be removed (409). A user who stops being an active manager is released from the categories they were responsible for (they fall back to the manager queue). 404 for an unknown user, 422 for invalid fields.
+         */
+        patch: operations["updateAdminUser"];
+        trace?: never;
+    };
+    "/admin/categories/{categoryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Category id. */
+                categoryId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change category routing
+         * @description Admin only. Partial update of the responsible manager (active manager or null for the fallback queue) and the response deadline in days (1..90). Applies to complaints created afterwards. 404 for an unknown category, 422 for an invalid manager or number.
+         */
+        patch: operations["updateAdminCategory"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1412,6 +1502,36 @@ export interface components {
             previous: components["schemas"]["ImpactPeriod"];
             /** @description Categories with complaints in either period, by current count descending then categoryId. */
             categories: components["schemas"]["CategoryChange"][];
+        };
+        AdminUser: {
+            id: string;
+            name: string;
+            role: components["schemas"]["Role"];
+            departmentId: string;
+            /** @description false: user is deactivated and cannot act. */
+            active: boolean;
+        };
+        AdminUserList: {
+            items: components["schemas"]["AdminUser"][];
+        };
+        DemoAccountList: {
+            items: components["schemas"]["User"][];
+        };
+        AdminUserInput: {
+            name: string;
+            role: components["schemas"]["Role"];
+            departmentId: string;
+        };
+        AdminUserPatch: {
+            name?: string;
+            role?: components["schemas"]["Role"];
+            departmentId?: string;
+            active?: boolean;
+        };
+        CategoryPatch: {
+            /** @description Active manager id or null for the fallback queue. */
+            assigneeId?: string | null;
+            dueInDays?: number;
         };
     };
     responses: {
@@ -2502,6 +2622,162 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            413: components["responses"]["TooLarge"];
+            415: components["responses"]["Unsupported"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    listDemoAccounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accounts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoAccountList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    listAdminUsers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Users. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    createAdminUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUserInput"];
+            };
+        };
+        responses: {
+            /** @description User created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUser"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            413: components["responses"]["TooLarge"];
+            415: components["responses"]["Unsupported"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    updateAdminUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description User id. */
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUserPatch"];
+            };
+        };
+        responses: {
+            /** @description Updated user. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUser"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            413: components["responses"]["TooLarge"];
+            415: components["responses"]["Unsupported"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    updateAdminCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Category id. */
+                categoryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryPatch"];
+            };
+        };
+        responses: {
+            /** @description Updated category. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             413: components["responses"]["TooLarge"];
             415: components["responses"]["Unsupported"];
             422: components["responses"]["Validation"];

@@ -1,0 +1,10 @@
+.admin-page { display: grid; gap: var(--space-4); }
+.admin-messages { min-height: 1.5em; }
+.admin-notice { margin: 0; font-weight: 500; }
+.admin-form-grid { display: grid; grid-template-columns: 2fr 1.2fr 1fr auto; gap: var(--space-3); align-items: end; }
+.admin-form-grid label { display: grid; gap: var(--space-1); font-size: 14px; min-width: 0; }
+.admin-form-grid input, .admin-form-grid select, .admin-table-wrap select, .admin-days { width: 100%; box-sizing: border-box; border: 1px solid var(--color-border-strong); border-radius: 6px; padding: 10px 12px; background: var(--color-surface); color: inherit; }
+.admin-days { max-width: 96px; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-inactive th, .admin-inactive td { opacity: .6; }
+@media (max-width: 720px) { .admin-form-grid { grid-template-columns: 1fr; } }

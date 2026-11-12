@@ -22,6 +22,10 @@ const fixtures = {
   // Feedback needs a finished complaint of employee-1 (seed A-004, implemented).
   recordFeedback: { payload: { understood: true, solved: false }, complaintId: 'complaint-4' },
   listImprovements: {}, getImpact: {}, listProblems: {},
+  listDemoAccounts: {}, listAdminUsers: {},
+  createAdminUser: { payload: { name: 'Новый участник', role: 'employee', departmentId: 'sales' } },
+  updateAdminUser: { payload: { role: 'manager' }, userId: 'employee-2' },
+  updateAdminCategory: { payload: { dueInDays: 5 }, categoryId: 'training' },
   createProblem: { payload: { title: 'Общая проблема', complaintIds: ['complaint-1', 'complaint-2'] } },
 };
 
@@ -29,11 +33,11 @@ for (const operation of operations) for (const [role, user] of Object.entries(id
   test(`#96 ${role} / ${operation.method.toUpperCase()} ${operation.path} follows x-roles`, async t => {
     const app = buildApp({}, { translator: { enabled: true, translate: async () => 'translated fixture' } }); t.after(() => app.close());
     assert.ok(Object.hasOwn(fixtures, operation.operationId), `Missing role-matrix fixture: ${role}/${operation.operationId}`);
-    const publicHealth = ['getHealth', 'getHealthReady'].includes(operation.operationId);
+    const publicHealth = ['getHealth', 'getHealthReady', 'listDemoAccounts'].includes(operation.operationId);
     const allowed = publicHealth || operation['x-roles'].includes(role);
-    const { complaintId = 'complaint-1', ...input } = fixtures[operation.operationId];
+    const { complaintId = 'complaint-1', userId = 'employee-2', categoryId = 'training', ...input } = fixtures[operation.operationId];
     const response = await app.inject({ method: operation.method.toUpperCase(),
-      url: operation.path.replace('{complaintId}', complaintId),
+      url: operation.path.replace('{complaintId}', complaintId).replace('{userId}', userId).replace('{categoryId}', categoryId),
       headers: user ? { 'x-demo-user': user } : {}, ...input });
     // Contract and access.md distinguish missing identity (401) from a known
     // role lacking permission (403). Using 403 for both would hide that rule.

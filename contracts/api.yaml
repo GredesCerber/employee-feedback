@@ -27,6 +27,10 @@
     {
       "name": "Analytics",
       "description": "Administrative aggregates"
+    },
+    {
+      "name": "Administration",
+      "description": "Users, roles and routing rules (admin only)."
     }
   ],
   "security": [
@@ -2376,6 +2380,329 @@
           }
         ]
       }
+    },
+    "/demo-accounts": {
+      "get": {
+        "operationId": "listDemoAccounts",
+        "summary": "Accounts offered on the login screen",
+        "description": "Public (no identity yet: this feeds the login screen). Active built-in demo accounts plus users added by an administrator; synthetic data, no secrets. Deactivated users are not listed.",
+        "tags": [
+          "Administration"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Accounts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoAccountList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "security": []
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "operationId": "listAdminUsers",
+        "summary": "List all users",
+        "description": "Admin only. All users including deactivated ones, for the administration section.",
+        "tags": [
+          "Administration"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Users.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          }
+        },
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createAdminUser",
+        "summary": "Register a new user",
+        "description": "Admin only. Adds a user (name, department, role); id is generated. 409 when a user with the same name exists, 422 for an unknown department or invalid fields. The user appears on the login screen. In-memory demo directory: a demo reset restores the seed.",
+        "tags": [
+          "Administration"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "admin"
+        ],
+        "responses": {
+          "201": {
+            "description": "User created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserInput"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ]
+      }
+    },
+    "/admin/users/{userId}": {
+      "patch": {
+        "operationId": "updateAdminUser",
+        "summary": "Change a user's role, department, name or activity",
+        "description": "Admin only. Partial update. An administrator cannot demote or deactivate themselves, and the last active administrator cannot be removed (409). A user who stops being an active manager is released from the categories they were responsible for (they fall back to the manager queue). 404 for an unknown user, 422 for invalid fields.",
+        "tags": [
+          "Administration"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserPatch"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "User id."
+        }
+      ]
+    },
+    "/admin/categories/{categoryId}": {
+      "patch": {
+        "operationId": "updateAdminCategory",
+        "summary": "Change category routing",
+        "description": "Admin only. Partial update of the responsible manager (active manager or null for the fallback queue) and the response deadline in days (1..90). Applies to complaints created afterwards. 404 for an unknown category, 422 for an invalid manager or number.",
+        "tags": [
+          "Administration"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated category.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryPatch"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "name": "categoryId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "description": "Category id."
+        }
+      ]
     }
   },
   "components": {
@@ -4979,6 +5306,149 @@
           }
         },
         "description": "Pilot effect panel: current period [now-days, now) against the previous equal period."
+      },
+      "AdminUser": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "role",
+          "departmentId",
+          "active"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "departmentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "false: user is deactivated and cannot act."
+          }
+        }
+      },
+      "AdminUserList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUser"
+            }
+          }
+        }
+      },
+      "DemoAccountList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          }
+        }
+      },
+      "AdminUserInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "role",
+          "departmentId"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "departmentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        }
+      },
+      "AdminUserPatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "departmentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CategoryPatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "assigneeId": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "pattern": "^[A-Za-z0-9_-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Active manager id or null for the fallback queue."
+          },
+          "dueInDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 90
+          }
+        }
       }
     },
     "responses": {
