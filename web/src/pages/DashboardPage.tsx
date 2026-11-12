@@ -120,7 +120,7 @@ export default function DashboardPage() {
         <Tile id="dash-total" title={t("Всего обращений")} value={number.format(totals.total)} note={t("С учётом закрытых")} />
         <Tile id="dash-open" title={t("Открытых")} value={number.format(totals.openCount)} note={`${t("Закрыто")} ${number.format(totals.closedCount)}`}
           to={role === 'manager' ? `/queue?${new URLSearchParams({ status_group: 'open', ...(department ? { departmentId: department } : {}) })}` : undefined} />
-        <Tile id="dash-overdue" title={t("Просрочено")} value={number.format(totals.overdueCount)} note={t("Срок прошёл, решения нет")} />
+        <Tile id="dash-overdue" title={t("Просрочено")} value={number.format(totals.overdueCount)} note={t("Срок прошёл, решения нет")} to={role === 'manager' ? '/queue?overdue=1' : undefined} />
         <Tile id="dash-resolution" title={t("Среднее время решения")} value={totals.averageResolutionHours === null ? t("Нет закрытых") : `${number.format(totals.averageResolutionHours)} ${locale === 'en' ? 'h' : locale === 'kk' ? t("сағ") : t("ч")}`}
           note={t("От подачи до закрытия")} />
       </div>
