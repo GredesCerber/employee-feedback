@@ -24,6 +24,7 @@ const states = (item: Pick<Complaint, 'status' | 'history'>) => progressModel(it
 
 beforeEach(() => {
   current = structuredClone(example);
+  sessionStorage.clear();
   vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:3000');
   vi.stubGlobal('fetch', vi.fn(async (request: Request) => {
     const url = new URL(request.url);
