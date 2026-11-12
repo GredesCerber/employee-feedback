@@ -10,6 +10,7 @@ import { AnonymousBadge } from '../features/complaintMeta';
 import type { Complaint } from '../features/complaint';
 import { dateLabel, Loading, LoadError, StatusBadge, statusLabels, typeLabels } from '../features/complaint';
 import { PageCompletionSignal } from '../features/CompletionSignal';
+import { IdeaQuick } from '../features/IdeaQuick';
 import { useRevealOnView } from '../features/designMotion';
 import { answerDaysLabel, hasMyFilters, MY_FETCH_LIMIT, MY_FETCH_MAX_PAGES, MY_PAGE_SIZE, MY_SEARCH_MAX, myFiltersFromUrl, myFiltersToQuery, mySortFromUrl, mySortLabels, myStateToUrl, sortMyComplaints } from '../features/myComplaintsFilters';
 import type { MyFilters, MySort } from '../features/myComplaintsFilters';
@@ -113,6 +114,7 @@ export default function MyComplaintsPage() {
       <Link to="/about"><strong>{t("Как всё устроено")}</strong><span>{t("Что реально, что имитация")}</span></Link>
     </nav>}
     {lastId && <p className="feedback-return"><Link to={lastComplaintPath(role, lastId)}>{t("Вернуться к последнему обращению")}</Link></p>}
+    <IdeaQuick onCreated={result.reload} />
     {showTools && <form className="my-filters" role="search" aria-label={t("Поиск и фильтр обращений")} onSubmit={submitSearch}>
       <label className="my-filter-search">{t("Поиск по номеру или тексту")}<input type="search" value={search} maxLength={MY_SEARCH_MAX} onChange={event => setSearch(event.target.value)} /></label>
       <label className="my-filter-status">{t("Статус")}<select value={applied.status} onChange={event => update({ status: event.target.value as MyFilters['status'], q: search })}>

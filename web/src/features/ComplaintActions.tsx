@@ -78,6 +78,9 @@ export function ManagerActions({ item, onUpdated }: { item: Complaint; onUpdated
   const terminal = ['implemented', 'rejected', 'closed'].includes(item.status);
   if (terminal) return null;
 
+  /** Шаблон только подставляет текст в поле: человек правит и отправляет сам (идея «черновик ответа», без ИИ и сети). */
+  const withTemplate = (current: string, template: string) => current.trim() ? `${current.trimEnd()}\n\n${template}` : template;
+
   function postComment(kind: CommentKind) {
     if (!comment.trim()) { mutation.setError('Введите текст сообщения.', 'manager-comment'); return; }
     void mutation.run(async () => {
@@ -101,7 +104,7 @@ export function ManagerActions({ item, onUpdated }: { item: Complaint; onUpdated
     </fieldset>
     <fieldset disabled={mutation.busy}><legend>{t("Статус и обсуждение")}</legend>
       <div className="actions">{(['in_review', 'in_progress'] as const).filter(status => allowed.includes(status)).map(status => <button key={status} onClick={() => void mutation.run(async () => requireData((await api.PATCH('/complaints/{complaintId}/status', { params: { path }, body: { status } })).data), "Статус обращения изменён.")}>{status === 'in_progress' ? t("Взять в работу") : item.status === 'new' ? t("Начать рассмотрение") : t("Вернуть на рассмотрение")}</button>)}</div>
-      <div className="action-panel"><label htmlFor="manager-comment">{t("Комментарий или вопрос")}</label><textarea id="manager-comment" {...mutation.invalid('manager-comment', 'manager-action-error')} rows={3} maxLength={5000} value={comment} onChange={event => setComment(event.target.value)} /><div className="actions"><button onClick={() => postComment('comment')}>{t("Добавить комментарий")}</button>{allowed.includes('awaiting_clarification') && <button onClick={() => postComment('clarification_request')}>{t("Запросить уточнение")}</button>}</div></div>
+      <div className="action-panel"><label htmlFor="manager-comment">{t("Комментарий или вопрос")}</label><textarea id="manager-comment" {...mutation.invalid('manager-comment', 'manager-action-error')} rows={3} maxLength={5000} value={comment} onChange={event => setComment(event.target.value)} /><div className="actions"><button type="button" className="template-button" onClick={() => setComment(value => withTemplate(value, t("Здравствуйте! Чтобы рассмотреть обращение, уточните, пожалуйста: 1) в каком подразделении и на каком этапе возникла ситуация; 2) как часто это повторяется; 3) какой результат вы ожидаете.")))}>{t("Вставить шаблон вопроса")}</button><button onClick={() => postComment('comment')}>{t("Добавить комментарий")}</button>{allowed.includes('awaiting_clarification') && <button onClick={() => postComment('clarification_request')}>{t("Запросить уточнение")}</button>}</div></div>
     </fieldset>
     {outcomes.length > 0 && <fieldset disabled={mutation.busy}><legend>{t("Завершение")}</legend><form className="action-panel" onSubmit={event => {
       event.preventDefault();
@@ -109,7 +112,9 @@ export function ManagerActions({ item, onUpdated }: { item: Complaint; onUpdated
       void mutation.run(async () => requireData((await api.POST('/complaints/{complaintId}/decision', { params: { path }, body: { outcome, explanation: explanation.trim(), ...(actions.trim() ? { actions: actions.trim() } : {}) } })).data), "Итог рассмотрения зафиксирован.");
     }}><label htmlFor="outcome">{t("Итог рассмотрения")}</label><select id="outcome" value={outcome} onChange={event => setOutcome(event.target.value as Outcome)}>{outcomes.map(value => <option key={value} value={value}>{t(statusLabels[value])}</option>)}</select>
       {item.status === 'new' && outcomes.length === 1 && <p className="muted">{t("Сейчас доступен только отказ: чтобы выбрать другой итог, сначала начните рассмотрение.")}</p>}
-      <label htmlFor="explanation">{outcome === 'rejected' ? t("Мотивированный отказ") : t("Обоснование решения")}</label><textarea id="explanation" aria-required="true" {...mutation.invalid('explanation', 'manager-action-error')} rows={4} maxLength={5000} value={explanation} onChange={event => setExplanation(event.target.value)} />
+      <label htmlFor="explanation">{outcome === 'rejected' ? t("Мотивированный отказ") : t("Обоснование решения")}</label><textarea id="explanation" aria-required="true" {...mutation.invalid('explanation', 'manager-action-error')} rows={4} maxLength={5000} value={explanation} onChange={event => setExplanation(event.target.value)} /><div className="actions"><button type="button" className="template-button" onClick={() => setExplanation(value => withTemplate(value, outcome === 'rejected'
+        ? t("Спасибо за обращение. Мы внимательно его рассмотрели, но не можем реализовать это предложение сейчас. Причина: [укажите причину]. Если ситуация изменится, мы вернёмся к вопросу.")
+        : t("Спасибо за обращение. Мы приняли решение: [что именно сделано или будет сделано]. Срок: [укажите срок].")))}>{t("Вставить шаблон решения")}</button></div>
       <label htmlFor="decision-actions">{t("Дальнейшие действия (необязательно)")}</label><textarea id="decision-actions" rows={2} maxLength={5000} value={actions} onChange={event => setActions(event.target.value)} />
       <button type="submit" className="primary-button">{t("Зафиксировать итог")}</button>
     </form></fieldset>}

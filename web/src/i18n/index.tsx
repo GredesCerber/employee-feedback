@@ -66,6 +66,9 @@ export function notificationText(locale: Locale, text: string): string {
     [/^Обращение ([A-Za-zА-Яа-я0-9-]+) поступило без ответственного\.$/, 'Request {n} arrived without an assignee.', '{n} өтініші жауапты адамсыз келіп түсті.'],
     [/^По обращению ([A-Za-zА-Яа-я0-9-]+) получено уточнение от автора\.$/, 'The author clarified request {n}.', '{n} өтініші бойынша автордан нақтылау алынды.'],
     [/^Срок рассмотрения обращения ([A-Za-zА-Яа-я0-9-]+) истекает менее чем через 24 часа\.$/, 'Request {n} is due in less than 24 hours.', '{n} өтінішін қарау мерзімі 24 сағаттан аз уақытта аяқталады.'],
+    [/^Срок рассмотрения обращения ([A-Za-zА-Яа-я0-9-]+) истёк\.$/, 'Request {n} is overdue.', '{n} өтінішін қарау мерзімі өтіп кетті.'],
+    [/^Обращение ([A-Za-zА-Яа-я0-9-]+) принято на рассмотрение\.$/, 'Request {n} is now under review.', '{n} өтініші қарауға алынды.'],
+    [/^Обращение ([A-Za-zА-Яа-я0-9-]+) взято в работу\.$/, 'Request {n} is now in progress.', '{n} өтініші жұмысқа алынды.'],
   ];
   for (const [pattern, en, kk] of patterns) { const match = pattern.exec(text); if (match) return (locale === 'en' ? en : kk).replace('{n}', match[1]!); }
   return text;

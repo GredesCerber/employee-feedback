@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type { Complaint, User } from './model.js';
+import type { Complaint, Status, User } from './model.js';
 import { terminalStatuses } from './model.js';
 import { contract, identity, invalid, queryParameters } from './http.js';
 import { Ajv2020 } from 'ajv/dist/2020.js';
@@ -11,11 +11,17 @@ const sinceValidator = new Ajv2020({ strict: false, formats: fullFormats }).comp
   (contract.paths['/notifications'].get.parameters as { name: string; schema: Record<string, unknown> }[])
     .find(parameter => parameter.name === 'since')!.schema);
 
-type Kind = 'clarification_requested' | 'decision_recorded' | 'unassigned' | 'clarification_received' | 'due_soon';
+type Kind = 'clarification_requested' | 'decision_recorded' | 'unassigned' | 'clarification_received' | 'due_soon'
+  | 'status_changed' | 'overdue';
 interface Event { id: string; kind: Kind; complaintId: string; complaintNumber: string; createdAt: string;
   message: string; href: string; simulated: true; disclaimer: string }
 
 const safeId = (value: string) => value.replace(/[^A-Za-z0-9_-]/g, '_');
+/** Status changes the author is told about while the complaint is open; clarification and decision have their own kinds. */
+const statusMessages: Partial<Record<Status, (number: string) => string>> = {
+  in_review: number => `Обращение ${number} принято на рассмотрение.`,
+  in_progress: number => `Обращение ${number} взято в работу.`,
+};
 
 /** Events are derived from complaint history; messages carry only the number, never author data. */
 function eventsFor(user: User, items: Complaint[], now: number): Event[] {
@@ -28,6 +34,13 @@ function eventsFor(user: User, items: Complaint[], now: number): Event[] {
       for (const comment of item.comments.filter(entry => entry.kind === 'clarification_request')) {
         events.push({ ...base(item), id: `clarification-requested-${safeId(comment.id)}`, kind: 'clarification_requested',
           createdAt: comment.createdAt, message: `По обращению ${item.number} запрошено уточнение.` });
+      }
+      // Only while the complaint is open: once decided, decision_recorded replaces the intermediate status news.
+      if (!terminalStatuses.includes(item.status)) for (const entry of item.history) {
+        const message = entry.kind === 'status_changed' && entry.toStatus && entry.fromStatus !== 'awaiting_clarification'
+          ? statusMessages[entry.toStatus] : undefined;
+        if (message) events.push({ ...base(item), id: `status-changed-${safeId(entry.id)}`, kind: 'status_changed',
+          createdAt: entry.createdAt, message: message(item.number) });
       }
       if (item.decision) {
         events.push({ ...base(item), id: `decision-recorded-${safeId(item.id)}`, kind: 'decision_recorded',
@@ -52,6 +65,11 @@ function eventsFor(user: User, items: Complaint[], now: number): Event[] {
       events.push({ ...base(item), id: `due-soon-${safeId(item.id)}-${Date.parse(item.dueAt)}`, kind: 'due_soon',
         createdAt: new Date(Date.parse(item.dueAt) - DAY).toISOString(),
         message: `Срок рассмотрения обращения ${item.number} истекает менее чем через 24 часа.` });
+    }
+    if (open && (mine || !item.assignee) && left <= 0) {
+      events.push({ ...base(item), id: `overdue-${safeId(item.id)}-${Date.parse(item.dueAt)}`, kind: 'overdue',
+        createdAt: new Date(Date.parse(item.dueAt)).toISOString(),
+        message: `Срок рассмотрения обращения ${item.number} истёк.` });
     }
   }
   return events;
