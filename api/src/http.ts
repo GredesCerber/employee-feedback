@@ -20,7 +20,7 @@ const listQueryValidator = ajv.compile({ type: 'object', additionalProperties: f
 export interface ListQuery {
   departmentId?: string; categoryId?: string; status?: string; type?: string;
   dueAfter?: string; dueBefore?: string; overdue?: boolean; queue?: string; q?: string;
-  limit?: number; offset?: number; simulated?: boolean;
+  limit?: number; offset?: number; simulated?: boolean; status_group?: 'open';
 }
 export function listQuery(request: FastifyRequest, paginated = true): ListQuery {
   const params = queryParameters(request, [...listParameters.map(parameter => parameter.name), ...extraListFilters]

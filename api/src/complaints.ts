@@ -25,6 +25,7 @@ function filteredComplaints(app: FastifyInstance, user: User, query: ListQuery):
       (query.departmentId === undefined || item.departmentId === query.departmentId)
       && (query.categoryId === undefined || item.categoryId === query.categoryId)
       && (query.status === undefined || item.status === query.status)
+      && (query.status_group !== 'open' || !terminalStatuses.includes(item.status))
       && (query.type === undefined || item.type === query.type)
       && (query.simulated === undefined || (item.simulated ?? false) === query.simulated)
       && (query.queue === undefined || item.routing.queue === query.queue)
