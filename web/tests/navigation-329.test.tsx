@@ -1,12 +1,11 @@
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter, MemoryRouter, useLocation } from 'react-router-dom';
 import App from '../src/App';
 
-const contract = JSON.parse(readFileSync(resolve('../contracts/api.yaml'), 'utf8'));
+const contract = JSON.parse(readFileSync(new URL('../../contracts/api.yaml', import.meta.url), 'utf8'));
 const item = { ...contract.paths['/complaints'].post.responses['201'].content['application/json'].examples.routed.value,
   id: 'complaint-21', number: 'A-021', status: 'awaiting_clarification' };
 const reference = contract.components.schemas.ReferenceData.examples[0];
