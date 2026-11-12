@@ -19,6 +19,10 @@ const fixtures = {
   addComment: { payload: { kind: 'comment', text: 'Синтетическое дополнение.' } },
   translateComplaintText: { payload: { field: 'description', targetLocale: 'en' } },
   recordDecision: { payload: { outcome: 'rejected', explanation: 'Синтетическое обоснование.' } },
+  // Feedback needs a finished complaint of employee-1 (seed A-004, implemented).
+  recordFeedback: { payload: { understood: true, solved: false }, complaintId: 'complaint-4' },
+  listImprovements: {}, getImpact: {}, listProblems: {},
+  createProblem: { payload: { title: 'Общая проблема', complaintIds: ['complaint-1', 'complaint-2'] } },
 };
 
 for (const operation of operations) for (const [role, user] of Object.entries(identities)) {
@@ -27,9 +31,10 @@ for (const operation of operations) for (const [role, user] of Object.entries(id
     assert.ok(Object.hasOwn(fixtures, operation.operationId), `Missing role-matrix fixture: ${role}/${operation.operationId}`);
     const publicHealth = ['getHealth', 'getHealthReady'].includes(operation.operationId);
     const allowed = publicHealth || operation['x-roles'].includes(role);
+    const { complaintId = 'complaint-1', ...input } = fixtures[operation.operationId];
     const response = await app.inject({ method: operation.method.toUpperCase(),
-      url: operation.path.replace('{complaintId}', 'complaint-1'),
-      headers: user ? { 'x-demo-user': user } : {}, ...fixtures[operation.operationId] });
+      url: operation.path.replace('{complaintId}', complaintId),
+      headers: user ? { 'x-demo-user': user } : {}, ...input });
     // Contract and access.md distinguish missing identity (401) from a known
     // role lacking permission (403). Using 403 for both would hide that rule.
     const expected = user === null && !publicHealth ? 401 : allowed ? Number(Object.keys(operation.responses).find(code => /^2\d\d$/.test(code))) : 403;
