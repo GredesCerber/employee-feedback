@@ -43,8 +43,12 @@ function RoleRoute({ role, children }: { role: Role | Role[]; children: ReactNod
   // Если роль только что сменили и запрошенный ранее адрес ей доступен, идём на него, иначе на домашнюю страницу роли.
   if ((Array.isArray(role) ? role : [role]).includes(session.role)) return children;
   // Открытая карточка обращения сохраняется при смене роли: /queue/:id ↔ /my/:id (#203).
-  const target = cardPath(location.pathname, session.role) ?? returnPath(location.state, session.role) ?? home[session.role];
-  return <Navigate to={target} replace state={{ from: `${location.pathname}${location.search}` }} />;
+  const cardTarget = cardPath(location.pathname, session.role);
+  const savedTarget = returnPath(location.state, session.role);
+  const target = cardTarget ?? savedTarget ?? home[session.role];
+  const required = Array.isArray(role) ? role : [role];
+  const defaultLanding = (location.state as { defaultLanding?: unknown } | null)?.defaultLanding === true;
+  return <Navigate to={target} replace state={!cardTarget && !savedTarget && !defaultLanding ? { from: `${location.pathname}${location.search}`, accessNotice: { required, forRole: session.role } } : null} />;
 }
 
 /** Адрес, который запрашивали до редиректа, если новая роль имеет к нему доступ. */
@@ -53,6 +57,15 @@ function returnPath(state: unknown, next: Role): string | undefined {
   if (typeof from !== 'string') return undefined;
   const allowed = navigation[next].some(item => from === item.path || from.startsWith(`${item.path}/`) || from.startsWith(`${item.path}?`));
   return allowed ? from : undefined;
+}
+
+/** Required roles come only from known routes, never from a URL or history state. */
+function requiredForPath(path: string): Role[] | undefined {
+  if (path === '/my' || /^\/my\/[^/]+\/?$/.test(path) || path === '/submit') return ['employee'];
+  if (path === '/queue' || /^\/queue\/[^/]+\/?$/.test(path)) return ['manager'];
+  if (path === '/dashboard') return ['manager', 'admin'];
+  if (path === '/summary') return ['admin'];
+  return undefined;
 }
 
 /** Карточка обращения у каждой роли своя: сотрудник видит её на /my/:id, руководитель — на /queue/:id. */
@@ -74,10 +87,24 @@ function Shell() {
   const theme = useTheme();
   const motion = useDesignMotion();
   const [signalSlot, setSignalSlot] = useState<HTMLDivElement | null>(null);
+  const state = location.state as { from?: unknown; defaultLanding?: boolean; accessNotice?: { required?: unknown; forRole?: unknown } } | null;
+  const required = state?.accessNotice?.required;
+  const validRoles = Array.isArray(required) && (required.join(',') === 'employee' || required.join(',') === 'manager' || required.join(',') === 'admin' || required.join(',') === 'manager,admin') && !required.includes(role);
+  const noticeRoles = validRoles && state?.accessNotice?.forRole === role && location.pathname === home[role] ? required as Role[] : [];
+  const noticeKey = noticeRoles.includes('manager') && noticeRoles.includes('admin') ? 'Эта страница доступна руководителю или администратору.'
+    : noticeRoles.includes('manager') ? 'Эта страница доступна руководителю.'
+      : noticeRoles.includes('admin') ? 'Эта страница доступна администратору.' : 'Эта страница доступна сотруднику.';
+  const homeLabel: Record<Role, string> = { employee: 'Перейти к моим обращениям', manager: 'Перейти к очереди обращений', admin: 'Перейти к сводке' };
+
   function switchRole(next: string) {
     if (next !== 'employee' && next !== 'manager' && next !== 'admin') return;
+    const cardTarget = cardPath(location.pathname, next);
+    const savedTarget = returnPath(location.state, next);
+    const target = cardTarget ?? savedTarget ?? home[next];
+    const required = requiredForPath(location.pathname);
+    const accessNotice = !cardTarget && !savedTarget && !state?.defaultLanding && required && !required.includes(next) ? { required, forRole: next } : undefined;
     setRole(next);
-    navigate(cardPath(location.pathname, next) ?? returnPath(location.state, next) ?? home[next], { replace: true });
+    navigate(target, { replace: true, state: accessNotice ? { accessNotice, from: `${location.pathname}${location.search}` } : null });
   }
   return <div className="app-shell">
     <a className="skip-link" href="#main">{t("Перейти к содержимому")}</a>
@@ -97,9 +124,13 @@ function Shell() {
       {/* Колокольчик стоит в DOM после меню (порядок Tab «шапка → меню» не меняется), а в шапку выводится стилями. */}
       {role !== 'admin' && <NotificationBell key={`bell-${role}`} role={role} />}
       <main id="main" tabIndex={-1} key={role}>
+        {noticeRoles.length > 0 && <div className="demo-hint" role="status" aria-label={t('Ограничение доступа')}>
+          <p>{t(noticeKey)}</p>
+          <button type="button" onClick={() => navigate(home[role], { replace: true, state: typeof state?.from === 'string' ? { from: state.from } : null })}>{t(homeLabel[role])}</button>
+        </div>}
         {hints.enabled && <DemoHint />}
         <CompletionSlot.Provider value={signalSlot}><Routes>
-          <Route path="/" element={<Navigate to={home[role]} replace />} />
+          <Route path="/" element={<Navigate to={home[role]} replace state={{ defaultLanding: true }} />} />
           <Route path="/my" element={<RoleRoute role="employee"><MyComplaintsPage /></RoleRoute>} />
           <Route path="/my/:complaintId" element={<RoleRoute role="employee"><ComplaintPage /></RoleRoute>} />
           <Route path="/submit" element={<RoleRoute role="employee"><SubmitPage /></RoleRoute>} />
