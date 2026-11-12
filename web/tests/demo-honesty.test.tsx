@@ -13,6 +13,7 @@ const repo = (path: string) => existsSync(resolve(path)) ? resolve(path) : resol
 const read = (path: string) => readFileSync(repo(path), 'utf8');
 
 beforeEach(() => {
+  sessionStorage.clear(); // черновик формы подачи (#312 A2) не переходит между тестами
   try { localStorage.clear(); } catch { /* jsdom always has storage */ }
   vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:3000');
   vi.stubGlobal('fetch', vi.fn(async (request: Request) => {
