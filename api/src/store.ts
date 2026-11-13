@@ -1,7 +1,8 @@
 import type { Category, Complaint, ReferenceData, User } from './model.js';
 import { seedComplaints, seedReferenceData, seedUsers } from './seed.js';
 import { FilePersistence } from './persistence.js';
-import type { DatabasePersistence } from './pg-persistence.js';
+import type { DatabasePersistence, DirectorySnapshot } from './pg-persistence.js';
+import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 
 /** Isolated demo memory store. Restart deliberately reloads the immutable seed. */
 export class ComplaintStore {
@@ -24,13 +25,43 @@ export class ComplaintStore {
     if (persistFile !== undefined && !database) {
       this.persistence = new FilePersistence(persistFile);
       for (const item of this.persistence.load() ?? []) this.records.set(item.id, structuredClone(item));
+      this.directoryFile = `${persistFile}.directory.json`;
+      try {
+        if (existsSync(this.directoryFile)) this.applyDirectory(JSON.parse(readFileSync(this.directoryFile, 'utf8')) as DirectorySnapshot);
+      } catch { /* a broken directory file falls back to the seed directory */ }
     }
+  }
+
+  private directoryFile?: string;
+  private directoryDirty: { snapshot: DirectorySnapshot | null } | null = null;
+
+  private applyDirectory(snapshot: DirectorySnapshot): void {
+    if (!Array.isArray(snapshot.users) || !Array.isArray(snapshot.categories) || !Array.isArray(snapshot.inactive)) return;
+    this.userList = structuredClone(snapshot.users);
+    this.inactive.clear();
+    for (const id of snapshot.inactive) this.inactive.add(id);
+    this.categoryList = structuredClone(snapshot.categories);
+  }
+
+  /** Persist the directory after an administrator change; `null` (reset) removes stored changes. */
+  private persistDirectory(reset = false): void {
+    const snapshot: DirectorySnapshot | null = reset ? null : {
+      users: structuredClone(this.userList), inactive: [...this.inactive], categories: structuredClone(this.categoryList) };
+    if (this.directoryFile) {
+      try {
+        if (snapshot === null) rmSync(this.directoryFile, { force: true });
+        else { writeFileSync(`${this.directoryFile}.tmp`, JSON.stringify(snapshot)); renameSync(`${this.directoryFile}.tmp`, this.directoryFile); }
+      } catch (error) { this.writeError = error; }
+    }
+    if (this.database?.saveDirectory) { this.directoryDirty = { snapshot }; void this.flush(); }
   }
 
   /** Load stored complaints from the database; call before seed(). */
   async hydrate(): Promise<void> {
     if (!this.database) return;
     for (const item of await this.database.load()) this.records.set(item.id, structuredClone(item));
+    const directory = await this.database.loadDirectory?.();
+    if (directory) this.applyDirectory(directory);
   }
 
   /** Writes every pending complaint; failures stay pending and are retried (next write, flush or timer). */
@@ -43,6 +74,18 @@ export class ComplaintStore {
 
   private async drain(): Promise<void> {
     const database = this.database!;
+    while (this.directoryDirty && database.saveDirectory) {
+      const pending = this.directoryDirty;
+      try {
+        await database.saveDirectory(pending.snapshot);
+        if (this.directoryDirty === pending) this.directoryDirty = null;
+        this.writeError = null;
+      } catch (error) {
+        this.writeError = error;
+        this.scheduleRetry();
+        return;
+      }
+    }
     for (const [id, item] of [...this.dirty]) {
       if (this.resetting) return;
       try {
@@ -92,6 +135,7 @@ export class ComplaintStore {
     while (this.userList.some(user => user.id === `${input.role}-${n}`)) n += 1;
     const user: User = { id: `${input.role}-${n}`, name: input.name, role: input.role, departmentId: input.departmentId };
     this.userList.push(user);
+    this.persistDirectory();
     return { ...structuredClone(user), active: true };
   }
   updateUser(id: string, patch: { name?: string; role?: User['role']; departmentId?: string; active?: boolean }): (User & { active: boolean }) | undefined {
@@ -105,12 +149,14 @@ export class ComplaintStore {
     if (user.role !== 'manager' || this.inactive.has(id)) {
       for (const category of this.categoryList) if (category.assigneeId === id) category.assigneeId = null;
     }
+    this.persistDirectory();
     return { ...structuredClone(user), active: !this.inactive.has(id) };
   }
   updateCategory(id: string, patch: { assigneeId?: string | null; dueInDays?: number; name?: string }): Category | undefined {
     const category = this.categoryList.find(candidate => candidate.id === id);
     if (!category) return undefined;
     Object.assign(category, patch);
+    this.persistDirectory();
     return structuredClone(category);
   }
   private resetDirectory(): void {
@@ -164,13 +210,14 @@ export class ComplaintStore {
       this.retryTimer = null;
       this.writeError = null;
       this.resetDirectory();
+      this.persistDirectory(true);
       this.records.clear();
       for (const item of seed) this.records.set(item.id, structuredClone(item));
       return seed.length;
     } finally {
       this.resetting = false;
       // A failed replacement keeps the existing memory and pending writes.
-      if (this.dirty.size > 0) void this.flush();
+      if (this.dirty.size > 0 || this.directoryDirty) void this.flush();
     }
   }
   get(id: string): Complaint | undefined {

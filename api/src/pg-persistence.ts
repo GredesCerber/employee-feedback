@@ -1,5 +1,8 @@
 import pg from 'pg';
-import type { Complaint } from './model.js';
+import type { Category, Complaint, User } from './model.js';
+
+/** Users, deactivation flags and routing rules edited by an administrator; survives restarts. */
+export interface DirectorySnapshot { users: User[]; inactive: string[]; categories: Category[] }
 
 /** Database storage behind the in-memory cache (the cache stays the source for reads). */
 export interface DatabasePersistence {
@@ -7,6 +10,9 @@ export interface DatabasePersistence {
   save(item: Complaint): Promise<void>;
   /** Atomically replace all stored complaints (demo reset). */
   replaceAll(items: Complaint[]): Promise<void>;
+  /** Optional: directory (users and category rules) storage. */
+  loadDirectory?(): Promise<DirectorySnapshot | null>;
+  saveDirectory?(snapshot: DirectorySnapshot | null): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -27,7 +33,21 @@ export async function createPgPersistence(connectionString: string): Promise<Dat
   });
   await pool.query(`CREATE TABLE IF NOT EXISTS complaints (
     id text PRIMARY KEY, data jsonb NOT NULL, updated_at timestamptz NOT NULL DEFAULT now())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS app_state (
+    key text PRIMARY KEY, data jsonb NOT NULL, updated_at timestamptz NOT NULL DEFAULT now())`);
   return {
+    async loadDirectory() {
+      const { rows } = await pool.query<{ data: DirectorySnapshot }>(`SELECT data FROM app_state WHERE key = 'directory'`);
+      return rows[0]?.data ?? null;
+    },
+    async saveDirectory(snapshot) {
+      if (snapshot === null) { await pool.query(`DELETE FROM app_state WHERE key = 'directory'`); return; }
+      await pool.query(
+        `INSERT INTO app_state (key, data) VALUES ('directory', $1::jsonb)
+         ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`,
+        [JSON.stringify(snapshot)],
+      );
+    },
     async load() {
       const { rows } = await pool.query<{ data: Complaint }>('SELECT data FROM complaints');
       return rows.map(row => row.data);

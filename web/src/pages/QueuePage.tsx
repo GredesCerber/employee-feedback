@@ -66,6 +66,16 @@ function filtersToUrl(filters: Filters) {
   return params;
 }
 
+function readQueueOffset(key: string): number {
+  try {
+    const value = Number(sessionStorage.getItem(`queue-offset:${key}`));
+    return Number.isInteger(value) && value > 0 ? value : 0;
+  } catch { return 0; }
+}
+function saveQueueOffset(key: string, value: number) {
+  try { sessionStorage.setItem(`queue-offset:${key}`, String(value)); } catch { /* память страницы не обязательна */ }
+}
+
 function filtersToQuery(filters: Filters, offset: number): Query {
   return { limit: 20, offset, ...filterParams(filters) } as Query;
 }
@@ -110,9 +120,22 @@ export default function QueuePage() {
   const urlKey = searchParams.toString();
   const applied = useMemo(() => filtersFromUrl(new URLSearchParams(urlKey), reference.data), [urlKey, reference.data]);
   const [filters, setFilters] = useState(applied);
-  useEffect(() => { setFilters(applied); }, [applied]);
-  const [offset, setOffset] = useState(0);
-  useEffect(() => { setOffset(0); }, [urlKey]);
+  // Поиск меняет только q: неприменённый выбор в форме фильтров при этом не сбрасываем (UX-03).
+  const previousApplied = useRef(applied);
+  useEffect(() => {
+    const before = previousApplied.current;
+    previousApplied.current = applied;
+    const onlySearchChanged = JSON.stringify({ ...before, q: '' }) === JSON.stringify({ ...applied, q: '' });
+    setFilters(current => (onlySearchChanged ? { ...current, q: applied.q } : applied));
+  }, [applied]);
+  // Страница списка запоминается на время сессии, чтобы возврат из карточки вёл на ту же страницу (UX-04).
+  const [offset, setOffsetState] = useState(() => readQueueOffset(urlKey));
+  const setOffset = useCallback((value: number) => { setOffsetState(value); saveQueueOffset(urlKey, value); }, [urlKey]);
+  const firstUrlKey = useRef(true);
+  useEffect(() => {
+    if (firstUrlKey.current) { firstUrlKey.current = false; return; }
+    setOffsetState(0); saveQueueOffset(urlKey, 0);
+  }, [urlKey]);
   // Поиск: поле живёт отдельно от формы фильтров и попадает в адрес через 300 мс после последнего символа.
   const [search, setSearch] = useState(applied.q);
   useEffect(() => { setSearch(current => (current.trim() === applied.q ? current : applied.q)); }, [applied.q]);

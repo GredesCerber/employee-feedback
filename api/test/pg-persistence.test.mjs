@@ -15,7 +15,7 @@ function installFakePool(t, { failInsertId } = {}) {
       const text = sql.replace(/\s+/g, ' ').trim();
       state.statements.push(text);
       const target = this.tx ?? state.rows;
-      if (text.startsWith('CREATE TABLE IF NOT EXISTS complaints')) return { rows: [] };
+      if (text.startsWith('CREATE TABLE IF NOT EXISTS complaints') || text.startsWith('CREATE TABLE IF NOT EXISTS app_state')) return { rows: [] };
       if (text === 'BEGIN') { this.tx = new Map(state.rows); return { rows: [] }; }
       if (text === 'COMMIT') { state.rows = this.tx; this.tx = null; return { rows: [] }; }
       if (text === 'ROLLBACK') { this.tx = null; return { rows: [] }; }
