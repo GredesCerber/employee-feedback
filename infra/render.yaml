@@ -26,4 +26,4 @@ services:
         sync: false
       # Таймаут одного обращения к провайдеру, мс (500..30000).
       - key: AI_TIMEOUT_MS
-        value: "5000"
+        value: "15000"

@@ -52,6 +52,18 @@ export function createCompatClassifier(config: CompatProviderConfig, timeoutMs: 
       } catch (error) {
         throw new CompatError(controller.signal.aborted ? `${config.kind}: timeout` : `${config.kind}: connection error`, { cause: error instanceof Error ? error.name : undefined });
       }
+      // A transient 5xx (Gemini 503 "overloaded") gets one quick retry inside the same time budget; the chain then moves on.
+      if (response.status >= 500 && !controller.signal.aborted) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        try {
+          response = await fetchImpl(url, { method: 'POST', signal: controller.signal,
+            headers: { 'content-type': 'application/json', authorization: `Bearer ${config.apiKey}` },
+            body: JSON.stringify({ model, temperature: 0, max_tokens: limits.maxTokens ?? 4096, response_format: { type: 'json_object' },
+              messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }) });
+        } catch (error) {
+          throw new CompatError(controller.signal.aborted ? `${config.kind}: timeout` : `${config.kind}: connection error`, { cause: error instanceof Error ? error.name : undefined });
+        }
+      }
       if (!response.ok) throw new CompatError(`${config.kind}: HTTP ${response.status}`);
       let body: unknown;
       try { body = await response.json(); } catch { throw new CompatError(`${config.kind}: answer is not JSON`); }

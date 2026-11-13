@@ -87,3 +87,21 @@ test('без ключей ИИ выключен и сеть не нужна', as
   assert.equal(ai.llmEnabled, false);
   assert.deepEqual(ai.providers, []);
 });
+
+test('Gemini 503 один раз и затем отвечает: запрос повторяется, второй провайдер не нужен', async () => {
+  let gemini = 0;
+  const { fetch, calls } = recorder({
+    'generativelanguage.googleapis.com': () => (++gemini === 1 ? new Response('overloaded', { status: 503 }) : reply({ categoryId: 'it' })),
+    'api.groq.com': () => reply({ categoryId: 'training' }),
+  });
+  const result = await createAiProvider({ compat, fetch }).suggestCategory(TEXT, references);
+  assert.deepEqual([result.source, result.category?.id], ['llm', 'it']);
+  assert.equal(calls.filter(call => call.host === 'api.groq.com').length, 0);
+});
+
+test('Gemini стабильно отдаёт 503: после повтора отвечает Groq', async () => {
+  const { fetch, calls } = recorder({ 'generativelanguage.googleapis.com': () => new Response('overloaded', { status: 503 }), 'api.groq.com': () => reply({ categoryId: 'training' }) });
+  const result = await createAiProvider({ compat, fetch }).suggestCategory(TEXT, references);
+  assert.deepEqual([result.source, result.category?.id], ['llm', 'training']);
+  assert.equal(calls.filter(call => call.host === 'generativelanguage.googleapis.com').length, 2);
+});

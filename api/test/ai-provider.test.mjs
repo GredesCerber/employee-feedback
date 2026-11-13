@@ -177,7 +177,7 @@ test('149 таймаут вызова LLM: ответ строят правил�
   assert.equal(calls.length, 1);
   assert.ok(Date.now() - started < 2500, 'таймаут должен сработать быстро');
   assert.ok(log().split('\n').filter(Boolean).some(line => JSON.parse(line).level === 40));
-  assert.equal(createAiProvider({ apiKey: FAKE_KEY }).timeoutMs, 3000, 'таймаут по умолчанию 3 с');
+  assert.equal(createAiProvider({ apiKey: FAKE_KEY }).timeoutMs, 15000, 'таймаут по умолчанию 15 с (у моделей с рассуждением 3 с мало)');
 });
 
 test('149 упавший LLM не ломает записанные примеры: остаётся demo-fixture', async t => {
