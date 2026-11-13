@@ -111,3 +111,16 @@ describe('#115 queue filters in the address bar', () => {
     expect((screen.getByLabelText('Статус') as HTMLSelectElement).value).toBe('');
   });
 });
+
+describe('UX-03 поиск не стирает неприменённый выбор в форме фильтров', () => {
+  it('keeps the chosen category while the search text is applied', async () => {
+    const user = renderAt('/');
+    await user.selectOptions(screen.getByLabelText('Демонстрационная роль'), 'manager');
+    await screen.findByRole('link', { name: 'A-999' });
+    await user.selectOptions(screen.getByLabelText('Категория'), 'no_rule_demo');
+    await user.type(screen.getByRole('searchbox'), 'A-999');
+    await waitFor(() => expect(search().get('q')).toBe('A-999'), { timeout: 3000 });
+    expect((screen.getByLabelText('Категория') as HTMLSelectElement).value).toBe('no_rule_demo');
+    expect(search().get('categoryId')).toBeNull();
+  });
+});
