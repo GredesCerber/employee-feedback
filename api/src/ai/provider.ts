@@ -8,7 +8,7 @@ import { compatConfigsFromEnv, timeoutFromEnv, CompatError, createCompatClassifi
 import { hasDigestFacts, templateDigest, type DigestContent, type DigestFacts } from './digest.js';
 
 export const DEFAULT_AI_MODEL = 'claude-haiku-5-5';
-export const DEFAULT_AI_TIMEOUT_MS = 3000;
+export const DEFAULT_AI_TIMEOUT_MS = 15_000;
 
 export interface CategorySuggestion {
   category: { id: string; name: string } | null;

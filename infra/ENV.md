@@ -33,7 +33,7 @@
 | `DEMO_BOT_INTERVAL_S` | `api/src/demo-bot.ts`: пауза между ходами ботов, секунды | 25 | нет | используется |
 | `DEMO_BOT_MAX_SIMULATED` | `api/src/demo-bot.ts`: потолок имитированных обращений | 60 | нет | используется |
 | `SEED_RELATIVE_DATES` | `api/src/seed.ts`: при значении `1` даты 20 seed-обращений считаются от начала текущего дня (UTC): 4 открытых просрочены, у остальных срок в будущем; `infra/run-demo.mjs`, `infra/hosted.Dockerfile` и `infra/render.yaml` задают `1` | не задана (фиксированные даты от 1 ноября 2026) | нет | используется |
-| `ANTHROPIC_API_KEY` | `api/src/ai/provider.ts` (#149): ключ Anthropic для живой подсказки категории; при ошибке или таймауте (3 с) ответ строят правила слов; в журнал и ответы не попадает; `api/.env.example` | пусто (ИИ выключен, сети нет: записанные примеры и правила слов) | нет | используется |
+| `ANTHROPIC_API_KEY` | `api/src/ai/provider.ts` (#149): ключ Anthropic для живой подсказки категории; при ошибке или таймауте (15 с) ответ строят правила слов; в журнал и ответы не попадает; `api/.env.example` | пусто (ИИ выключен, сети нет: записанные примеры и правила слов) | нет | используется |
 | `AI_MODEL` | `api/src/ai/provider.ts` (#149): модель Claude для подсказки категории; `api/.env.example` | `claude-haiku-5-5` | нет | используется |
 | `GEMINI_API_KEY` | `api/src/ai/openai-compatible.ts`: ключ Google Gemini (OpenAI-совместимый API), первый в ИИ-цепочке для подсказки категории, сводки и перевода; в журнал и ответы не попадает | пусто | нет | используется |
 | `GEMINI_MODEL` | `api/src/ai/openai-compatible.ts`: модель Gemini | `gemini-3.8-flash` | нет | используется |
@@ -43,7 +43,7 @@
 | `AI_FALLBACK_PROVIDER` | `api/src/ai/openai-compatible.ts`: `xai` или `groq`; без значения выбирается провайдер, для которого задан ключ (сначала xAI) | по ключу | нет | используется |
 | `AI_FALLBACK_MODEL` | `api/src/ai/openai-compatible.ts`: модель второго провайдера | `grok-3-mini` (xAI), `openai/gpt-oss-120b` (Groq) | нет | используется |
 | `AI_FALLBACK_BASE_URL` | `api/src/ai/openai-compatible.ts`: адрес второго провайдера (шлюз или прокси) | стандартный адрес провайдера | нет | используется |
-| `AI_TIMEOUT_MS` | `api/src/ai/provider.ts`: таймаут одного обращения к провайдеру, 500–30000 мс; при сбое переходим к следующему провайдеру, затем к правилам без ИИ | 3000 | нет | используется |
+| `AI_TIMEOUT_MS` | `api/src/ai/provider.ts`: таймаут одного обращения к провайдеру, 500–30000 мс; при сбое переходим к следующему провайдеру, затем к правилам без ИИ | 15000 | нет | используется |
 | `DEMO_API_PORT` | `infra/serve-demo.mjs`: порт API, на который проксируется `/api`; задаёт `infra/run-demo.mjs` | выбирает `infra/run-demo.mjs` | нет | используется |
 | `DEMO_WEB_PORT` | `infra/serve-demo.mjs`: порт собранного веба; задаёт `infra/run-demo.mjs` | выбирает `infra/run-demo.mjs` | нет | используется |
 | `WEB_PORT` | `docker-compose.yml`: внешний порт веба в Docker | `8080` | нет | используется |
