@@ -7,6 +7,8 @@ import { once } from 'node:events';
 import { childEnv, seedResetUnset } from './demo-env.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
+// Локальный .env (он в .gitignore) подхватывается без dotenv; уже заданные переменные сильнее.
+try { process.loadEnvFile(join(root, '.env')); } catch { /* файла .env нет */ }
 const help = `Запуск: node infra/run-demo.mjs [флаги]
 Node >=22.12.0; Docker не нужен.
 --api-port N   Порт API (по умолчанию свободный)
