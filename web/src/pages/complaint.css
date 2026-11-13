@@ -78,6 +78,8 @@
 .copy-number-status { font-size: var(--font-size-sm); color: var(--color-text-muted); }
 .copy-number-status:empty { display: none; }
 .detail-header .copy-number { margin-left: auto; }
+/* Сенсорная область на узком экране не меньше 40 px, как у остальных кнопок (#329). */
+@media (max-width: 560px) { .copy-number-button { min-height: 40px; } }
 .what-next { margin-top: 24px; padding: 18px 20px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); overflow-wrap: anywhere; }
 .what-next > :is(h2, h3) { margin: 0 0 6px; }
 .what-next .registration-meta { margin: 12px 0 0; }

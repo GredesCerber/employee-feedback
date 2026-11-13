@@ -50,6 +50,11 @@ export default function ComplaintPage() {
   const currentStep = (location.state as { demoStep?: number } | null)?.demoStep;
   useEffect(() => {
     if (role !== 'employee' || demoStep === undefined || currentStep === demoStep) return;
+    // react-router v7 меняет адрес в переходе (transition): если карточка догрузилась, пока уходим со страницы
+    // (например, «Мои обращения» после смены роли), этот рендер ещё видит старый адрес. Замена на него
+    // перетёрла бы новый переход и вернула карточку (#329), поэтому пишем шаг только в актуальную запись истории.
+    const latestKey = (window.history.state as { key?: unknown } | null)?.key;
+    if (typeof latestKey === 'string' && latestKey !== location.key) return;
     navigate(location, { replace: true, state: { ...(location.state as object | null), demoStep } });
   }, [role, demoStep, currentStep, location, navigate]);
   const onUpdated = useCallback((message?: string) => {
