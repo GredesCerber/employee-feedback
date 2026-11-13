@@ -88,15 +88,33 @@ export function createCompatClassifier(config: CompatProviderConfig, timeoutMs: 
   };
 }
 
-/** Provider settings from the environment; empty when no key is set. Never logs or returns anything but names. */
+/** The provider a key belongs to by its public prefix (gsk_ Groq, xai- xAI, AIza Google); undefined when unknown. */
+export function kindFromKey(key: string): CompatKind | undefined {
+  if (key.startsWith('gsk_')) return 'groq';
+  if (key.startsWith('xai-')) return 'xai';
+  if (key.startsWith('AIza')) return 'gemini';
+  return undefined;
+}
+
+/**
+ * Provider settings from the environment; empty when no key is set. Never logs or returns anything but names.
+ * A key put into the "wrong" variable (a gsk_ key in XAI_API_KEY) is still routed to its own provider.
+ */
 export function compatConfigsFromEnv(env: NodeJS.ProcessEnv = process.env): CompatProviderConfig[] {
+  const keys = new Map<CompatKind, string>();
+  for (const [name, fallbackKind] of [['GEMINI_API_KEY', 'gemini'], ['XAI_API_KEY', 'xai'], ['GROQ_API_KEY', 'groq']] as const) {
+    const key = env[name]?.trim();
+    if (!key) continue;
+    const kind = kindFromKey(key) ?? fallbackKind;
+    if (!keys.has(kind)) keys.set(kind, key);
+  }
   const configs: CompatProviderConfig[] = [];
-  const gemini = env.GEMINI_API_KEY?.trim();
+  const gemini = keys.get('gemini');
   if (gemini) configs.push({ kind: 'gemini', apiKey: gemini, model: env.GEMINI_MODEL?.trim() || undefined });
   const wanted = env.AI_FALLBACK_PROVIDER?.trim().toLowerCase();
-  const kind: CompatKind | undefined = wanted === 'xai' || wanted === 'groq' ? wanted
-    : env.XAI_API_KEY?.trim() ? 'xai' : env.GROQ_API_KEY?.trim() ? 'groq' : undefined;
-  const key = kind === 'xai' ? env.XAI_API_KEY?.trim() : kind === 'groq' ? env.GROQ_API_KEY?.trim() : undefined;
+  const kind: CompatKind | undefined = (wanted === 'xai' || wanted === 'groq') && keys.has(wanted) ? wanted
+    : keys.has('xai') ? 'xai' : keys.has('groq') ? 'groq' : undefined;
+  const key = kind ? keys.get(kind) : undefined;
   if (kind && key) configs.push({ kind, apiKey: key, model: env.AI_FALLBACK_MODEL?.trim() || undefined, baseUrl: env.AI_FALLBACK_BASE_URL?.trim() || undefined });
   return configs;
 }
