@@ -10,7 +10,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
-    "test": "npm run build && node --test ../tests/acceptance/*-api-*.test.mjs test/*.test.mjs"
+    "test": "npm run build && node --import ./test/no-network.mjs --test ../tests/acceptance/*-api-*.test.mjs test/*.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.8.0",
