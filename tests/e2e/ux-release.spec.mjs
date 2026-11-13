@@ -53,7 +53,7 @@ test('UX: interface languages preserve form values, role changes and reload; the
   await expect(page.getByRole('heading', { name: 'Request queue', exact: true })).toBeVisible();
   await page.reload();
   await expect(selector).toHaveValue('en');
-  await page.locator('.theme-selector select').selectOption('dark');
+  await page.getByRole('button', { name: 'Theme: System default' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
