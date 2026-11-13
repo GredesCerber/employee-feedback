@@ -2,11 +2,13 @@ import { useI18n } from '../i18n';
 import LanguageSelect from '../i18n/LanguageSelect';
 import { demoAccounts } from './session';
 import type { Account, Role } from './session';
+import { useTheme } from '../features/theme';
 
 const roleTitle: Record<Role, string> = { employee: 'Сотрудник', manager: 'Руководитель', admin: 'Администратор' };
 
 /** Экран условного входа: выбор роли без пароля (имитация входа для демо). */
 export default function LoginPage({ onLogin, accounts = demoAccounts }: { onLogin: (userId: string) => void; accounts?: Account[] }) {
+  useTheme();
   const { t } = useI18n();
   return <main className="login-page" id="main">
     <section className="login-card" aria-labelledby="login-title">

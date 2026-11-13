@@ -4,10 +4,26 @@
 .summary-metrics:has(.summary-overdue) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .metric-card { display: flex; flex-direction: column; min-width: 0; gap: var(--space-1); padding: var(--space-4); overflow-wrap: anywhere; background: var(--color-surface-muted); border: 1px solid var(--color-border); border-radius: var(--radius-xl); }
 .metric-card h2 { font-size: var(--font-size-sm); margin: 0; font-weight: 600; }
-.metric-card .metric-value { order: -1; margin: 0 0 var(--space-1); font-size: clamp(21px, 2.6vw, 30px); line-height: 1.2; font-family: ui-monospace, Consolas, monospace; font-weight: 500; font-variant-numeric: tabular-nums; color: inherit; }
+.metric-card .metric-value { order: -1; margin: 0 0 var(--space-1); font-size: clamp(21px, 2.6vw, 30px); line-height: 1.2; font-weight: 700; font-variant-numeric: tabular-nums; color: inherit; }
 .metric-card .muted { font-size: var(--font-size-xs); margin: 0; }
 :is(.summary-metrics, .dashboard-tiles) > .metric-card:first-child { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
 :is(.summary-metrics, .dashboard-tiles) > .metric-card:first-child :is(h2, .muted) { color: inherit; }
+
+@media (hover: hover) and (pointer: fine) {
+  :is(.summary-metrics, .dashboard-tiles) > .metric-card:hover {
+    position: relative;
+    z-index: 1;
+    filter: brightness(1.12);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :is(.summary-metrics, .dashboard-tiles) > .metric-card {
+    transition: transform var(--motion-medium) var(--motion-ease), filter var(--motion-medium) ease, box-shadow var(--motion-medium) ease;
+  }
+  :is(.summary-metrics, .dashboard-tiles) > .metric-card:hover { transform: scale(1.025); }
+}
+
 .summary-sections { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: start; gap: var(--space-4); margin-top: var(--space-4); }
 /* Две независимые колонки: длинная таблица справа не растягивает ряд и не оставляет пустот слева. Справочник маршрутизации — во всю ширину. */
 .summary-column { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--space-4); min-width: 0; }
@@ -27,7 +43,7 @@
 .summary-chart { margin: 12px 0 20px; }
 .bar-chart-frame { width: 100%; min-width: 0; overflow: hidden; }
 /* Колонки сводки могут сужаться до ширины экрана: иначе SVG по умолчанию (640 px) растягивает их и даёт горизонтальную прокрутку. */
-.summary-sections > *, .summary-chart { min-width: 0; }
+.summary-table-panel, .summary-chart { min-width: 0; }
 .bar-chart { display: block; overflow: visible; }
 .bar-chart text { font-size: 14px; fill: var(--color-text); }
 .bar-chart .bar-value { font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -36,7 +52,7 @@
 .bar-fill { transform-box: fill-box; transform-origin: left center; }
 
 @media (prefers-reduced-motion: no-preference) {
-  :root:not([data-design-motion="off"]) [data-bar].is-revealed .bar-fill { animation: fill-chart-bar 720ms cubic-bezier(.2, .72, .2, 1) both; }
+  [data-bar].is-revealed .bar-fill { animation: fill-chart-bar 720ms cubic-bezier(.2, .72, .2, 1) both; }
   [data-bar].is-revealed:nth-of-type(2) .bar-fill { animation-delay: 45ms; }
   [data-bar].is-revealed:nth-of-type(3) .bar-fill { animation-delay: 90ms; }
   [data-bar].is-revealed:nth-of-type(4) .bar-fill { animation-delay: 135ms; }

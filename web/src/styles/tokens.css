@@ -3,6 +3,22 @@
  * Светлая тема — по умолчанию; тёмная — по prefers-color-scheme или по выбору в демо-панели (data-theme на <html>).
  * Контраст пар «текст/фон» ≥ 4.5:1 проверяет web/tests/tokens.test.ts.
  */
+@font-face {
+  font-family: Play;
+  src: url('/fonts/play/Play-Regular.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Play;
+  src: url('/fonts/play/Play-Bold.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
 
@@ -64,6 +80,7 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-9: 36px;
+  --header-min-height: 92px;
 
   /* Радиусы */
   --radius-sm: 5px;
@@ -73,8 +90,7 @@
   --radius-pill: 999px;
 
   /* Типографика */
-  --font-family: Inter, system-ui, sans-serif;
-  --font-mono: Consolas, 'Courier New', monospace;
+  --font-family: Play, system-ui, sans-serif;
   --font-size-xs: 12px;
   --font-size-sm: 13px;
   --font-size-md: 14px;
@@ -87,6 +103,11 @@
   --shadow-card: 0 1px 2px rgb(16 32 48 / 6%);
   /* #312: состояния кнопок, кольцо фокуса, подъём карточки */
   --color-primary-hover: #0f0f0f;
+  --color-quick-action-bg: #dedede;
+  --color-quick-action-fg: #0f0f0f;
+  --color-quick-action-hover-bg: #2b2b2b;
+  --color-white: #ffffff;
+  --color-quick-action-hover-fg: var(--color-white);
   --color-surface-hover: #e4e4e4;
   --color-surface-pressed: #d4d4d4;
   --color-focus-halo: #f2f2f2;

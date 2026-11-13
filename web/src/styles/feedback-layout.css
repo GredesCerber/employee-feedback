@@ -97,7 +97,23 @@
 .my-complaints-page .item-header { gap: 8px 12px; }
 .my-complaints-page .item-header .status-badge { margin-inline-start: auto; }
 .my-complaints-page .item-description { font-weight: 600; }
-.my-complaints-page .complaint-number { font-size: var(--font-size-md); }
+.my-complaints-page a.complaint-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 32px;
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--font-size-md);
+  text-decoration: none;
+}
+.my-complaints-page a.complaint-number:hover { background: var(--color-primary-hover); }
+.my-complaints-page a.complaint-number:focus-visible {
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-focus-halo);
+}
 .my-complaints-page .my-next-action {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(110px, auto);
@@ -129,6 +145,7 @@
   .submit-layout { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 720px) {
+  .my-complaints-page a.complaint-number { min-block-size: 44px; }
   .queue-page .filter-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .queue-list-header { display: none; }
   .queue-list { gap: 8px; margin-top: 10px; }

@@ -1,5 +1,5 @@
 import { useI18n, localeNames, referenceLabel } from '../i18n';
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useId, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSession } from '../app/session';
 import type { components } from '../api/client';
@@ -7,6 +7,7 @@ import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError } from '../features/complaint';
 import { BarChart, useContainerWidth } from './SummaryPage';
 import { CompletionSignal } from '../features/CompletionSignal';
+import { CountUp } from '../features/CountUp';
 import { useRevealOnView } from '../features/designMotion';
 import { EscalationBadge, escalatedCount } from '../features/escalation';
 import { ImpactPanel } from '../features/ImpactPanel';
@@ -67,7 +68,7 @@ function CountTable({ label, head, rows }: { label: string; head: string; rows: 
     <tbody>{rows.map(row => <tr key={row.key}><th scope="row">{row.name}</th><td>{number.format(row.count)}</td></tr>)}</tbody></table>;
 }
 
-function Tile({ id, title, value, note, to }: { id: string; title: string; value: string; note: string; to?: string }) {
+function Tile({ id, title, value, note, to }: { id: string; title: string; value: ReactNode; note: string; to?: string }) {
   const content = <><h2 id={id}>{title}</h2><p className="metric-value">{value}</p><p className="muted">{note}</p></>;
   return <section className="metric-card" aria-labelledby={id}>{to ? <Link className="metric-card-link" aria-label={title} to={to}>{content}</Link> : content}</section>;
 }
@@ -78,6 +79,8 @@ export default function DashboardPage() {
   const { t, locale } = useI18n();
   const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const { api, role } = useSession();
+  const count = (value: number) => number.format(Math.round(value));
+  const hourUnit = { ru: 'ч', en: 'h', kk: 'сағ' }[locale];
   const [params, setParams] = useSearchParams();
   const department = params.get('department')?.trim() ?? '';
   const categorySort = params.get('categorySort') === 'name' ? 'name' : 'count';
@@ -120,11 +123,11 @@ export default function DashboardPage() {
     {trends && totals && <>
       <CompletionSignal total={totals.total} closed={totals.closedCount} scope={department ? t("Выбранное подразделение") : undefined} />
       <div ref={revealPanel} className="dashboard-tiles reveal-panel">
-        <Tile id="dash-total" title={t("Всего обращений")} value={number.format(totals.total)} note={t("С учётом закрытых")} />
-        <Tile id="dash-open" title={t("Открытых")} value={number.format(totals.openCount)} note={`${t("Закрыто")} ${number.format(totals.closedCount)}`}
+        <Tile id="dash-total" title={t("Всего обращений")} value={<CountUp value={totals.total} format={count} />} note={t("С учётом закрытых")} />
+        <Tile id="dash-open" title={t("Открытых")} value={<CountUp value={totals.openCount} format={count} />} note={`${t("Закрыто")} ${number.format(totals.closedCount)}`}
           to={role === 'manager' ? `/queue?${new URLSearchParams({ status_group: 'open', ...(department ? { departmentId: department } : {}) })}` : undefined} />
-        <Tile id="dash-overdue" title={t("Просрочено")} value={number.format(totals.overdueCount)} note={t("Срок прошёл, решения нет")} to={role === 'manager' ? '/queue?overdue=1' : undefined} />
-        <Tile id="dash-resolution" title={t("Среднее время решения")} value={totals.averageResolutionHours === null ? t("Нет закрытых") : `${number.format(totals.averageResolutionHours)} ${locale === 'en' ? 'h' : locale === 'kk' ? t("сағ") : t("ч")}`}
+        <Tile id="dash-overdue" title={t("Просрочено")} value={<CountUp value={totals.overdueCount} format={count} />} note={t("Срок прошёл, решения нет")} to={role === 'manager' ? '/queue?overdue=1' : undefined} />
+        <Tile id="dash-resolution" title={t("Среднее время решения")} value={totals.averageResolutionHours === null ? t("Нет закрытых") : <CountUp value={totals.averageResolutionHours} format={value => number.format(value) + ' ' + hourUnit} />}
           note={t("От подачи до закрытия")} />
       </div>
       {empty && <p className="summary-empty" role="status">{t("Обращений пока нет — графики появятся после первой подачи.")}</p>}
@@ -157,8 +160,8 @@ export default function DashboardPage() {
                 {role === 'manager' ? <Link to={`/queue/${encodeURIComponent(item.id)}`}>{item.number}</Link> : <span className="overdue-number">{item.number}</span>}
                 <span className="muted">{referenceLabel(locale, 'category', item.categoryId, item.categoryName)}</span>
               </div>
-              <EscalationBadge overdueHours={item.overdueHours} />
-              <span className="overdue-hours"><span className="visually-hidden">{t("просрочено на")} </span>{number.format(Math.round(item.overdueHours))} {t("ч")}</span>
+              <div className="overdue-meta"><EscalationBadge overdueHours={item.overdueHours} />
+                <span className="overdue-hours"><span className="visually-hidden">{t("просрочено на")} </span>{number.format(Math.round(item.overdueHours))} {t("ч")}</span></div>
             </li>)}</ul>}
           {escalatedCount(trends.overdue) > 0 && <p role="status" className="escalation-summary"><strong>{t("Требуют эскалации: {count}", { count: number.format(escalatedCount(trends.overdue)) })}</strong> {t("Просрочка больше двух суток: вопрос передаётся руководителю направления, больше пяти суток — администратору.")}</p>}
           {role !== 'manager' && trends.overdue.length > 0 && <p className="muted">{t("Карточки открывает руководитель в очереди обращений.")}</p>}

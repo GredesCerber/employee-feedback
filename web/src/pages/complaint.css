@@ -20,6 +20,9 @@
 }
 .detail-record { display: grid; gap: 18px; }
 .detail-history > h2:first-child, .detail-layout .management-panel > h2:first-child { margin-top: 0; }
+.complaint-history { display: grid; gap: var(--space-2); margin-block-end: 0; padding: 0; list-style: none; }
+.complaint-history li { display: grid; gap: var(--space-1); }
+.complaint-history p { margin: 0; }
 .complaint-detail .metadata { margin: 0 0 20px; gap: 12px; }
 .complaint-detail .metadata dd { overflow-wrap: anywhere; }
 .complaint-detail .detail-copy > h2 { margin-top: 20px; }
@@ -65,8 +68,8 @@
   .status-step-text { align-items: flex-start; padding-top: 6px; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  :root:not([data-design-motion="off"]) .status-step.is-current .status-step-marker { animation: status-step-in var(--motion-medium) var(--motion-ease) both; }
-  :root:not([data-design-motion="off"]) .copy-number-status:not(:empty) { animation: notice-in var(--motion-medium) var(--motion-ease) both; }
+  .status-step.is-current .status-step-marker { animation: status-step-in var(--motion-medium) var(--motion-ease) both; }
+  .copy-number-status:not(:empty) { animation: notice-in var(--motion-medium) var(--motion-ease) both; }
 }
 @keyframes status-step-in { from { transform: scale(.82); opacity: .4; } to { transform: scale(1); opacity: 1; } }
 

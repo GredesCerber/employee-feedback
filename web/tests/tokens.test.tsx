@@ -98,23 +98,26 @@ describe('#106 theme switcher', () => {
   });
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); document.documentElement.removeAttribute('data-theme'); });
   const open = () => { const user = userEvent.setup(); const view = render(<MemoryRouter initialEntries={['/my']}><App /></MemoryRouter>); return { user, ...view }; };
+  const themeButton = (label: string) => screen.getByRole('button', { name: 'Тема: ' + label });
 
   it('follows the system by default and applies the chosen dark theme', async () => {
     const { user } = open();
     expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
-    await user.selectOptions(screen.getByLabelText('Тема'), 'dark');
+    await user.click(themeButton('Как в системе'));
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    await user.selectOptions(screen.getByLabelText('Тема'), 'light');
+    await user.click(themeButton('Тёмная'));
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    await user.click(themeButton('Светлая'));
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
   });
 
   it('remembers the choice in localStorage across reloads', async () => {
     const first = open();
-    await first.user.selectOptions(screen.getByLabelText('Тема'), 'dark');
+    await first.user.click(themeButton('Как в системе'));
     expect(localStorage.getItem('theme')).toBe('dark');
     first.unmount(); document.documentElement.removeAttribute('data-theme');
     open();
-    expect((screen.getByLabelText('Тема') as HTMLSelectElement).value).toBe('dark');
+    expect(themeButton('Тёмная')).toBeTruthy();
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   });
 
@@ -122,7 +125,7 @@ describe('#106 theme switcher', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('denied'); });
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('denied'); });
     const { user } = open();
-    await user.selectOptions(screen.getByLabelText('Тема'), 'dark');
+    await user.click(themeButton('Как в системе'));
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   });
 });

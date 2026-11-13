@@ -35,10 +35,10 @@ describe('#312 interaction polish: motion', () => {
     expect(outside).not.toMatch(/\banimation:|\btransition:|\btransform:/);
   });
 
-  it('turns motion off with the design-motion switch as well', () => {
-    const rules = motion.split('}').map(rule => rule.trim()).filter(rule => !rule.startsWith('@keyframes') && /\b(animation|transition|transform):/.test(rule));
-    expect(rules.length).toBeGreaterThan(3);
-    for (const rule of rules) expect(rule, rule).toMatch(/^:root:not\(\[data-design-motion='off'\]\)/);
+  it('keeps demo hints and removes the separate animation switch', () => {
+    render(<MemoryRouter initialEntries={['/my']}><App /></MemoryRouter>);
+    expect(screen.getByRole('checkbox', { name: 'Подсказки демо' })).toBeTruthy();
+    expect(screen.queryByRole('checkbox', { name: 'Анимации' })).toBeNull();
   });
 
   it('is loaded after the base styles so that its states win', () => {

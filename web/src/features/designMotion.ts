@@ -1,21 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
-const key = 'feedback:design-motion';
 const observers = new Map<boolean, IntersectionObserver>();
-
-export function useDesignMotion() {
-  const [enabled, setEnabled] = useState(() => {
-    try { return localStorage.getItem(key) !== 'off'; } catch { return true; }
-  });
-  useEffect(() => {
-    const root = document.documentElement;
-    if (enabled) delete root.dataset.designMotion;
-    else root.dataset.designMotion = 'off';
-    try { localStorage.setItem(key, enabled ? 'on' : 'off'); } catch { /* the setting still works in this tab */ }
-    return () => { delete root.dataset.designMotion; };
-  }, [enabled]);
-  return { enabled, setEnabled };
-}
 
 function viewportObserver(trackVisibility: boolean) {
   const existing = observers.get(trackVisibility);

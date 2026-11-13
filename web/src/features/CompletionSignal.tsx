@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { CompletionSlot } from './completionSlot';
+import { CountUp } from './CountUp';
 import { useRevealOnView } from './designMotion';
 import type { Complaint } from './complaint';
 import { localeNames, useI18n } from '../i18n';
@@ -32,7 +33,7 @@ export function CompletionSignal({ total, closed, scope }: { total: number; clos
         <circle className="completion-track" cx="80" cy="80" r="54" />
         <circle className="completion-progress" cx="80" cy="80" r="54" pathLength="100" strokeDasharray={`${percent} 100`} transform="rotate(-90 80 80)" />
       </svg>
-      <strong>{number.format(Math.round(percent))}<small>%</small></strong>
+      <strong><CountUp value={percent} format={value => number.format(Math.round(value))} /><small>%</small></strong>
     </div>
     <span>{t('{closed} из {total}', { closed: number.format(closed), total: number.format(total) })}</span>
     {scope && <span className="completion-scope">{scope}</span>}

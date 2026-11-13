@@ -122,7 +122,7 @@ export default function ComplaintPage() {
               <TranslatableText complaintId={item.id} field="comment" commentId={comment.id} text={comment.text} /><time dateTime={comment.createdAt}>{dateLabel(comment.createdAt, locale)}</time>
             </li>)}</ul>}
             <h2>{t("История обращения")}</h2>
-            <ol className="timeline">{item.history.map(event => <li key={event.id} ref={revealHistory} data-reveal-panel>
+            <ol className="complaint-history" role="list">{item.history.map(event => <li key={event.id} className="field-hint inline-note" ref={revealHistory} data-reveal-panel>
               <p className="preserve-lines">{systemText(locale, event.text)}{event.simulated && <> <ImitationBadge hint={t("создано демо-симулятором")} /></>}</p>
               <p className="muted">{event.actor ? ('id' in event.actor ? event.actor.name : t(event.actor.name)) : t('Система')} · <time dateTime={event.createdAt}>{dateLabel(event.createdAt, locale)}</time></p>
             </li>)}</ol>

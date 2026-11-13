@@ -1,4 +1,5 @@
 .map-picker-canvas { height: 300px; width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted); }
+.map-picker-canvas.leaflet-container { font-family: var(--font-family); }
 .map-picker-fields, .map-picker-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-3); }
 .map-picker-fields label { display: grid; gap: var(--space-1); }
 .map-picker-marker { background: var(--color-primary); border: 3px solid var(--color-on-primary); border-radius: var(--radius-pill); box-shadow: 0 0 0 2px var(--color-primary); }

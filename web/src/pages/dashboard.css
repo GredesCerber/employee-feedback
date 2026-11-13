@@ -32,14 +32,16 @@
 .dashboard-table tbody th { font-weight: 500; }
 .dashboard-table td, .dashboard-table thead th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .overdue-list { list-style: none; margin: var(--space-2) 0 0; padding: 0; }
-.overdue-list li { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); padding: var(--space-2) 0; }
+.overdue-list li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-2) 0; }
 .overdue-list li + li { border-top: 1px solid var(--color-border); }
-.overdue-info { display: grid; min-width: 0; overflow-wrap: anywhere; }
+.overdue-info { display: grid; flex: 1 1 92px; min-width: 0; overflow-wrap: anywhere; }
+.overdue-meta { display: grid; grid-template-columns: minmax(0, 1fr) 5ch; align-items: center; gap: var(--space-2); max-width: 100%; margin-inline-start: auto; }
+.overdue-meta .escalation-badge { justify-self: end; text-align: end; }
 .overdue-list a, .overdue-number { font-weight: 600; }
-.overdue-hours { flex: none; color: var(--color-danger); font-size: var(--font-size-sm); font-variant-numeric: tabular-nums; }
+.overdue-hours { grid-column: 2; text-align: end; color: var(--color-danger); font-size: var(--font-size-sm); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 @media (prefers-reduced-motion: no-preference) {
-  :root:not([data-design-motion="off"]) .chart-motion.is-revealed .line-series { animation: reveal-line 850ms cubic-bezier(.2, .72, .2, 1) both; }
+  .chart-motion.is-revealed .line-series { animation: reveal-line 850ms cubic-bezier(.2, .72, .2, 1) both; }
   @keyframes reveal-line { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
 }
 

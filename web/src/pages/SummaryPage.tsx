@@ -6,6 +6,7 @@ import { useSession } from '../app/session';
 import { requireData, useResource } from '../features/data';
 import { dateLabel, Loading, LoadError, typeLabels } from '../features/complaint';
 import { CompletionSignal } from '../features/CompletionSignal';
+import { ChartCountUp, CountUp } from '../features/CountUp';
 import { useRevealOnView } from '../features/designMotion';
 import { RoutingRules } from '../features/routingRules';
 import { buildSummaryCsv, isSummaryEmpty, summaryCsvFileName } from '../features/summaryCsv';
@@ -18,7 +19,7 @@ const hours = (value: number | null, locale: Locale) => value === null ? '—' :
 export type Bar = { label: string; value: number };
 
 const DEFAULT_WIDTH = 640, VALUE_WIDTH = 48, ROW = 34, BAR = 5, LABEL_LINE = 18;
-/** Оценка ширины подписи при 14 px (кириллица в Inter/system-ui ≈ 7.5 px на символ) и отступ до столбца. */
+/** Оценка ширины подписи Play при 14 px и отступ до столбца. */
 const labelWidth = (label: string) => Math.ceil(label.length * 7.5) + 16;
 
 /** Ширина контейнера в пикселях; без ResizeObserver (тесты, старые браузеры) — ширина по умолчанию. */
@@ -89,7 +90,8 @@ export function BarChart({ title, bars, format }: { title: string; bars: Bar[]; 
             : <text className="bar-label" x={labelColumn - 12} y={bar.y + ROW / 2} textAnchor="end" dominantBaseline="middle">{bar.label}</text>}
           <rect className="bar-track" x={left} y={barY} width={track} height={BAR} rx={BAR / 2} />
           <rect className="bar-fill" x={left} y={barY} width={filled} height={BAR} rx={BAR / 2} />
-          <text className="bar-value" x={width} y={stacked ? bar.y + 9 : barY + BAR / 2} textAnchor="end" dominantBaseline="middle">{number.format(bar.value)}</text>
+          <ChartCountUp className="bar-value" x={width} y={stacked ? bar.y + 9 : barY + BAR / 2} textAnchor="end" dominantBaseline="middle"
+            value={bar.value} format={Number.isInteger(bar.value) ? value => number.format(Math.round(value)) : number.format} />
         </g>;
       })}
     </svg>
@@ -101,6 +103,8 @@ export default function SummaryPage() {
   const { t, locale } = useI18n();
   const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const percent = new Intl.NumberFormat(localeNames[locale], { style: 'percent', maximumFractionDigits: 1 });
+  const count = (value: number) => number.format(Math.round(value));
+  const hourUnit = { ru: 'ч', en: 'h', kk: 'сағ' }[locale];
   const { api, role } = useSession();
   const queueHint = { ru: 'Очередь доступна руководителю', en: 'The queue is available to managers', kk: 'Кезек басшыға қолжетімді' }[locale];
   const load = useCallback(async () => requireData((await api.GET('/summary')).data), [api]);
@@ -169,10 +173,10 @@ export default function SummaryPage() {
         {resetMessage && (resetMessage.error ? <p role="alert">{resetMessage.text}</p> : <p role="status" className="muted">{resetMessage.text}</p>)}
       </div>
       <div ref={revealPanel} className="summary-metrics reveal-panel">
-        <section className="metric-card" aria-labelledby="summary-total"><h2 id="summary-total">{t("Всего обращений")}</h2><p className="metric-value">{number.format(summary.total)}</p><p className="muted">{t("За всё время")}</p></section>
-        <section className="metric-card" aria-labelledby="summary-closed"><h2 id="summary-closed">{t("Доля закрытых")}</h2><p className="metric-value">{percent.format(summary.closedShare)}</p><p className="muted">{t("Завершено")} {number.format(summary.closedCount)} {t("из")} {number.format(summary.total)}{t(". Включены реализованные, отклонённые и закрытые.")}</p></section>
-        <section className="metric-card" aria-labelledby="summary-response"><h2 id="summary-response">{t("Среднее время первого ответа")}</h2><p className="metric-value">{summary.averageFirstResponseHours === null ? t("Нет ответов") : `${number.format(summary.averageFirstResponseHours)} ч`}</p><p className="muted">{summary.respondedCount > 0 ? `По ${number.format(summary.respondedCount)} обращениям с первым ответом` : t("Показатель появится после первого ответа руководителя")}</p></section>
-        {summary.overdueCount !== undefined && <section className="metric-card summary-overdue" aria-labelledby="summary-overdue"><h2 id="summary-overdue">{t("Просрочено")}<span className="visually-hidden">: {number.format(summary.overdueCount)}</span></h2><p className="metric-value" aria-hidden="true">{number.format(summary.overdueCount)}</p><p className="muted">{t("Срок прошёл, решения нет.")}</p>{role === 'admin' ? <span className="muted">{queueHint}</span> : <Link to="/queue?overdue=1">{t("Открыть просроченные в очереди")}</Link>}</section>}
+        <section className="metric-card" aria-labelledby="summary-total"><h2 id="summary-total">{t("Всего обращений")}</h2><p className="metric-value"><CountUp value={summary.total} format={count} /></p><p className="muted">{t("За всё время")}</p></section>
+        <section className="metric-card" aria-labelledby="summary-closed"><h2 id="summary-closed">{t("Доля закрытых")}</h2><p className="metric-value"><CountUp value={summary.closedShare} format={percent.format} /></p><p className="muted">{t("Завершено")} {number.format(summary.closedCount)} {t("из")} {number.format(summary.total)}{t(". Включены реализованные, отклонённые и закрытые.")}</p></section>
+        <section className="metric-card" aria-labelledby="summary-response"><h2 id="summary-response">{t("Среднее время первого ответа")}</h2><p className="metric-value">{summary.averageFirstResponseHours === null ? t("Нет ответов") : <CountUp value={summary.averageFirstResponseHours} format={value => number.format(value) + ' ' + hourUnit} />}</p><p className="muted">{summary.respondedCount > 0 ? `По ${number.format(summary.respondedCount)} обращениям с первым ответом` : t("Показатель появится после первого ответа руководителя")}</p></section>
+        {summary.overdueCount !== undefined && <section className="metric-card summary-overdue" aria-labelledby="summary-overdue"><h2 id="summary-overdue">{t("Просрочено")}<span className="visually-hidden">: {number.format(summary.overdueCount)}</span></h2><p className="metric-value" aria-hidden="true"><CountUp value={summary.overdueCount} format={count} /></p><p className="muted">{t("Срок прошёл, решения нет.")}</p>{role === 'admin' ? <span className="muted">{queueHint}</span> : <Link to="/queue?overdue=1">{t("Открыть просроченные в очереди")}</Link>}</section>}
       </div>
       {summary.total === 0 && <p className="summary-empty" role="status">{t("Обращений пока нет — диаграммы появятся после первой подачи.")}</p>}
       <div className="summary-sections">

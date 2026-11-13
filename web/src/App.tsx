@@ -16,10 +16,8 @@ import { AboutPage, DemoHint, ImitationBadge, useDemoHints } from './features/de
 import { ImprovementsPage } from './features/improvements';
 import { NotificationBell } from './features/notifications';
 import { LastComplaintButton } from './features/ResumeComplaint';
-import { useTheme } from './features/theme';
-import type { ThemeChoice } from './features/theme';
+import { useTheme, type ThemeChoice } from './features/theme';
 import { CompletionSlot } from './features/completionSlot';
-import { useDesignMotion } from './features/designMotion';
 import './styles/tokens.css';
 import './shell.css';
 import './pages.css';
@@ -31,6 +29,20 @@ const navigation: Record<Role, { path: string; label: string }[]> = {
   admin: [{ path: '/summary', label: 'Сводка' }, { path: '/dashboard', label: 'Дашборд' }, { path: '/admin', label: 'Пользователи и права' }],
 };
 const home: Record<Role, string> = { employee: '/my', manager: '/queue', admin: '/summary' };
+const themeLabels: Record<ThemeChoice, string> = { system: 'Как в системе', dark: 'Тёмная', light: 'Светлая' };
+const nextTheme: Record<ThemeChoice, ThemeChoice> = { system: 'dark', dark: 'light', light: 'system' };
+
+function ThemeToggle({ theme, set }: ReturnType<typeof useTheme>) {
+  const { t } = useI18n();
+  const label = t('Тема') + ': ' + t(themeLabels[theme]);
+  return <button className="theme-toggle" type="button" aria-label={label} title={label} onClick={() => set(nextTheme[theme])}>
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      {theme === 'system' && <><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M12 17v4m-4 0h8" /></>}
+      {theme === 'dark' && <path d="M20.8 14.1A9 9 0 0 1 9.9 3.2a9 9 0 1 0 10.9 10.9Z" />}
+      {theme === 'light' && <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5" /></>}
+    </svg>
+  </button>;
+}
 
 function NavigationIcon({ path }: { path: string }) {
   return <svg className="navigation-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -90,7 +102,6 @@ function Shell() {
   const location = useLocation();
   const hints = useDemoHints();
   const theme = useTheme();
-  const motion = useDesignMotion();
   const [signalSlot, setSignalSlot] = useState<HTMLDivElement | null>(null);
   const state = location.state as { from?: unknown; defaultLanding?: boolean; accessNotice?: { required?: unknown; forRole?: unknown } } | null;
   const required = state?.accessNotice?.required;
@@ -115,14 +126,21 @@ function Shell() {
     <a className="skip-link" href="#main">{t("Перейти к содержимому")}</a>
     <header className="app-header">
       <Link className="brand" to={home[role]}><span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" focusable="false"><path d="M7 24V8l9 9 9-9v16M7 8l9 16 9-16" /></svg></span><span>{t("Модус Трейд")}<small>{t("Обратная связь сотрудников")}</small></span></Link>
-      <label className="role-selector">{t("Демонстрационная роль")}<select value={role} onChange={event => switchRole(event.target.value)}><option value="employee">{t("Сотрудник")}</option><option value="manager">{t("Руководитель")}</option><option value="admin">{t("Администратор")}</option></select></label>
+      <label className="role-selector">
+        <span>{t("Демонстрационная роль")}</span>
+        <select value={role} onChange={event => switchRole(event.target.value)}>
+          <option value="employee">{t("Сотрудник")}</option>
+          <option value="manager">{t("Руководитель")}</option>
+          <option value="admin">{t("Администратор")}</option>
+        </select>
+      </label>
       <LanguageSelect />
       <ImitationBadge hint={t("выбор роли — не настоящий вход, пароля и учётной записи нет")} />
     </header>
     <aside className="demo-notice" aria-label={t("Демонстрация")}>{t("Демонстрация · только синтетические данные. Выбор роли имитирует вход.")}</aside>
     <div className="workspace">
       <aside className="workspace-sidebar">
-        <p className="workspace-sidebar-title" aria-hidden="true">{t("Рабочее пространство")}</p>
+        <h2 className="workspace-sidebar-title">{t("Рабочее пространство")}</h2>
         <nav aria-label={t("Основное меню")}>{navigation[role].map(item => <NavLink key={item.path} to={item.path}><NavigationIcon path={item.path} /><span>{t(item.label)}</span></NavLink>)}<LastComplaintButton key={role} /></nav>
         <div className="session-box"><span className="session-user">{demoAccounts.some(account => account.id === userId) ? t(demoAccounts.find(account => account.id === userId)!.title) : userName ?? t('Сотрудник')}</span><button type="button" className="logout-button" onClick={logout}>{t('Выйти')}</button></div>
         <div ref={setSignalSlot} className="completion-slot" />
@@ -130,7 +148,7 @@ function Shell() {
       {/* Колокольчик стоит в DOM после меню (порядок Tab «шапка → меню» не меняется), а в шапку выводится стилями. */}
       {role !== 'admin' && <NotificationBell key={`bell-${role}`} role={role} />}
       <main id="main" tabIndex={-1} key={role}>
-        {noticeRoles.length > 0 && <div className="demo-hint" role="status" aria-label={t('Ограничение доступа')}>
+        {noticeRoles.length > 0 && <div className="demo-hint access-notice" role="status" aria-label={t('Ограничение доступа')}>
           <p>{t(noticeKey)}</p>
           <button type="button" onClick={() => navigate(home[role], { replace: true, state: typeof state?.from === 'string' ? { from: state.from } : null })}>{t(homeLabel[role])}</button>
         </div>}
@@ -152,7 +170,11 @@ function Shell() {
       </main>
     </div>
     {/* Демо-панель после основного содержимого: не мешает порядку Tab «шапка → меню → содержимое». */}
-    <footer className="demo-controls" aria-label={t("Демонстрация")}><label className="theme-selector">{t("Тема")}<select value={theme.theme} onChange={event => theme.set(event.target.value as ThemeChoice)}><option value="system">{t("Как в системе")}</option><option value="light">{t("Светлая")}</option><option value="dark">{t("Тёмная")}</option></select></label><label className="checkbox-label hints-toggle"><input type="checkbox" checked={hints.enabled} onChange={event => hints.set(event.target.checked)} />{t("Подсказки демо")}</label><label className="checkbox-label hints-toggle"><input type="checkbox" checked={motion.enabled} onChange={event => motion.setEnabled(event.target.checked)} />{t("Анимации")}</label><Link to="/about">{t("О прототипе")}</Link></footer>
+    <footer className="demo-controls" aria-label={t("Демонстрация")}>
+      <ThemeToggle {...theme} />
+      <label className="checkbox-label hints-toggle"><input type="checkbox" checked={hints.enabled} onChange={event => hints.set(event.target.checked)} />{t("Подсказки демо")}</label>
+      <Link to="/about">{t("О прототипе")}</Link>
+    </footer>
   </div>;
 }
 
