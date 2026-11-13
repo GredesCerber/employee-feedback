@@ -7,16 +7,16 @@
 .dashboard-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: var(--space-4) 0; }
 .dashboard-toolbar p { margin: 0; font-size: var(--font-size-sm); }
 .dashboard-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
-.dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: var(--space-4); margin-top: var(--space-4); }
-.dashboard-grid.dashboard-overview:has(> :nth-child(2)) { grid-template-columns: minmax(0, 1.52fr) minmax(0, 1fr); }
-.dashboard-overdue:only-child { grid-column: 1 / -1; }
+/* Две независимые колонки (как в сводке): панели складываются стопкой, короткая не оставляет пустоты рядом с длинной. */
+.dashboard-columns { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: start; gap: var(--space-4); margin: var(--space-4) 0; }
+.dashboard-column { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--space-4); min-width: 0; }
+.dashboard-column > * { min-width: 0; }
 .dashboard-panel { min-width: 0; padding: var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); }
 .dashboard-panel h2 { font-size: var(--font-size-lg); margin: 0 0 var(--space-1); }
 .dashboard-panel .muted { font-size: var(--font-size-sm); margin-top: 0; }
 .dashboard-panel-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-2); }
 .dashboard-panel-count { min-width: 2.2em; padding: var(--space-1); border: 1px solid var(--color-border); border-radius: var(--radius-pill); text-align: center; color: var(--color-text-muted); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; }
 .dashboard-chart { margin: var(--space-3) 0; min-width: 0; }
-.chart-axis-note { margin-top: 6px; font-size: 13px; color: var(--color-text-muted); }
 .line-chart { display: block; width: 100%; height: auto; }
 .line-chart text { font-size: 14px; fill: var(--color-text); }
 .line-chart .chart-tick { fill: var(--color-text-muted); font-variant-numeric: tabular-nums; }
@@ -31,7 +31,6 @@
 .dashboard-table thead th { font-weight: 500; color: var(--color-text-muted); font-size: 12px; }
 .dashboard-table tbody th { font-weight: 500; }
 .dashboard-table td, .dashboard-table thead th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
-.dashboard-panel details summary { cursor: pointer; font-size: var(--font-size-sm); margin-bottom: var(--space-2); }
 .overdue-list { list-style: none; margin: var(--space-2) 0 0; padding: 0; }
 .overdue-list li { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); padding: var(--space-2) 0; }
 .overdue-list li + li { border-top: 1px solid var(--color-border); }
@@ -44,12 +43,12 @@
   @keyframes reveal-line { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
 }
 
-@media (max-width: 1050px) { .dashboard-grid { grid-template-columns: minmax(0, 1fr); } .dashboard-grid.dashboard-overview:has(> :nth-child(2)) { grid-template-columns: minmax(0, 1fr); } .dashboard-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1050px) { .dashboard-columns { grid-template-columns: minmax(0, 1fr); } .dashboard-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .dashboard-panel { padding: var(--space-4); } }
 
 .dashboard-panel h2 .dashboard-section-toggle { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.dashboard-section-toggle span { color: var(--color-text-muted); }
-.dashboard-category-sort { display: grid; gap: var(--space-1); max-width: 260px; margin-top: var(--space-3); font-size: var(--font-size-sm); color: var(--color-text-muted); }
+.dashboard-section-toggle > span[aria-hidden]:not(.collapsible-chevron) { color: var(--color-text-muted); }
+.dashboard-category-sort { display: grid; gap: var(--space-1); max-width: 260px; margin-top: var(--space-1); font-size: var(--font-size-sm); color: var(--color-text-muted); }
 .dashboard-show-categories { margin-top: var(--space-3); }
 .metric-card-link { display: flex; flex-direction: column; gap: var(--space-1); color: inherit; text-decoration: none; border-radius: var(--radius-md); }
 .metric-card-link:hover h2 { text-decoration: underline; text-underline-offset: 3px; }

@@ -12,6 +12,7 @@ import { EscalationBadge, escalatedCount } from '../features/escalation';
 import { ImpactPanel } from '../features/ImpactPanel';
 import { ProblemsPanel } from '../features/sharedProblems';
 import { WeeklyDigest } from '../features/weeklyDigest';
+import { ChartHeader, CollapsiblePanel, ShowAllButton, useShowAll } from '../features/collapsiblePanel';
 import './dashboard.css';
 
 type DayCount = components['schemas']['DayCount'];
@@ -21,7 +22,7 @@ const shortDate = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}`;
 
 const LINE = { height: 188, left: 44, right: 20, top: 14, bottom: 45 };
 
-/** Линейный график «обращения по дням» на чистом SVG: оси с подписями, точки, таблица-альтернатива рядом. */
+/** Линейный график «обращения по дням» на чистом SVG: оси с подписями, точки; таблица-альтернатива — для экранных читалок. */
 function LineChart({ title, days }: { title: string; days: DayCount[] }) {
   const { t, locale } = useI18n();
   const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
@@ -73,9 +74,7 @@ function Tile({ id, title, value, note, to }: { id: string; title: string; value
 
 export default function DashboardPage() {
   const revealPanel = useRevealOnView<HTMLElement>();
-  const [categoriesOpen, setCategoriesOpen] = useState(true);
   const [showAllCategories, setShowAllCategories] = useState(false);
-  const categoriesId = useId();
   const { t, locale } = useI18n();
   const number = new Intl.NumberFormat(localeNames[locale], { maximumFractionDigits: 1 });
   const { api, role } = useSession();
@@ -102,6 +101,7 @@ export default function DashboardPage() {
   })).sort((a, b) => (categorySort === 'count' ? b.count - a.count : 0)
     || collator.compare(a.name, b.name) || a.key.localeCompare(b.key));
   const visibleCategories = showAllCategories ? categoryRows : categoryRows.slice(0, 8);
+  const departments = useShowAll((trends?.byDepartment ?? []).map(item => ({ label: referenceLabel(locale, 'department', item.departmentId, item.departmentName), value: item.count })));
   return <section className="section dashboard-page">
     <header className="dashboard-header">
       <div><p className="eyebrow">{t("Обзор обратной связи")}</p><h1>{t("Дашборд")}</h1>
@@ -128,15 +128,29 @@ export default function DashboardPage() {
           note={t("От подачи до закрытия")} />
       </div>
       {empty && <p className="summary-empty" role="status">{t("Обращений пока нет — графики появятся после первой подачи.")}</p>}
-      <div className="dashboard-grid dashboard-overview">
-        {!empty && <section ref={revealPanel} className="dashboard-panel reveal-panel"><h2>{t("Обращения по дням")}</h2><p className="muted">{t("Последние 14 дней, UTC.")}</p>
+    </>}
+    {/* Две независимые колонки: короткая панель не оставляет пустоты рядом с длинной. Каждую панель можно свернуть. */}
+    <div className="dashboard-columns">
+      <div className="dashboard-column">
+        {trends && !empty && <CollapsiblePanel id="dashboard-days" panelRef={revealPanel} className="dashboard-panel reveal-panel" title={t("Обращения по дням")}>
+          <p className="muted">{t("Последние 14 дней, UTC.")}</p>
           <figure className="dashboard-chart"><LineChart title={t("Обращения по дням")} days={trends.byDay} /></figure>
-          <details><summary>{t("Таблица по дням")}</summary>
-            <CountTable label={t("Обращения по дням")} head={t("Дата")} rows={trends.byDay.map(day => ({ key: day.date, name: shortDate(day.date), count: day.count }))} />
-          </details>
-        </section>}
-        <section ref={revealPanel} className="dashboard-panel dashboard-overdue reveal-panel">
-          <div className="dashboard-panel-heading"><h2>{t("Просроченные")}</h2><span className="dashboard-panel-count" aria-hidden="true">{number.format(totals.overdueCount)}</span></div>
+          <div className="visually-hidden"><CountTable label={t("Обращения по дням")} head={t("Дата")} rows={trends.byDay.map(day => ({ key: day.date, name: shortDate(day.date), count: day.count }))} /></div>
+        </CollapsiblePanel>}
+        {trends && !empty && <CollapsiblePanel id="dashboard-categories" panelRef={revealPanel} className="dashboard-panel reveal-panel" title={t("По категориям")}>
+          <label className="dashboard-category-sort">{t("Сортировка категорий")}<select value={categorySort} onChange={event => updateParam('categorySort', event.target.value)}>
+            <option value="count">{t("По числу обращений")}</option><option value="name">{t("По алфавиту")}</option>
+          </select></label>
+          <figure className="dashboard-chart"><ChartHeader label={t("Категория")} value={t("Количество")} /><BarChart title={t("Обращения по категориям")} bars={visibleCategories.map(item => ({ label: item.name, value: item.count }))} /></figure>
+          <div className="visually-hidden"><CountTable label={t("Обращения по категориям")} head={t("Категория")} rows={visibleCategories} /></div>
+          {categoryRows.length > 8 && <button type="button" className="dashboard-show-categories" onClick={() => setShowAllCategories(all => !all)}>{showAllCategories ? t("Свернуть") : t("Показать все")}</button>}
+        </CollapsiblePanel>}
+        <ImpactPanel />
+        <ProblemsPanel />
+      </div>
+      <div className="dashboard-column">
+        {trends && totals && <CollapsiblePanel id="dashboard-overdue" panelRef={revealPanel} className="dashboard-panel dashboard-overdue reveal-panel" title={t("Просроченные")}
+          badge={<span className="dashboard-panel-count" aria-hidden="true">{number.format(totals.overdueCount)}</span>}>
           {trends.overdue.length === 0 ? <p>{t("Просроченных обращений нет.")}</p>
             : <ul className="overdue-list" aria-label={t("Просроченные обращения")}>{trends.overdue.map(item => <li key={item.id}>
               <div className="overdue-info">
@@ -148,28 +162,14 @@ export default function DashboardPage() {
             </li>)}</ul>}
           {escalatedCount(trends.overdue) > 0 && <p role="status" className="escalation-summary"><strong>{t("Требуют эскалации: {count}", { count: number.format(escalatedCount(trends.overdue)) })}</strong> {t("Просрочка больше двух суток: вопрос передаётся руководителю направления, больше пяти суток — администратору.")}</p>}
           {role !== 'manager' && trends.overdue.length > 0 && <p className="muted">{t("Карточки открывает руководитель в очереди обращений.")}</p>}
-        </section>
+        </CollapsiblePanel>}
+        {trends && !empty && <CollapsiblePanel id="dashboard-departments" panelRef={revealPanel} className="dashboard-panel reveal-panel" title={t("По подразделениям")}>
+          <figure className="dashboard-chart"><ChartHeader label={t("Подразделение")} value={t("Количество")} /><BarChart title={t("Обращения по подразделениям")} bars={departments.visible} /></figure>
+          {departments.more && <ShowAllButton all={departments.all} toggle={departments.toggle} label={{ more: t("Показать все"), less: t("Свернуть") }} />}
+          <div className="visually-hidden"><CountTable label={t("Обращения по подразделениям")} head={t("Подразделение")} rows={trends.byDepartment.map(item => ({ key: item.departmentId, name: referenceLabel(locale, 'department', item.departmentId, item.departmentName), count: item.count }))} /></div>
+        </CollapsiblePanel>}
       </div>
-      {!empty && <div className="dashboard-grid">
-        <section ref={revealPanel} className="dashboard-panel reveal-panel"><h2><button type="button" className="dashboard-section-toggle" aria-expanded={categoriesOpen} aria-controls={categoriesId} onClick={() => setCategoriesOpen(open => !open)}>{t("По категориям")}<span aria-hidden="true">{categoriesOpen ? '⌃' : '⌄'}</span></button></h2>
-          <div id={categoriesId} hidden={!categoriesOpen}>
-            <label className="dashboard-category-sort">{t("Сортировка категорий")}<select value={categorySort} onChange={event => updateParam('categorySort', event.target.value)}>
-              <option value="count">{t("По числу обращений")}</option><option value="name">{t("По алфавиту")}</option>
-            </select></label>
-            <figure className="dashboard-chart"><BarChart title={t("Обращения по категориям")} bars={visibleCategories.map(item => ({ label: item.name, value: item.count }))} />
-              <figcaption className="chart-axis-note">{t("По горизонтали — число обращений")}</figcaption></figure>
-            <CountTable label={t("Обращения по категориям")} head={t("Категория")} rows={visibleCategories} />
-            {categoryRows.length > 8 && <button type="button" className="dashboard-show-categories" onClick={() => setShowAllCategories(all => !all)}>{showAllCategories ? t("Свернуть") : t("Показать все")}</button>}
-          </div>
-        </section>
-        <section ref={revealPanel} className="dashboard-panel reveal-panel"><h2>{t("По подразделениям")}</h2>
-          <figure className="dashboard-chart"><BarChart title={t("Обращения по подразделениям")} bars={trends.byDepartment.map(item => ({ label: referenceLabel(locale, 'department', item.departmentId, item.departmentName), value: item.count }))} />
-            <figcaption className="chart-axis-note">{t("По горизонтали — число обращений")}</figcaption></figure>
-          <CountTable label={t("Обращения по подразделениям")} head={t("Подразделение")} rows={trends.byDepartment.map(item => ({ key: item.departmentId, name: referenceLabel(locale, 'department', item.departmentId, item.departmentName), count: item.count }))} />
-        </section>
-      </div>}
-    </>}
-    <div className="dashboard-grid"><ImpactPanel /><ProblemsPanel /></div>
+    </div>
     <WeeklyDigest department={department} />
   </section>;
 }

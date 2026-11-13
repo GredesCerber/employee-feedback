@@ -1,0 +1,20 @@
+/* Кольцевая диаграмма: оттенки основного цвета темы, поэтому одинаково спокойно смотрится в светлой и тёмной теме. */
+.donut { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-4) var(--space-5); }
+.donut-chart { flex: none; display: block; overflow: visible; }
+.donut-track { fill: none; stroke: var(--color-chart-track); stroke-width: 5; }
+.donut-slice { fill: none; stroke-width: 5; stroke: var(--color-primary); }
+.donut-total { font-size: 7px; font-weight: 600; fill: var(--color-text); font-variant-numeric: tabular-nums; }
+.donut-caption { font-size: 3.5px; fill: var(--color-text-muted); }
+.donut-shade-1 { opacity: .58; }
+.donut-shade-2 { opacity: .28; }
+.donut-legend { flex: 1 1 180px; list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); min-width: 0; }
+.donut-legend li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto 3.2em; align-items: center; gap: var(--space-2); font-size: 14px; }
+.donut-swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--color-primary); }
+.donut-label { overflow-wrap: anywhere; }
+.donut-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+.donut-share { text-align: right; color: var(--color-text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-design-motion="off"]) .donut.is-revealed .donut-arcs { animation: donut-in 760ms cubic-bezier(.2, .72, .2, 1) both; transform-origin: 21px 21px; }
+  @keyframes donut-in { from { opacity: 0; transform: rotate(-60deg); } to { opacity: 1; transform: rotate(0); } }
+}

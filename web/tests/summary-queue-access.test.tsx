@@ -20,7 +20,7 @@ describe('#282 summary queue access', () => {
   ] as const)('shows a localized explanation instead of inaccessible admin links (%s)', async (locale, hint) => {
     state.locale = locale; open();
     const overdue = await screen.findByRole('region', { name: /Просрочено/ });
-    const topic = screen.getByRole('list', { name: 'Повторяющиеся темы' });
+    const topic = screen.getByRole('region', { name: 'Повторяющиеся темы' });
     expect(within(overdue).queryByRole('link')).toBeNull();
     expect(within(topic).queryByRole('link')).toBeNull();
     expect(within(overdue).getByText(hint)).toBeTruthy();
@@ -29,7 +29,8 @@ describe('#282 summary queue access', () => {
   it('keeps the existing filtered links for a manager', async () => {
     state.role = 'manager'; open();
     expect((await screen.findByRole('link', { name: 'Открыть просроченные в очереди' })).getAttribute('href')).toBe('/queue?overdue=1');
-    expect(screen.getByRole('link', { name: 'Открыть в очереди' }).getAttribute('href')).toBe('/queue?categoryId=safety');
+    const links = screen.getByRole('list', { name: 'Открыть в очереди' });
+    expect(within(links).getByRole('link', { name: 'Безопасность' }).getAttribute('href')).toBe('/queue?categoryId=safety');
     expect(screen.queryByText('Очередь доступна руководителю')).toBeNull();
   });
 });
