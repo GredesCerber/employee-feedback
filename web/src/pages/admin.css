@@ -8,3 +8,7 @@
 .admin-table-wrap { overflow-x: auto; }
 .admin-inactive th, .admin-inactive td { opacity: .6; }
 @media (max-width: 720px) { .admin-form-grid { grid-template-columns: 1fr; } }
+
+.admin-structure details { margin: 0 0 8px; }
+.admin-structure summary { cursor: pointer; font-weight: 600; }
+.admin-structure ul { margin: 6px 0 0; padding-left: 20px; }

@@ -2779,6 +2779,182 @@
           "description": "Category id."
         }
       ]
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "Sign in with login and password",
+        "description": "Public. Returns a signed bearer token (12 hours). Passwords are stored as scrypt hashes; built-in demo accounts accept the demo password published in the README. The quick role picker (X-Demo-User) keeps working next to it. Wrong login or password: 401 with the same message. The attempt is written to the action journal.",
+        "tags": [
+          "Administration"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "Sign out",
+        "description": "Any role. Writes the sign-out to the action journal; the client discards the token.",
+        "tags": [
+          "Administration"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ]
+      }
+    },
+    "/admin/audit": {
+      "get": {
+        "operationId": "listAuditLog",
+        "summary": "Action journal",
+        "description": "Admin only. Latest entries first: sign-ins and sign-outs, failed sign-in attempts, complaints created, assignments, status changes, comments, decisions, user and routing changes. Stored in the database, survives restarts.",
+        "tags": [
+          "Administration"
+        ],
+        "x-demo-steps": [],
+        "x-roles": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Journal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        },
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -5543,6 +5719,12 @@
             "minLength": 1,
             "maxLength": 100,
             "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 100,
+            "description": "Write-only. Stored as a scrypt hash, never returned."
           }
         }
       },
@@ -5567,6 +5749,12 @@
           },
           "active": {
             "type": "boolean"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 100,
+            "description": "Write-only. Stored as a scrypt hash, never returned."
           }
         }
       },
@@ -5592,6 +5780,142 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 90
+          }
+        }
+      },
+      "LoginInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "login",
+          "password"
+        ],
+        "properties": {
+          "login": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "User id (employee-1) or full name."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        }
+      },
+      "LoginResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "user"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Send as Authorization: Bearer <token>. Valid 12 hours."
+          },
+          "user": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "role",
+              "departmentId"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "role": {
+                "$ref": "#/components/schemas/Role"
+              },
+              "departmentId": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "AuditEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "at",
+          "actorId",
+          "actorName",
+          "action",
+          "target",
+          "detail"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actorId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actorName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "action": {
+            "type": "string"
+          },
+          "target": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "detail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "AuditList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEntry"
+            }
+          }
+        }
+      },
+      "LogoutResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok"
           }
         }
       }

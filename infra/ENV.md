@@ -39,6 +39,7 @@
 | `GEMINI_MODEL` | `api/src/ai/openai-compatible.ts`: модель Gemini | `gemini-2.5-flash` | нет | используется |
 | `XAI_API_KEY` | `api/src/ai/openai-compatible.ts`: ключ xAI (Grok), второй провайдер, если Gemini не ответил (ошибка или таймаут) | пусто | нет | используется |
 | `GROQ_API_KEY` | `api/src/ai/openai-compatible.ts`: ключ Groq (OpenAI-совместимый API), второй провайдер вместо xAI | пусто | нет | используется |
+| `SESSION_SECRET` | `api/src/auth-token.ts`: ключ подписи токенов входа по паролю; без него ключ случайный на процесс (перезапуск разлогинивает всех) | пусто | нет | используется |
 | `AI_FALLBACK_PROVIDER` | `api/src/ai/openai-compatible.ts`: `xai` или `groq`; без значения выбирается провайдер, для которого задан ключ (сначала xAI) | по ключу | нет | используется |
 | `AI_FALLBACK_MODEL` | `api/src/ai/openai-compatible.ts`: модель второго провайдера | `grok-3-mini` (xAI), `llama-3.3-70b-versatile` (Groq) | нет | используется |
 | `AI_FALLBACK_BASE_URL` | `api/src/ai/openai-compatible.ts`: адрес второго провайдера (шлюз или прокси) | стандартный адрес провайдера | нет | используется |

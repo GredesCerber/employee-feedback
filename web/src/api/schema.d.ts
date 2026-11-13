@@ -615,6 +615,66 @@ export interface paths {
         patch: operations["updateAdminCategory"];
         trace?: never;
     };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign in with login and password
+         * @description Public. Returns a signed bearer token (12 hours). Passwords are stored as scrypt hashes; built-in demo accounts accept the demo password published in the README. The quick role picker (X-Demo-User) keeps working next to it. Wrong login or password: 401 with the same message. The attempt is written to the action journal.
+         */
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign out
+         * @description Any role. Writes the sign-out to the action journal; the client discards the token.
+         */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Action journal
+         * @description Admin only. Latest entries first: sign-ins and sign-outs, failed sign-in attempts, complaints created, assignments, status changes, comments, decisions, user and routing changes. Stored in the database, survives restarts.
+         */
+        get: operations["listAuditLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1556,17 +1616,53 @@ export interface components {
             name: string;
             role: components["schemas"]["Role"];
             departmentId: string;
+            /** @description Write-only. Stored as a scrypt hash, never returned. */
+            password?: string;
         };
         AdminUserPatch: {
             name?: string;
             role?: components["schemas"]["Role"];
             departmentId?: string;
             active?: boolean;
+            /** @description Write-only. Stored as a scrypt hash, never returned. */
+            password?: string;
         };
         CategoryPatch: {
             /** @description Active manager id or null for the fallback queue. */
             assigneeId?: string | null;
             dueInDays?: number;
+        };
+        LoginInput: {
+            /** @description User id (employee-1) or full name. */
+            login: string;
+            password: string;
+        };
+        LoginResult: {
+            /** @description Send as Authorization: Bearer <token>. Valid 12 hours. */
+            token: string;
+            user: {
+                id: string;
+                name: string;
+                role: components["schemas"]["Role"];
+                departmentId: string;
+            };
+        };
+        AuditEntry: {
+            id: string;
+            /** Format: date-time */
+            at: string;
+            actorId: string | null;
+            actorName: string | null;
+            action: string;
+            target: string | null;
+            detail: string | null;
+        };
+        AuditList: {
+            items: components["schemas"]["AuditEntry"][];
+        };
+        LogoutResult: {
+            /** @constant */
+            status: "ok";
         };
     };
     responses: {
@@ -2846,6 +2942,92 @@ export interface operations {
             404: components["responses"]["NotFound"];
             413: components["responses"]["TooLarge"];
             415: components["responses"]["Unsupported"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginInput"];
+            };
+        };
+        responses: {
+            /** @description Signed in. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            413: components["responses"]["TooLarge"];
+            415: components["responses"]["Unsupported"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signed out. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogoutResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            415: components["responses"]["Unsupported"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    listAuditLog: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Journal. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             422: components["responses"]["Validation"];
             429: components["responses"]["TooManyRequests"];
             500: components["responses"]["Internal"];

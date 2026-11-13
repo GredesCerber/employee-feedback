@@ -30,6 +30,8 @@ const mutations = [
   { operationId: 'getComplaintAdvice', method: 'POST', path: '/complaints/complaint-1/advice', user: 'manager-1', body: {} },
   { operationId: 'recordDecision', method: 'POST', path: '/complaints/complaint-1/decision', user: 'manager-1', body: { outcome: 'rejected', explanation: 'Причина.' } },
   { operationId: 'recordFeedback', method: 'POST', path: '/complaints/complaint-4/feedback', user: 'employee-1', body: { understood: true, solved: true } },
+  { operationId: 'login', method: 'POST', path: '/auth/login', user: null, body: { login: 'employee-1', password: 'demo1234' } },
+  { operationId: 'logout', method: 'POST', path: '/auth/logout', user: 'manager-1', body: {} },
   { operationId: 'createAdminUser', method: 'POST', path: '/admin/users', user: 'admin-1', body: { name: 'Новый участник', role: 'employee', departmentId: 'sales' } },
   { operationId: 'updateAdminUser', method: 'PATCH', path: '/admin/users/employee-2', user: 'admin-1', body: { role: 'manager', active: true } },
   { operationId: 'updateAdminCategory', method: 'PATCH', path: '/admin/categories/training', user: 'admin-1', body: { assigneeId: 'manager-1', dueInDays: 5 } },

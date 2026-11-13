@@ -1,3 +1,4 @@
+import { verifyToken } from './auth-token.js';
 import { readFileSync } from 'node:fs';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { fullFormats } from 'ajv-formats/dist/formats.js';
@@ -70,9 +71,10 @@ export function validateBody<T>(name: string, value: unknown): T {
   return value as T;
 }
 export function identity(app: FastifyInstance, request: FastifyRequest, roles?: Role[]): User {
-  const id = request.headers['x-demo-user'];
+  const bearer = /^Bearer (\S+)$/.exec(String(request.headers.authorization ?? ''))?.[1];
+  const id = bearer ? verifyToken(bearer) : request.headers['x-demo-user'];
   const user = typeof id === 'string' ? app.store.users.find(user => user.id === id) : undefined;
-  if (!user) throw new ApiError(401, 'UNAUTHENTICATED', 'Выберите известного демо-пользователя.');
+  if (!user) throw new ApiError(401, 'UNAUTHENTICATED', bearer ? 'Сессия недействительна, войдите снова.' : 'Выберите известного демо-пользователя.');
   if (roles && !roles.includes(user.role)) throw new ApiError(403, 'FORBIDDEN', 'Роль не разрешает это действие.');
   return user;
 }

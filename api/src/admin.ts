@@ -24,20 +24,22 @@ export function registerAdmin(app: FastifyInstance) {
   app.post('/admin/users', async (request, reply) => {
     identity(app, request, ['admin']);
     queryParameters(request, []);
-    const body = validateBody<{ name: string; role: Role; departmentId: string }>('AdminUserInput', request.body);
+    const body = validateBody<{ name: string; role: Role; departmentId: string; password?: string }>('AdminUserInput', request.body);
     const name = body.name.trim();
     if (!name) invalid('ФИО не может быть пустым.');
     if (!app.store.referenceData.departments.some(department => department.id === body.departmentId)) invalid('Неизвестное подразделение.');
     if (app.store.allUsers.some(user => user.name.toLowerCase() === name.toLowerCase())) {
       throw new ApiError(409, 'CONFLICT', 'Пользователь с таким ФИО уже есть.');
     }
-    return reply.code(201).send(app.store.addUser({ name, role: body.role, departmentId: body.departmentId }));
+    const created = app.store.addUser({ name, role: body.role, departmentId: body.departmentId });
+    if (body.password) app.store.setPassword(created.id, body.password);
+    return reply.code(201).send(created);
   });
 
   app.patch<{ Params: { userId: string } }>('/admin/users/:userId', async request => {
     const admin = identity(app, request, ['admin']);
     queryParameters(request, []);
-    const body = validateBody<{ name?: string; role?: Role; departmentId?: string; active?: boolean }>('AdminUserPatch', request.body);
+    const body = validateBody<{ name?: string; role?: Role; departmentId?: string; active?: boolean; password?: string }>('AdminUserPatch', request.body);
     const target = app.store.allUsers.find(user => user.id === request.params.userId);
     if (!target) throw new ApiError(404, 'NOT_FOUND', 'Пользователь не найден.');
     if (Object.keys(body).length === 0) invalid('Укажите, что изменить.');
@@ -54,7 +56,9 @@ export function registerAdmin(app: FastifyInstance) {
       && !app.store.allUsers.some(user => user.id !== target.id && user.role === 'admin' && user.active)) {
       throw new ApiError(409, 'CONFLICT', 'Должен остаться хотя бы один активный администратор.');
     }
-    return app.store.updateUser(target.id, { ...body, ...(body.name !== undefined ? { name: body.name.trim() } : {}) });
+    const { password, ...profile } = body;
+    if (password) app.store.setPassword(target.id, password);
+    return app.store.updateUser(target.id, { ...profile, ...(body.name !== undefined ? { name: body.name.trim() } : {}) });
   });
 
   app.patch<{ Params: { categoryId: string } }>('/admin/categories/:categoryId', async request => {

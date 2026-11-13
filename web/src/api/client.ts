@@ -22,6 +22,21 @@ export function parseRetryAfter(header: string | null, now = Date.now()): number
 
 export const tooManyRequests = (seconds: number) => `Слишком много запросов, повторите через ${seconds} с`;
 
+const AUTH_STORAGE_KEY = 'auth-session';
+/** Токен входа по паролю хранится вместе с id пользователя: при быстром выборе роли он не применяется. */
+export function readAuthSession(): { userId: string; token: string } | null {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    const value = raw ? JSON.parse(raw) as { userId?: unknown; token?: unknown } : null;
+    return value && typeof value.userId === 'string' && typeof value.token === 'string' ? { userId: value.userId, token: value.token } : null;
+  } catch { return null; }
+}
+export function writeAuthSession(session: { userId: string; token: string } | null) {
+  try {
+    if (session) localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session)); else localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch { /* хранилище недоступно: вход действует до перезагрузки */ }
+}
+
 export function createApiClient(options: { userId: string; baseUrl?: string; fetch?: (request: Request) => Promise<Response> }) {
   const client = createClient<paths>({
     baseUrl: options.baseUrl ?? (import.meta.env.VITE_API_BASE_URL || '/api'),
@@ -30,6 +45,8 @@ export function createApiClient(options: { userId: string; baseUrl?: string; fet
   client.use({
     onRequest({ request }) {
       request.headers.set('X-Demo-User', options.userId);
+      const auth = readAuthSession();
+      if (auth && auth.userId === options.userId) request.headers.set('Authorization', `Bearer ${auth.token}`);
       return request;
     },
     async onResponse({ response }) {
