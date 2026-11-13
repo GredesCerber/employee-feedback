@@ -15,6 +15,7 @@ import { registerNotifications } from './notifications.js';
 import { registerDigest } from './digest.js';
 import { registerEngagement } from './engagement.js';
 import { registerTranslations } from './translations.js';
+import { registerAdvice } from './advice.js';
 import type { TextTranslator } from './ai/translate.js';
 import { registerRateLimit } from './rate-limit.js';
 import { registerSecurity } from './security.js';
@@ -95,6 +96,7 @@ function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = f
   registerDigest(app);
   registerEngagement(app);
   registerTranslations(app, translator);
+  registerAdvice(app);
   return app;
 }
 
