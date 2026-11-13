@@ -109,10 +109,10 @@ export default function MyComplaintsPage() {
       <div><p className="eyebrow">{t("Личный кабинет")}</p><h1 ref={heading} tabIndex={-1}>{t("Мои обращения")}</h1></div>
     </div>
     {showTools && <nav className="my-quick-actions" aria-label={t("Быстрые действия")}>
-      <Link className="primary-link" to="/submit"><strong>{t("Подать обращение")}</strong><span>{t("Проблема, вопрос или благодарность")}</span></Link>
-      <Link to="/submit?type=suggestion"><strong>{t("Предложить идею")}</strong><span>{t("Как сделать работу лучше")}</span></Link>
-      <Link to="/my?status=awaiting_clarification"><strong>{t("Ждут вашего ответа")}</strong><span>{t("Уточняющие вопросы руководителя")}</span></Link>
-      <Link to="/about"><strong>{t("Как всё устроено")}</strong><span>{t("Что реально, что имитация")}</span></Link>
+      <Link className="quick-action" to="/submit"><strong>{t("Подать обращение")}</strong><span>{t("Проблема, вопрос или благодарность")}</span></Link>
+      <Link className="quick-action" to="/submit?type=suggestion"><strong>{t("Предложить идею")}</strong><span>{t("Как сделать работу лучше")}</span></Link>
+      <Link className="quick-action" to="/my?status=awaiting_clarification"><strong>{t("Ждут вашего ответа")}</strong><span>{t("Уточняющие вопросы руководителя")}</span></Link>
+      <Link className="quick-action" to="/about"><strong>{t("Как всё устроено")}</strong><span>{t("Что реально, что имитация")}</span></Link>
     </nav>}
     {lastId && <p className="feedback-return"><Link to={lastComplaintPath(role, lastId)}>{t("Вернуться к последнему обращению")}</Link></p>}
     <IdeaQuick onCreated={result.reload} />

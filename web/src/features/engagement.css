@@ -4,7 +4,9 @@
 .result-feedback-answers { display: grid; gap: var(--space-2); margin: 0; }
 .result-feedback-answers dt { font-weight: 700; color: var(--color-text-strong); }
 .result-feedback-answers dd { margin: 0; }
-.result-feedback-choice { display: flex; gap: var(--space-4); margin-bottom: var(--space-3); }
+form.result-feedback { gap: var(--space-2); }
+form.result-feedback :is(h2, p) { margin: 0; }
+.result-feedback-choice { display: flex; gap: var(--space-4); margin-top: calc(-1 * var(--space-1)); }
 .result-feedback-choice label { min-height: 44px; display: inline-flex; align-items: center; gap: var(--space-2); }
 .problem-banner { background: var(--color-hint-bg); }
 .improvement-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }

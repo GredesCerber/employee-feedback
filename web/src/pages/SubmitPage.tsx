@@ -168,7 +168,7 @@ function SubmitForm({ role }: { role: string }) {
       </fieldset>
       <fieldset className="form-block" data-block="how">
         <legend><span className="form-block-step" aria-hidden="true">3</span>{t("Как подать")}</legend>
-        <p className="field-hint how-to-note">{t("Анонимность скрывает ваше имя от ответственного. Точка на карте и подробности в тексте всё равно могут указать на вас: отмечайте место, только если оно важно для решения.")}</p>
+        <p className="field-hint inline-note">{t("Анонимность скрывает ваше имя от ответственного. Точка на карте и подробности в тексте всё равно могут указать на вас: отмечайте место, только если оно важно для решения.")}</p>
         <label className="checkbox-label"><input type="checkbox" checked={anonymous} onChange={event => setAnonymous(event.target.checked)} aria-describedby="anonymous-hint" />{t("Подать анонимно")}</label>
         <p id="anonymous-hint" className="field-hint">{t("Ответственный не видит автора, но по тексту и вложениям автора могут узнать. Не указывайте лишних подробностей, по которым вас можно опознать.")}</p>
         <details className="optional-map" open={mapOpen} onToggle={event => { setMapOpen(event.currentTarget.open); if (event.currentTarget.open) setMapLoaded(true); }}>

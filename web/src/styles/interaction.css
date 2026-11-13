@@ -2,8 +2,7 @@
  * #312: единые состояния элементов управления и мягкая анимация.
  * Виды кнопок: основная (.primary-button, .primary-link), обычная (button без класса) и опасная (.danger-button).
  * Состояния: наведение, нажатие, фокус с клавиатуры, недоступна (disabled), занята (aria-busy="true").
- * Движение включается только при prefers-reduced-motion: no-preference и включённом переключателе «Анимации»
- * (features/designMotion.ts ставит data-design-motion="off" на <html>).
+ * Движение учитывает системную настройку prefers-reduced-motion.
  */
 
 /* Обычная (вторичная) кнопка. :where() держит специфичность низкой, чтобы «плоские» кнопки страниц сохраняли свой вид. */
@@ -50,19 +49,19 @@ button[aria-busy="true"]::before { content: ''; display: inline-block; width: .9
 .queue-list .complaint-item.is-last-opened { box-shadow: inset 3px 0 var(--color-primary); }
 
 @media (prefers-reduced-motion: no-preference) {
-  :root:not([data-design-motion='off']) :is(.primary-link, .danger-button) { transition: background-color var(--motion-fast) ease, color var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease; }
-  :root:not([data-design-motion='off']) .primary-link:active { transform: translateY(1px); }
-  :root:not([data-design-motion='off']) button[aria-busy="true"]::before { animation: spin .8s linear infinite; }
+  :is(.primary-link, .danger-button) { transition: background-color var(--motion-fast) ease, color var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, transform var(--motion-fast) ease; }
+  .primary-link:active { transform: translateY(1px); }
+  button[aria-busy="true"]::before { animation: spin .8s linear infinite; }
 
   /* Подъём карточки при наведении */
-  :root:not([data-design-motion='off']) .complaint-list:not(.queue-list) > .complaint-item { transition: transform var(--motion-medium) var(--motion-ease), box-shadow var(--motion-medium) var(--motion-ease), border-color var(--motion-medium) ease; }
-  :root:not([data-design-motion='off']) .complaint-list:not(.queue-list) > .complaint-item:is(:hover, :focus-within) { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+  .complaint-list:not(.queue-list) > .complaint-item { transition: transform var(--motion-medium) var(--motion-ease), box-shadow var(--motion-medium) var(--motion-ease), border-color var(--motion-medium) ease; }
+  .complaint-list:not(.queue-list) > .complaint-item:is(:hover, :focus-within) { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
 
   /* Появление сообщений и панелей */
-  :root:not([data-design-motion='off']) :is(.load-error, .demo-hint, .suggestion-note, .similar-box, .summary-reset-confirm, .translation-result, .notification-panel, .field-error, p.muted[aria-live]) { animation: notice-in var(--motion-medium) var(--motion-ease) both; }
+  :is(.load-error, .demo-hint, .suggestion-note, .similar-box, .summary-reset-confirm, .translation-result, .notification-panel, .field-error, p.muted[aria-live]) { animation: notice-in var(--motion-medium) var(--motion-ease) both; }
 
   /* Короткая подсветка строки, к которой вернулись из карточки */
-  :root:not([data-design-motion='off']) .queue-list .complaint-item.is-last-opened { animation: row-flash 1.6s ease-out both; }
+  .queue-list .complaint-item.is-last-opened { animation: row-flash 1.6s ease-out both; }
 
   @keyframes notice-in { from { opacity: 0; transform: translateY(-4px); } }
   @keyframes row-flash { from { background-color: var(--color-flash-bg); } }
