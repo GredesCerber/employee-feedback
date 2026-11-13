@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -109,5 +111,14 @@ describe('summary layout', () => {
     await user.click(again);
     expect(again.getAttribute('aria-expanded')).toBe('true');
     localStorage.clear();
+  });
+
+  it('prints full tables instead of charts cut to eight rows, and shows collapsed panels on paper', () => {
+    const src = existsSync(resolve('src/pages')) ? resolve('src') : resolve('web/src');
+    const css = readFileSync(resolve(src, 'pages/summary.css'), 'utf8');
+    const print = css.slice(css.indexOf('@media print'));
+    expect(print).toMatch(/\.visually-hidden:has\(> table\)\s*\{[^}]*position: static[^}]*clip: auto/);
+    expect(print).toMatch(/\.summary-chart:has\(\.bar-chart\)\s*\{\s*display: none/);
+    expect(print).toMatch(/\.collapsible-body\[hidden\]\s*\{\s*display: block/);
   });
 });

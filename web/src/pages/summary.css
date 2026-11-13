@@ -13,6 +13,7 @@
 .summary-column { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--space-4); min-width: 0; }
 .summary-column > * { min-width: 0; }
 .summary-column:empty { display: none; }
+.summary-sections:has(> .summary-column:empty) { grid-template-columns: minmax(0, 1fr); }
 .summary-sections > .routing-rules { grid-column: 1 / -1; }
 .summary-table-panel { padding: var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); }
 .summary-table-panel h2 { margin: 0 0 var(--space-2); font-size: var(--font-size-lg); }
@@ -66,6 +67,9 @@
   .summary-page .dashboard-section-toggle { pointer-events: none; }
   .summary-page :is(.donut-slice, .donut-swatch, .donut-track) { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .summary-page .donut-arcs { animation: none !important; }
+  /* На бумаге — полные таблицы (все строки и столбцы «Закрыто», «Доля закрытых»), а не урезанные до 8 столбчатые диаграммы. */
+  .summary-page .visually-hidden:has(> table) { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; white-space: normal; }
+  .summary-page .summary-chart:has(.bar-chart) { display: none; }
   body:has(.summary-page) .workspace { display: block; }
   body:has(.summary-page) main { margin: 0; padding: 0; max-width: none; }
   .summary-page { color: CanvasText; background: Canvas; }

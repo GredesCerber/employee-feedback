@@ -187,7 +187,7 @@ export default function SummaryPage() {
             <figure className="summary-chart"><ChartHeader label={t("Категория")} value={t("Количество")} /><BarChart title={t("Повторяющиеся темы по категориям")} bars={topics.visible} /></figure>
             {topics.more && <ShowAllButton all={topics.all} toggle={topics.toggle} label={showLabel} />}
             {role === 'admin' ? <p className="muted topic-hint">{queueHint}</p>
-              : <ul className="topic-links" aria-label={t("Открыть в очереди")}>{summary.recurringTopics.map(topic => <li key={topic.categoryId}>
+              : <ul className="topic-links" aria-label={t("Открыть в очереди")}>{summary.recurringTopics.slice(0, topics.visible.length).map(topic => <li key={topic.categoryId}>
                 <Link to={`/queue?categoryId=${encodeURIComponent(topic.categoryId)}`}>{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</Link>
               </li>)}</ul>}
             {/* Те же данные, что в диаграмме: таблица остаётся для экранных читалок и не дублирует диаграмму на экране. */}<div className="visually-hidden"><table aria-label={t("Повторяющиеся темы")}><thead><tr><th scope="col">{t("Категория")}</th><th scope="col">{t("Количество")}</th></tr></thead><tbody>{summary.recurringTopics.map(topic => <tr key={topic.categoryId}><th scope="row">{referenceLabel(locale, 'category', topic.categoryId, topic.categoryName)}</th><td>{number.format(topic.count)}</td></tr>)}</tbody></table></div>
