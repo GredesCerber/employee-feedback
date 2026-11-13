@@ -215,7 +215,7 @@
       "get": {
         "operationId": "getReferenceData",
         "summary": "Get form and routing reference data",
-        "description": "All roles can read categories and departments. Only managers/admins receive eligible assignees; employees get assignees=[]. Missing category rules are represented by assigneeId=null. This read-only MVP catalogue has no administration mutations.",
+        "description": "All roles can read categories and departments. Only managers/admins receive eligible assignees; employees get assignees=[]. Missing category rules are represented by assigneeId=null. This endpoint is read-only; admins change a category's responsible manager and response deadline via PATCH /admin/categories/{categoryId}.",
         "tags": [
           "Context"
         ],
