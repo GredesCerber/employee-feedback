@@ -4,6 +4,7 @@ import { useSession } from '../app/session';
 import { requireData, useResource } from './data';
 import { dateLabel, LoadError } from './complaint';
 import './weeklyDigest.css';
+import './collapsiblePanel.css';
 
 export function WeeklyDigest({ department }: { department: string }) {
   const { t, locale } = useI18n();
@@ -21,8 +22,8 @@ export function WeeklyDigest({ department }: { department: string }) {
   }, [api, department]);
   const result = useResource(load);
   const digest = result.data;
-  return <section className="dashboard-panel weekly-digest" aria-labelledby={heading}>
-    <div className="digest-heading"><h2 id={heading}><button type="button" className="dashboard-section-toggle" aria-expanded={open} aria-controls={content} onClick={() => setOpen(value => !value)}>{t("Сводка за неделю")}<span aria-hidden="true">{open ? '⌃' : '⌄'}</span></button></h2></div>
+  return <section className="dashboard-panel weekly-digest collapsible-panel" data-open={open} aria-labelledby={heading}>
+    <div className="digest-heading"><h2 id={heading}><button type="button" className="dashboard-section-toggle" aria-expanded={open} aria-controls={content} onClick={() => setOpen(value => !value)}>{t("Сводка за неделю")}<span className="collapsible-chevron" aria-hidden="true" /></button></h2></div>
     <div id={content} hidden={!open}>
     {!result.loading && !result.error && <button type="button" aria-label={t("Обновить сводку за неделю")} onClick={result.reload}>{t("Обновить")}</button>}
     {result.loading && <div className="digest-skeleton" aria-busy="true">

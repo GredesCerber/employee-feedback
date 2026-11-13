@@ -9,6 +9,11 @@
 :is(.summary-metrics, .dashboard-tiles) > .metric-card:first-child { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
 :is(.summary-metrics, .dashboard-tiles) > .metric-card:first-child :is(h2, .muted) { color: inherit; }
 .summary-sections { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: start; gap: var(--space-4); margin-top: var(--space-4); }
+/* Две независимые колонки: длинная таблица справа не растягивает ряд и не оставляет пустот слева. Справочник маршрутизации — во всю ширину. */
+.summary-column { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--space-4); min-width: 0; }
+.summary-column > * { min-width: 0; }
+.summary-column:empty { display: none; }
+.summary-sections > .routing-rules { grid-column: 1 / -1; }
 .summary-table-panel { padding: var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); }
 .summary-table-panel h2 { margin: 0 0 var(--space-2); font-size: var(--font-size-lg); }
 .summary-table-panel table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -39,11 +44,9 @@
   @keyframes fill-chart-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 }
 
-.topic-list { list-style: none; margin: 12px 0 20px; padding: 0; display: grid; gap: 8px; }
-.topic-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; }
-.topic-name { font-weight: 600; }
-.topic-count { color: var(--color-text-muted); font-size: 13px; }
-.topic-list a { margin-left: auto; font-size: 13px; }
+/* Повторяющиеся темы: диаграмма + одна строка ссылок в очередь (без второго списка с теми же числами). */
+.topic-hint { margin: 0; }
+.topic-links { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); font-size: 13px; }
 @media (max-width: 1050px) { .summary-metrics, .summary-metrics:has(.summary-overdue) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .summary-sections { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 600px) { .metric-card, .summary-table-panel { padding: var(--space-3); } }
 
@@ -57,7 +60,12 @@
 /* Печать сводки (#346): только содержимое страницы, без шапки, меню и кнопок. Диаграммы — без анимации и в цвете. */
 @media print {
   body:has(.summary-page) :is(.skip-link, .app-header, .demo-notice, .workspace-sidebar, .notification-bell, .demo-hint, .demo-controls) { display: none !important; }
-  .summary-page :is(button, .summary-actions, .summary-reset, .summary-export-message, .topic-list a, .summary-overdue a, .routing-rules) { display: none !important; }
+  .summary-page :is(button:not(.dashboard-section-toggle), .summary-actions, .summary-reset, .summary-export-message, .topic-links, .summary-overdue a, .routing-rules, .collapsible-chevron) { display: none !important; }
+  /* Свёрнутые на экране панели печатаются целиком: заголовок-кнопка остаётся обычным текстом. */
+  .summary-page .collapsible-body[hidden] { display: block !important; }
+  .summary-page .dashboard-section-toggle { pointer-events: none; }
+  .summary-page :is(.donut-slice, .donut-swatch, .donut-track) { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .summary-page .donut-arcs { animation: none !important; }
   body:has(.summary-page) .workspace { display: block; }
   body:has(.summary-page) main { margin: 0; padding: 0; max-width: none; }
   .summary-page { color: CanvasText; background: Canvas; }

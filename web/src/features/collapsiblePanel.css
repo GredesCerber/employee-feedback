@@ -1,0 +1,14 @@
+/* Сворачиваемые панели аналитики (сводка, дашборд) и подписи столбцов над диаграммой. */
+.collapsible-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.collapsible-panel .collapsible-heading h2 { flex: 1; min-width: 0; margin: 0; }
+.collapsible-panel .dashboard-section-toggle { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%; min-height: 32px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.collapsible-panel .dashboard-section-toggle:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 4px; border-radius: var(--radius-md); }
+.collapsible-chevron { flex: none; width: 8px; height: 8px; margin-right: 6px; border-right: 2px solid var(--color-text-muted); border-bottom: 2px solid var(--color-text-muted); transform: translateY(-2px) rotate(45deg); transition: transform 160ms ease; }
+.collapsible-panel[data-open="false"] .collapsible-chevron { transform: translateY(2px) rotate(-135deg); }
+.collapsible-panel[data-open="true"] > .collapsible-body { margin-top: var(--space-2); }
+.collapsible-panel[data-open="false"] { padding-block: var(--space-3); }
+.collapsible-heading .dashboard-panel-count { flex: none; }
+@media (prefers-reduced-motion: reduce) { .collapsible-chevron { transition: none; } }
+
+.show-all-button { margin-top: var(--space-3); }
+.chart-header { display: flex; justify-content: space-between; gap: var(--space-3); padding-bottom: 6px; margin-bottom: var(--space-2); border-bottom: 1px solid var(--color-border); font-size: 12px; font-weight: 500; color: var(--color-text-muted); }
