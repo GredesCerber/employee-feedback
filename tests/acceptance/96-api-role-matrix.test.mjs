@@ -18,6 +18,7 @@ const fixtures = {
   changeComplaintStatus: { payload: { status: 'in_review' } },
   addComment: { payload: { kind: 'comment', text: 'Синтетическое дополнение.' } },
   translateComplaintText: { payload: { field: 'description', targetLocale: 'en' } },
+  getComplaintAdvice: {},
   recordDecision: { payload: { outcome: 'rejected', explanation: 'Синтетическое обоснование.' } },
   // Feedback needs a finished complaint of employee-1 (seed A-004, implemented).
   recordFeedback: { payload: { understood: true, solved: false }, complaintId: 'complaint-4' },
