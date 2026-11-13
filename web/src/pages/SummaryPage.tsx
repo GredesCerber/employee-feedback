@@ -8,6 +8,7 @@ import { dateLabel, Loading, LoadError, typeLabels } from '../features/complaint
 import { CompletionSignal } from '../features/CompletionSignal';
 import { useRevealOnView } from '../features/designMotion';
 import { RoutingRules } from '../features/routingRules';
+import { buildSummaryCsv, isSummaryEmpty, summaryCsvFileName } from '../features/summaryCsv';
 import './summary.css';
 
 const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
@@ -125,6 +126,29 @@ export default function SummaryPage() {
       setResetStep('idle'); setResetMessage({ text: error instanceof ApiError ? error.message : 'Не удалось сбросить демо. Повторите попытку.', error: true });
     }
   };
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
+  const emptyExport = t('Нет данных для выгрузки: обращений пока нет.');
+  const downloadCsv = () => {
+    if (!summary || isSummaryEmpty(summary)) { setExportMessage(emptyExport); return; }
+    setExportMessage(null);
+    const exportedAt = new Date();
+    const csv = buildSummaryCsv(summary, {
+      exportedAt, t,
+      typeLabel: type => t(typeLabels[type]),
+      categoryLabel: (id, name) => referenceLabel(locale, 'category', id, name),
+      departmentLabel: (id, name) => referenceLabel(locale, 'department', id, name),
+    });
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url; link.download = summaryCsvFileName(exportedAt);
+    document.body.append(link); link.click(); link.remove();
+    URL.revokeObjectURL(url);
+  };
+  const printSummary = () => {
+    if (!summary || isSummaryEmpty(summary)) { setExportMessage(emptyExport); return; }
+    setExportMessage(null);
+    window.print();
+  };
   const typeBars = summary?.byType.map(item => ({ label: t(typeLabels[item.type]), value: item.count })) ?? [];
   const topicBars = summary?.recurringTopics.map(topic => ({ label: referenceLabel(locale, 'category', topic.categoryId, topic.categoryName), value: topic.count })) ?? [];
   return <section className="section summary-page"><p className="eyebrow">{t("Обзор обратной связи")}</p><h1>{t("Сводка")}</h1>
@@ -133,7 +157,8 @@ export default function SummaryPage() {
     {result.error && <LoadError message={result.error} retry={result.reload} retryAfter={result.retryAfter} />}
     {summary && <>
       <CompletionSignal total={summary.total} closed={summary.closedCount} />
-      <div className="summary-toolbar"><p className="muted">{t("Сводка на")} <time dateTime={summary.generatedAt}>{dateLabel(summary.generatedAt, locale)}</time></p><button onClick={result.reload}>{t("Обновить сводку")}</button></div>
+      <div className="summary-toolbar"><p className="muted">{t("Сводка на")} <time dateTime={summary.generatedAt}>{dateLabel(summary.generatedAt, locale)}</time></p><div className="summary-actions" role="group" aria-label={t("Экспорт сводки")}><button type="button" onClick={downloadCsv}>{t("Скачать CSV")}</button><button type="button" onClick={printSummary}>{t("Печать")}</button><button onClick={result.reload}>{t("Обновить сводку")}</button></div></div>
+      {exportMessage && <p className="summary-export-message" role="status">{exportMessage}</p>}
       <div className="summary-reset">
         {resetStep === 'unavailable' ? <p className="muted">{t("Недоступно в этой среде")}</p>
           : resetStep === 'idle' ? <button type="button" className="danger-button" onClick={() => setResetStep('confirm')}>{t("Сбросить демо")}</button>
