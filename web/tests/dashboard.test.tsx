@@ -102,7 +102,13 @@ describe('#152 manager dashboard', () => {
     expect(departments.querySelector('[data-bar="Снабжение"]')?.textContent).toContain('3');
     expect(within(screen.getByRole('table', { name: 'Обращения по категориям' })).getByRole('row', { name: 'Обучение 2' })).toBeTruthy();
     expect(within(screen.getByRole('table', { name: 'Обращения по подразделениям' })).getByRole('row', { name: /Инженерный отдел 5/ })).toBeTruthy();
-    expect(screen.getAllByText('По горизонтали — число обращений').length).toBeGreaterThanOrEqual(2);
+    // Подписи столбцов — над диаграммой; таблицы с теми же числами только для экранных читалок.
+    for (const [chart, label] of [[categories, 'Категория'], [departments, 'Подразделение']] as const) {
+      expect(chart.closest('figure')?.querySelector('.chart-header')?.textContent).toBe(`${label}Количество`);
+    }
+    for (const name of ['Обращения по дням', 'Обращения по категориям', 'Обращения по подразделениям']) {
+      expect(screen.getByRole('table', { name }).closest('.visually-hidden')).not.toBeNull();
+    }
   });
 
   it('lists overdue complaints with links to the card', async () => {
@@ -157,6 +163,6 @@ describe('#152 manager dashboard', () => {
     const css = readFileSync(join(src, 'pages/dashboard.css'), 'utf8');
     expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|rgb\(|hsl\(/i);
     expect(css).toMatch(/var\(--color-primary\)/);
-    expect(css).toMatch(/@media \(max-width: [0-9]+px\)[^}]*\.dashboard-grid \{[^}]*grid-template-columns: (1fr|minmax\(0, 1fr\))/);
+    expect(css).toMatch(/@media \(max-width: [0-9]+px\)[^}]*\.dashboard-columns \{[^}]*grid-template-columns: (1fr|minmax\(0, 1fr\))/);
   });
 });
