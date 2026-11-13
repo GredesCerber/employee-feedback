@@ -24,6 +24,7 @@ const fixtures = {
   recordFeedback: { payload: { understood: true, solved: false }, complaintId: 'complaint-4' },
   listImprovements: {}, getImpact: {}, listProblems: {},
   listDemoAccounts: {}, listAdminUsers: {},
+  login: { payload: { login: 'employee-1', password: 'demo1234' } }, logout: {}, listAuditLog: {},
   createAdminUser: { payload: { name: 'Новый участник', role: 'employee', departmentId: 'sales' } },
   updateAdminUser: { payload: { role: 'manager' }, userId: 'employee-2' },
   updateAdminCategory: { payload: { dueInDays: 5 }, categoryId: 'training' },
@@ -34,7 +35,7 @@ for (const operation of operations) for (const [role, user] of Object.entries(id
   test(`#96 ${role} / ${operation.method.toUpperCase()} ${operation.path} follows x-roles`, async t => {
     const app = buildApp({}, { translator: { enabled: true, translate: async () => 'translated fixture' } }); t.after(() => app.close());
     assert.ok(Object.hasOwn(fixtures, operation.operationId), `Missing role-matrix fixture: ${role}/${operation.operationId}`);
-    const publicHealth = ['getHealth', 'getHealthReady', 'listDemoAccounts'].includes(operation.operationId);
+    const publicHealth = ['getHealth', 'getHealthReady', 'listDemoAccounts', 'login'].includes(operation.operationId);
     const allowed = publicHealth || operation['x-roles'].includes(role);
     const { complaintId = 'complaint-1', userId = 'employee-2', categoryId = 'training', ...input } = fixtures[operation.operationId];
     const response = await app.inject({ method: operation.method.toUpperCase(),

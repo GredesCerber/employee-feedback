@@ -17,10 +17,10 @@ export default function AdminPage() {
   const [version, setVersion] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', departmentId: '', role: 'employee' as Role });
+  const [form, setForm] = useState({ name: '', departmentId: '', role: 'employee' as Role, password: '' });
   const load = useCallback(async () => {
-    const [users, reference] = await Promise.all([api.GET('/admin/users'), api.GET('/reference-data')]);
-    return { users: requireData(users.data).items, reference: requireData(reference.data), version };
+    const [users, reference, audit] = await Promise.all([api.GET('/admin/users'), api.GET('/reference-data'), api.GET('/admin/audit', { params: { query: { limit: 100 } } })]);
+    return { users: requireData(users.data).items, reference: requireData(reference.data), audit: requireData(audit.data).items, version };
   }, [api, version]);
   const { data, error: loadError, loading, reload } = useResource(load);
 
@@ -36,8 +36,8 @@ export default function AdminPage() {
   function create(event: FormEvent) {
     event.preventDefault();
     void run(async () => {
-      await api.POST('/admin/users', { body: { name: form.name.trim(), role: form.role, departmentId: form.departmentId || departments[0]?.id || '' } });
-      setForm({ name: '', departmentId: form.departmentId, role: 'employee' });
+      await api.POST('/admin/users', { body: { name: form.name.trim(), role: form.role, departmentId: form.departmentId || departments[0]?.id || '', ...(form.password ? { password: form.password } : {}) } });
+      setForm({ name: '', departmentId: form.departmentId, role: 'employee', password: '' });
     }, 'Участник добавлен: он появился на экране входа.');
   }
 
@@ -57,7 +57,9 @@ export default function AdminPage() {
           {departments.map(item => <option key={item.id} value={item.id}>{departmentName(item.id)}</option>)}</select></label>
         <label>{t('Роль')}<select value={form.role} onChange={event => setForm({ ...form, role: event.target.value as Role })}>
           {roles.map(role => <option key={role} value={role}>{t(roleTitle[role])}</option>)}</select></label>
-        <button type="submit" disabled={!form.name.trim() || departments.length === 0}>{t('Добавить')}</button>
+        <label>{t('Пароль (не меньше 8 знаков)')}<input type="password" autoComplete="new-password" value={form.password} minLength={8} maxLength={100}
+          onChange={event => setForm({ ...form, password: event.target.value })} /></label>
+        <button type="submit" disabled={!form.name.trim() || departments.length === 0 || (form.password.length > 0 && form.password.length < 8)}>{t('Добавить')}</button>
       </div>
     </form>
 
@@ -96,6 +98,31 @@ export default function AdminPage() {
             <td><input type="number" min={1} max={90} aria-label={`${t('Срок ответа, дней')}: ${category.name}`} defaultValue={category.dueInDays} className="admin-days"
               onBlur={event => { const days = Number(event.target.value); if (Number.isInteger(days) && days >= 1 && days <= 90 && days !== category.dueInDays) void run(async () => { await api.PATCH('/admin/categories/{categoryId}', { params: { path: { categoryId: category.id } }, body: { dueInDays: days } }); }, 'Правило сохранено.'); }} /></td>
           </tr>)}</tbody>
+        </table></div>
+      </section>
+      <section className="summary-table-panel" aria-labelledby="admin-structure-title">
+        <h2 id="admin-structure-title">{t('Структура')}</h2>
+        <p className="muted">{t('Подразделения и люди в них. Состав меняется в таблице «Пользователи» выше.')}</p>
+        <div className="admin-structure">{departments.map(department => {
+          const people = data.users.filter(user => user.departmentId === department.id);
+          return <details key={department.id} open={people.length > 0}>
+            <summary>{departmentName(department.id)} ({people.length})</summary>
+            <ul>{people.map(user => <li key={user.id} className={user.active ? undefined : 'admin-inactive'}>
+              {user.name} <small className="muted">· {t(roleTitle[user.role as Role])}{user.active ? '' : ` · ${t('Деактивирован')}`}</small></li>)}
+              {people.length === 0 && <li className="muted">{t('Пока никого')}</li>}</ul>
+          </details>;
+        })}</div>
+      </section>
+
+      <section className="summary-table-panel" aria-labelledby="admin-audit-title">
+        <h2 id="admin-audit-title">{t('Журнал действий')}</h2>
+        <p className="muted">{t('Кто и когда входил, выходил, создавал, назначал и отвечал. Хранится в базе.')}</p>
+        <div className="admin-table-wrap"><table aria-label={t('Журнал действий')}>
+          <thead><tr><th scope="col">{t('Время')}</th><th scope="col">{t('Кто')}</th><th scope="col">{t('Действие')}</th><th scope="col">{t('Объект')}</th></tr></thead>
+          <tbody>{data.audit.map(entry => <tr key={entry.id}>
+            <td>{new Date(entry.at).toLocaleString(locale)}</td><td>{entry.actorName ?? '—'}</td><td>{entry.action}</td><td>{entry.target ?? ''}</td>
+          </tr>)}
+          {data.audit.length === 0 && <tr><td colSpan={4} className="muted">{t('Записей пока нет')}</td></tr>}</tbody>
         </table></div>
       </section>
     </>}

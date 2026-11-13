@@ -1,7 +1,9 @@
 import type { Category, Complaint, ReferenceData, User } from './model.js';
 import { seedComplaints, seedReferenceData, seedUsers } from './seed.js';
 import { FilePersistence } from './persistence.js';
-import type { DatabasePersistence, DirectorySnapshot } from './pg-persistence.js';
+import type { AuditEntry, DatabasePersistence, DirectorySnapshot } from './pg-persistence.js';
+import { randomUUID } from 'node:crypto';
+import { DEFAULT_DEMO_PASSWORD, checkPassword, hashPassword } from './auth-token.js';
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 
 /** Isolated demo memory store. Restart deliberately reloads the immutable seed. */
@@ -33,6 +35,25 @@ export class ComplaintStore {
   }
 
   private directoryFile?: string;
+  private auditLog: AuditEntry[] = [];
+  /** Password hashes by user id; seeded users without one accept the published demo password. */
+  private credentials = new Map<string, string>();
+
+  setPassword(userId: string, password: string): void { this.credentials.set(userId, hashPassword(password)); this.persistDirectory(); }
+  verifyPassword(userId: string, password: string): boolean {
+    const stored = this.credentials.get(userId);
+    if (stored) return checkPassword(password, stored);
+    return seedUsers.some(user => user.id === userId) && password === DEFAULT_DEMO_PASSWORD;
+  }
+  /** Append to the action journal (memory and database; file mode keeps it in memory); never throws into a request. */
+  audit(entry: Omit<AuditEntry, 'id' | 'at'>): void {
+    const full: AuditEntry = { id: randomUUID(), at: new Date().toISOString(), ...entry };
+    this.auditLog.push(full);
+    if (this.auditLog.length > 500) this.auditLog.shift();
+    void this.database?.appendAudit?.(full).catch(() => undefined);
+  }
+  recentAudit(limit: number): AuditEntry[] { return structuredClone(this.auditLog.slice(-limit).reverse()); }
+
   private directoryDirty: { snapshot: DirectorySnapshot | null } | null = null;
 
   private applyDirectory(snapshot: DirectorySnapshot): void {
@@ -40,13 +61,15 @@ export class ComplaintStore {
     this.userList = structuredClone(snapshot.users);
     this.inactive.clear();
     for (const id of snapshot.inactive) this.inactive.add(id);
+    this.credentials = new Map(Object.entries(snapshot.credentials ?? {}));
     this.categoryList = structuredClone(snapshot.categories);
   }
 
   /** Persist the directory after an administrator change; `null` (reset) removes stored changes. */
   private persistDirectory(reset = false): void {
     const snapshot: DirectorySnapshot | null = reset ? null : {
-      users: structuredClone(this.userList), inactive: [...this.inactive], categories: structuredClone(this.categoryList) };
+      users: structuredClone(this.userList), inactive: [...this.inactive], categories: structuredClone(this.categoryList),
+      credentials: Object.fromEntries(this.credentials) };
     if (this.directoryFile) {
       try {
         if (snapshot === null) rmSync(this.directoryFile, { force: true });
@@ -62,6 +85,7 @@ export class ComplaintStore {
     for (const item of await this.database.load()) this.records.set(item.id, structuredClone(item));
     const directory = await this.database.loadDirectory?.();
     if (directory) this.applyDirectory(directory);
+    this.auditLog = (await this.database.loadAudit?.(500)) ?? [];
   }
 
   /** Writes every pending complaint; failures stay pending and are retried (next write, flush or timer). */
@@ -162,6 +186,7 @@ export class ComplaintStore {
   private resetDirectory(): void {
     this.userList = structuredClone(seedUsers);
     this.inactive.clear();
+    this.credentials.clear();
     this.categoryList = structuredClone(seedReferenceData.categories);
   }
 

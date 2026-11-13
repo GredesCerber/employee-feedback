@@ -88,6 +88,7 @@ const probes = {
 // covered in an isolated scenario that checks for complaint linkage instead of author-name leaks.
 const directoryOperations = new Set([
   'listDemoAccounts', 'listAdminUsers', 'createAdminUser', 'updateAdminUser', 'updateAdminCategory',
+  'login', 'logout', 'listAuditLog',
 ]);
 /** Operations that change state; exercised in the mutation scenario (as manager) or by the author. */
 const mutations = ['createComplaint', 'assignComplaint', 'changeComplaintStatus', 'addComment', 'recordDecision', 'undoLastAction', 'resetDemo', 'translateComplaintText', 'recordFeedback', 'createProblem', 'getComplaintAdvice'];
@@ -126,6 +127,9 @@ test('#132 directory and admin operations do not link users or categories to ano
   await probe('listDemoAccounts', 'GET', '/demo-accounts', undefined, null, 200);
   await probe('listDemoAccounts', 'GET', '/demo-accounts', undefined, 'manager-1', 200);
   await probe('listDemoAccounts', 'GET', '/demo-accounts', undefined, 'admin-1', 200);
+  await probe('login', 'POST', '/auth/login', { login: 'manager-1', password: 'demo1234' }, null, 200);
+  await probe('logout', 'POST', '/auth/logout', {}, 'manager-1', 200);
+  await probe('listAuditLog', 'GET', '/admin/audit', undefined, 'admin-1', 200);
   await probe('listAdminUsers', 'GET', '/admin/users', undefined, 'manager-1', 403);
   await probe('createAdminUser', 'POST', '/admin/users', {
     name: 'Directory sweep user 132', role: 'employee', departmentId: 'sales',

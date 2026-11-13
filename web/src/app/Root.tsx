@@ -2,15 +2,22 @@ import { useCallback, useEffect, useState } from 'react';
 import App from '../App';
 import { I18nProvider } from '../i18n';
 import LoginPage from './LoginPage';
-import { createApiClient } from '../api/client';
+import { createApiClient, writeAuthSession } from '../api/client';
 import { demoAccounts, mergeAccounts, readStoredUser, writeStoredUser } from './session';
 import type { Account } from './session';
 
 /** Условный вход: пока роль не выбрана, показываем экран входа; выбор запоминается в браузере. */
 export default function Root() {
   const [userId, setUserId] = useState<string | null>(readStoredUser);
-  const login = useCallback((id: string) => { writeStoredUser(id); setUserId(id); }, []);
-  const logout = useCallback(() => { writeStoredUser(null); setUserId(null); }, []);
+  const login = useCallback((id: string, token?: string) => {
+    writeAuthSession(token ? { userId: id, token } : null);
+    writeStoredUser(id); setUserId(id);
+  }, []);
+  const logout = useCallback(() => {
+    // Выход попадает в журнал действий; результат запроса не важен для выхода из интерфейса.
+    if (userId) void createApiClient({ userId }).POST('/auth/logout').catch(() => undefined);
+    writeAuthSession(null); writeStoredUser(null); setUserId(null);
+  }, [userId]);
   const [accounts, setAccounts] = useState<Account[]>(demoAccounts);
   // Экран входа показывает и тех, кого администратор добавил; без ответа сервера остаются встроенные учётки.
   useEffect(() => {

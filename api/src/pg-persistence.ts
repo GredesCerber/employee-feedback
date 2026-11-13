@@ -2,7 +2,10 @@ import pg from 'pg';
 import type { Category, Complaint, User } from './model.js';
 
 /** Users, deactivation flags and routing rules edited by an administrator; survives restarts. */
-export interface DirectorySnapshot { users: User[]; inactive: string[]; categories: Category[] }
+export interface DirectorySnapshot { users: User[]; inactive: string[]; categories: Category[]; credentials?: Record<string, string> }
+
+/** One journal row: who did what and when. */
+export interface AuditEntry { id: string; at: string; actorId: string | null; actorName: string | null; action: string; target: string | null; detail: string | null }
 
 /** Database storage behind the in-memory cache (the cache stays the source for reads). */
 export interface DatabasePersistence {
@@ -13,6 +16,9 @@ export interface DatabasePersistence {
   /** Optional: directory (users and category rules) storage. */
   loadDirectory?(): Promise<DirectorySnapshot | null>;
   saveDirectory?(snapshot: DirectorySnapshot | null): Promise<void>;
+  /** Optional: append-only action journal. */
+  appendAudit?(entry: AuditEntry): Promise<void>;
+  loadAudit?(limit: number): Promise<AuditEntry[]>;
   close(): Promise<void>;
 }
 
@@ -35,7 +41,16 @@ export async function createPgPersistence(connectionString: string): Promise<Dat
     id text PRIMARY KEY, data jsonb NOT NULL, updated_at timestamptz NOT NULL DEFAULT now())`);
   await pool.query(`CREATE TABLE IF NOT EXISTS app_state (
     key text PRIMARY KEY, data jsonb NOT NULL, updated_at timestamptz NOT NULL DEFAULT now())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS audit_log (
+    seq bigserial PRIMARY KEY, id text NOT NULL, at timestamptz NOT NULL, data jsonb NOT NULL)`);
   return {
+    async appendAudit(entry) {
+      await pool.query('INSERT INTO audit_log (id, at, data) VALUES ($1, $2, $3::jsonb)', [entry.id, entry.at, JSON.stringify(entry)]);
+    },
+    async loadAudit(limit) {
+      const { rows } = await pool.query<{ data: AuditEntry }>('SELECT data FROM audit_log ORDER BY seq DESC LIMIT $1', [limit]);
+      return rows.map(row => row.data).reverse();
+    },
     async loadDirectory() {
       const { rows } = await pool.query<{ data: DirectorySnapshot }>(`SELECT data FROM app_state WHERE key = 'directory'`);
       return rows[0]?.data ?? null;
