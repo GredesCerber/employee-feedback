@@ -1,4 +1,5 @@
 import { useI18n } from '../i18n';
+import LanguageSelect from '../i18n/LanguageSelect';
 import { demoAccounts } from './session';
 import type { Account, Role } from './session';
 
@@ -9,7 +10,10 @@ export default function LoginPage({ onLogin, accounts = demoAccounts }: { onLogi
   const { t } = useI18n();
   return <main className="login-page" id="main">
     <section className="login-card" aria-labelledby="login-title">
-      <p className="login-brand">{t('Модус Трейд')}</p>
+      <div className="login-top">
+        <p className="login-brand">{t('Модус Трейд')}</p>
+        <LanguageSelect className="role-selector login-language" />
+      </div>
       <h1 id="login-title">{t('Вход в систему')}</h1>
       <p className="login-lead">{t('Выберите, под кем войти. Пароль не нужен: это демонстрация на синтетических данных.')}</p>
       <ul className="login-accounts">
