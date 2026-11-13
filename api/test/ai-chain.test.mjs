@@ -32,7 +32,7 @@ test('Gemini отвечает: второй провайдер не вызыва
   assert.deepEqual([result.source, result.category?.id], ['llm', 'it']);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].auth, `Bearer ${GEMINI_KEY}`);
-  assert.equal(calls[0].body.model, 'gemini-2.5-flash');
+  assert.equal(calls[0].body.model, 'gemini-3.8-flash');
 });
 
 test('Gemini упал: отвечает второй провайдер', async () => {

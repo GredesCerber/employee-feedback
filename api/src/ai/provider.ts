@@ -88,7 +88,7 @@ export function createAiProvider(options: AiProviderOptions = {}): AiProvider {
   const anthropicJson = apiKey ? createAnthropicJson({ apiKey, model, timeoutMs: adviceTimeoutMs, fetch: options.fetch }) : undefined;
   const adviceChain: { name: string; model: string; ask: (system: string, user: string) => Promise<unknown> }[] = [
     ...compat.map(item => ({ name: item.kind, model: item.model,
-      ask: (system: string, user: string) => item.completeJson(system, user, { timeoutMs: adviceTimeoutMs, maxTokens: 4096 }) })),
+      ask: (system: string, user: string) => item.completeJson(system, user, { timeoutMs: adviceTimeoutMs, maxTokens: 8192 }) })),
     ...(anthropicJson ? [{ name: 'anthropic', model, ask: (system: string, user: string) => anthropicJson(system, user, ADVICE_JSON_SCHEMA) }] : []),
   ];
   return {

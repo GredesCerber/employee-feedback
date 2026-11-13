@@ -12,9 +12,9 @@ export interface CompatProviderConfig {
 }
 
 export const COMPAT_DEFAULTS: Record<CompatKind, { baseUrl: string; model: string }> = {
-  gemini: { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-2.5-flash' },
+  gemini: { baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', model: 'gemini-3.8-flash' },
   xai: { baseUrl: 'https://api.x.ai/v1', model: 'grok-3-mini' },
-  groq: { baseUrl: 'https://api.groq.com/openai/v1', model: 'llama-3.3-70b-versatile' },
+  groq: { baseUrl: 'https://api.groq.com/openai/v1', model: 'openai/gpt-oss-120b' },
 };
 
 /** Failure description that never contains request text or credentials. */
@@ -46,7 +46,7 @@ export function createCompatClassifier(config: CompatProviderConfig, timeoutMs: 
         response = await fetchImpl(url, {
           method: 'POST', signal: controller.signal,
           headers: { 'content-type': 'application/json', authorization: `Bearer ${config.apiKey}` },
-          body: JSON.stringify({ model, temperature: 0, max_tokens: limits.maxTokens ?? 1024, response_format: { type: 'json_object' },
+          body: JSON.stringify({ model, temperature: 0, max_tokens: limits.maxTokens ?? 4096, response_format: { type: 'json_object' },
             messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
         });
       } catch (error) {
