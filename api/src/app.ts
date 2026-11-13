@@ -72,7 +72,13 @@ function createApp(options: FastifyServerOptions, store: ComplaintStore, spa = f
   store.seed();
   app.decorate('store', store);
   // Without ANTHROPIC_API_KEY the provider never touches the network (recorded examples and keyword rules only).
-  app.decorate('ai', createAiProvider({ ...aiConfigFromEnv(), ...aiChainConfigFromEnv() }));
+  const ai = createAiProvider({ ...aiConfigFromEnv(), ...aiChainConfigFromEnv(),
+    // Diagnostics for the administrator's action journal: provider, model and a short reason, never keys.
+    onFailure: ({ provider, model, reason }) => store.audit({ actorId: null, actorName: 'ИИ-слой', action: `Сбой ИИ (${provider}, ${model}): ${reason}`.slice(0, 300), target: null, detail: null }) });
+  app.decorate('ai', ai);
+  app.addHook('onReady', async () => {
+    store.audit({ actorId: null, actorName: 'ИИ-слой', action: ai.llmEnabled ? `ИИ включён: ${ai.providers.join(' → ')} (модель ${ai.model})` : 'ИИ выключен: ключи не заданы, работают правила', target: null, detail: null });
+  });
   registerSecurity(app);
   app.addHook('onSend', async (request, reply, payload) => {
     reply.header('X-Request-Id', request.id);

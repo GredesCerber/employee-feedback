@@ -25,6 +25,8 @@ export interface AiProviderOptions {
   fetch?: typeof globalThis.fetch;
   /** Chain before Anthropic: Gemini first, then the second provider (xAI or Groq), then local rules. */
   compat?: CompatProviderConfig[];
+  /** Called when a provider fails (names and short reasons only, never keys or request text). */
+  onFailure?: (info: { provider: string; model: string; reason: string }) => void;
 }
 
 export interface AiProvider {
@@ -95,8 +97,9 @@ export function createAiProvider(options: AiProviderOptions = {}): AiProvider {
         try {
           return { options: parseAdvice(await provider.ask(ADVICE_SYSTEM_PROMPT, JSON.stringify(context)), secrets), source: 'llm' };
         } catch (error) {
-          log?.warn({ reason: error instanceof Error && !(error instanceof CompatError) && error.constructor === Error ? `unusable answer: ${error.message}` : describe(error),
-            provider: provider.name, model: provider.model }, '«Помощь ИИ» недоступна у провайдера, пробуем следующего или правила');
+          const reason = error instanceof Error && !(error instanceof CompatError) && error.constructor === Error ? `unusable answer: ${error.message}` : describe(error);
+          log?.warn({ reason, provider: provider.name, model: provider.model }, '«Помощь ИИ» недоступна у провайдера, пробуем следующего или правила');
+          options.onFailure?.({ provider: provider.name, model: provider.model, reason });
         }
       }
       return { options: adviceByRules(context), source: 'rules' };
