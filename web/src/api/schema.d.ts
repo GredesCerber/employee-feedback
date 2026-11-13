@@ -378,6 +378,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/complaints/{complaintId}/advice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * «Помощь ИИ»: 2–3 solution options for the viewer's role
+         * @description Explicit user action only. Same visibility as GET /complaints/{complaintId}: missing/foreign complaint returns the same 404. The server builds the context only from what this role already sees in the card (messages, statuses, history, decision) with people replaced by role labels (no names or user IDs) and sends it to the configured AI chain (Gemini, then xAI/Groq, then Anthropic). Keys stay server-side. Anonymous complaints are never sent to a provider. Without keys, on timeout or an unusable answer, options come from local rules (source=rules). Advice only: nothing is published or changed. Per-user write rate limit applies.
+         */
+        post: operations["getComplaintAdvice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/complaints/{complaintId}/translations": {
         parameters: {
             query?: never;
@@ -1374,6 +1394,21 @@ export interface components {
             overdue: components["schemas"]["OverdueComplaint"][];
             totals: components["schemas"]["AnalyticsTotals"];
         };
+        AdviceOption: {
+            title: string;
+            summary: string;
+            pros: string[];
+            cons: string[];
+        };
+        /** @description Suggestions only. The person decides; nothing is changed by this response. */
+        AdviceResponse: {
+            options: components["schemas"]["AdviceOption"][];
+            /**
+             * @description llm: answer of a configured model; rules: local fallback without network.
+             * @enum {string}
+             */
+            source: "llm" | "rules";
+        };
         /** @description Select existing text of a visible complaint. comment requires commentId. Other fields forbid commentId. Original text is never modified. */
         TranslationRequest: {
             /** @enum {string} */
@@ -2361,6 +2396,37 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             422: components["responses"]["Validation"];
+            500: components["responses"]["Internal"];
+        };
+    };
+    getComplaintAdvice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                complaintId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Two or three options with pros and cons; source shows whether a model (llm) or local rules answered. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdviceResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            413: components["responses"]["TooLarge"];
+            415: components["responses"]["Unsupported"];
+            422: components["responses"]["Validation"];
+            429: components["responses"]["TooManyRequests"];
             500: components["responses"]["Internal"];
         };
     };

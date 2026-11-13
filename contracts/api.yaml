@@ -1882,6 +1882,82 @@
         ]
       }
     },
+    "/complaints/{complaintId}/advice": {
+      "post": {
+        "operationId": "getComplaintAdvice",
+        "x-demo-steps": [
+          3,
+          4
+        ],
+        "tags": [
+          "Complaints"
+        ],
+        "summary": "«Помощь ИИ»: 2–3 solution options for the viewer's role",
+        "description": "Explicit user action only. Same visibility as GET /complaints/{complaintId}: missing/foreign complaint returns the same 404. The server builds the context only from what this role already sees in the card (messages, statuses, history, decision) with people replaced by role labels (no names or user IDs) and sends it to the configured AI chain (Gemini, then xAI/Groq, then Anthropic). Keys stay server-side. Anonymous complaints are never sent to a provider. Without keys, on timeout or an unusable answer, options come from local rules (source=rules). Advice only: nothing is published or changed. Per-user write rate limit applies.",
+        "x-roles": [
+          "employee",
+          "manager",
+          "admin"
+        ],
+        "security": [
+          {
+            "DemoIdentity": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "complaintId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Two or three options with pros and cons; source shows whether a model (llm) or local rules answered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdviceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/TooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/Unsupported"
+          },
+          "422": {
+            "$ref": "#/components/responses/Validation"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/Internal"
+          }
+        }
+      }
+    },
     "/complaints/{complaintId}/translations": {
       "post": {
         "operationId": "translateComplaintText",
@@ -4729,6 +4805,75 @@
             }
           }
         ]
+      },
+      "AdviceOption": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "summary",
+          "pros",
+          "cons"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "pros": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          },
+          "cons": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          }
+        }
+      },
+      "AdviceResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "options",
+          "source"
+        ],
+        "properties": {
+          "options": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/AdviceOption"
+            }
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "llm",
+              "rules"
+            ],
+            "description": "llm: answer of a configured model; rules: local fallback without network."
+          }
+        },
+        "description": "Suggestions only. The person decides; nothing is changed by this response."
       },
       "TranslationRequest": {
         "type": "object",

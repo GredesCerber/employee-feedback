@@ -1,7 +1,8 @@
 import type { FastifyBaseLogger } from 'fastify';
 import type { ReferenceData } from '../model.js';
 import { MIN_SUGGESTION_LENGTH, suggestDemoCategory } from '../discovery.js';
-import { createAnthropicClassifier, describeFailure, type CategoryClassifier } from './anthropic.js';
+import { createAnthropicClassifier, createAnthropicJson, describeFailure, type CategoryClassifier } from './anthropic.js';
+import { ADVICE_JSON_SCHEMA, ADVICE_SYSTEM_PROMPT, adviceByRules, parseAdvice, type Advice, type AdviceContext } from './advice.js';
 import { suggestByRules } from './rules.js';
 import { compatConfigsFromEnv, timeoutFromEnv, CompatError, createCompatClassifier, type CompatClassifier, type CompatProviderConfig } from './openai-compatible.js';
 import { hasDigestFacts, templateDigest, type DigestContent, type DigestFacts } from './digest.js';
@@ -34,7 +35,12 @@ export interface AiProvider {
   readonly timeoutMs: number;
   suggestCategory(text: string, references: ReferenceData, log?: FastifyBaseLogger): Promise<CategorySuggestion>;
   summarize(facts: DigestFacts, log?: FastifyBaseLogger): Promise<DigestContent>;
+  /** «Помощь ИИ»: 2–3 options for the viewer's role. `localOnly` (anonymous complaint) never calls a provider. */
+  advise(context: AdviceContext, localOnly: boolean, log?: FastifyBaseLogger): Promise<Advice>;
 }
+
+/** Answers with several options take longer than a category id; never wait less than this. */
+export const MIN_ADVICE_TIMEOUT_MS = 15_000;
 
 /** ANTHROPIC_API_KEY turns the live model on; AI_MODEL overrides the default model. */
 export function aiConfigFromEnv(): { apiKey: string | undefined; model: string } {
@@ -76,7 +82,25 @@ export function createAiProvider(options: AiProviderOptions = {}): AiProvider {
     ...(anthropic ? [{ name: 'anthropic', model, classifier: anthropic }] : []),
   ];
   const describe = (error: unknown) => error instanceof CompatError ? error.message : describeFailure(error);
+  const adviceTimeoutMs = Math.max(timeoutMs, MIN_ADVICE_TIMEOUT_MS);
+  const anthropicJson = apiKey ? createAnthropicJson({ apiKey, model, timeoutMs: adviceTimeoutMs, fetch: options.fetch }) : undefined;
+  const adviceChain: { name: string; model: string; ask: (system: string, user: string) => Promise<unknown> }[] = [
+    ...compat.map(item => ({ name: item.kind, model: item.model,
+      ask: (system: string, user: string) => item.completeJson(system, user, { timeoutMs: adviceTimeoutMs, maxTokens: 4096 }) })),
+    ...(anthropicJson ? [{ name: 'anthropic', model, ask: (system: string, user: string) => anthropicJson(system, user, ADVICE_JSON_SCHEMA) }] : []),
+  ];
   return {
+    async advise(context, localOnly, log) {
+      if (!localOnly) for (const provider of adviceChain) {
+        try {
+          return { options: parseAdvice(await provider.ask(ADVICE_SYSTEM_PROMPT, JSON.stringify(context)), secrets), source: 'llm' };
+        } catch (error) {
+          log?.warn({ reason: error instanceof Error && !(error instanceof CompatError) && error.constructor === Error ? `unusable answer: ${error.message}` : describe(error),
+            provider: provider.name, model: provider.model }, '«Помощь ИИ» недоступна у провайдера, пробуем следующего или правила');
+        }
+      }
+      return { options: adviceByRules(context), source: 'rules' };
+    },
     llmEnabled: chain.length > 0,
     model: chain[0]?.model ?? model,
     providers: chain.map(item => item.name),

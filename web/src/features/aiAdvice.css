@@ -1,0 +1,18 @@
+/* «Помощь ИИ» на карточке обращения: компактная кнопка и варианты решения на токенах темы. */
+.ai-advice { margin-top: var(--space-3, 12px); }
+.ai-advice-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px; border-radius: var(--radius-pill, 999px); border: 1px solid var(--color-border-strong); background: var(--color-surface); color: var(--color-text); font-size: var(--font-size-sm, 14px); font-weight: 600; }
+.ai-advice-toggle[aria-expanded="true"] { border-color: var(--color-primary); }
+.ai-advice-spark { color: var(--color-primary); font-size: 1.05em; line-height: 1; }
+.ai-advice-panel { margin-top: var(--space-2, 8px); padding: 12px 14px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-surface-muted); color: var(--color-text); }
+.ai-advice-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.ai-advice-again { min-height: 32px; padding: 4px 12px; font-size: var(--font-size-sm, 14px); }
+.ai-advice-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.ai-advice-option { padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); }
+.ai-advice-option h3 { margin: 0 0 4px; font-size: var(--font-size-md, 15px); color: var(--color-text-strong, var(--color-text)); }
+.ai-advice-option p { margin: 0 0 8px; font-size: var(--font-size-sm, 14px); }
+.ai-advice-tradeoffs { display: grid; gap: 6px; font-size: var(--font-size-sm, 14px); }
+.ai-advice-tradeoffs strong { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--color-text-muted, var(--color-text)); }
+.ai-advice-tradeoffs ul { margin: 2px 0 0; padding: 0; list-style: none; }
+.ai-advice-tradeoffs li { position: relative; padding-left: 16px; }
+.ai-advice-pros li::before { content: "+"; position: absolute; left: 0; font-weight: 700; color: var(--status-implemented-fg); }
+.ai-advice-cons li::before { content: "−"; position: absolute; left: 0; font-weight: 700; color: var(--color-danger, var(--color-text)); }
